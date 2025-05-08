@@ -1,8 +1,9 @@
 
 import React from 'react'
-import CalendarPage from '@/Component/calendar/calendar';
+
 import Sidebar from '@/Component/Usersidebar/usersidebar';
 import NavBar from '@/Component/Navbar/navbar';
+import CalendarPage from '@/Component/calendar/calendar';
 
 
 export default function Home() {
@@ -22,7 +23,7 @@ export default function Home() {
 
         {/* Page Content */}
         <main className="px-6 py-6">
-  <CalendarPage />
+<CalendarPage/>
 </main>
      
     

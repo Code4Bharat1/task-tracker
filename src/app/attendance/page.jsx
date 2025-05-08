@@ -1,4 +1,5 @@
 
+
 import AttendancePage from '@/Component/attendance/myattendance';
 import NavBar from '@/Component/Navbar/navbar';
 import Sidebar from '@/Component/Usersidebar/usersidebar';
@@ -21,7 +22,7 @@ export default function Home() {
 
       {/* Scrollable Content below Navbar */}
       <div className="mt-[60px] ml-[16.6667%] h-[calc(100vh-60px)] overflow-y-auto p-4 bg-white">
-    <AttendancePage/>
+   <AttendancePage/>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
-import Companypolicy from "@/Component/companypolicy/companypolicy";
+
+import Companypolicy from "@/Component/Companypolicy/companypolicy";
 import NavBar from "@/Component/Navbar/navbar";
 import Sidebar from "@/Component/Usersidebar/usersidebar";
 
@@ -18,18 +19,9 @@ function page() {
             <div className="w-full md:w-5/6 md:flex-1 h-screen bg-white">
                 {/* Desktop Navbar (hidden on mobile) */}
               <NavBar/>
-
-                {/* Page Content */}
-                <main className="hidden md:block">
-                    <Companypolicy />
-                </main>
-
-
-
-
-
-                {/* Mobile View */}
-                <main className="block md:hidden"></main>
+<div>
+    <Companypolicy/>
+</div>
 
             </div>
 
