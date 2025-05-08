@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+
+/* Add this CSS to style the custom left and right borders */
+.custom-border-left {
+  position: absolute;
+  top: 50%; /* Center the border vertically */
+  left: 0;
+  width: 1px; /* Border width */
+  height: 20px; /* Set the custom height for the border */
+  background-color: gray; /* Border color */
+  transform: translateY(-50%); /* Adjust to truly center it */
+}
+
+.custom-border-left::after {
+  content: "";
+  position: absolute;
+  bottom: 50%; /* Center the border vertically */
+  left: 0;
+  width: 1px;
+  height: 20px; /* Set the custom height for the border */
+  background-color:lightgray; /* Border color */
+  transform: translateY(50%); /* Adjust to truly center it */
+}
+
+
+
