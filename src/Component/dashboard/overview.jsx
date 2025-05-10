@@ -48,10 +48,10 @@ export default function OverviewHeader({ selected, setSelected }) {
       <div className="relative">
       <h2 className="text-center font-semibold text-gray-800  text-2xl mb-6">
           <span className="relative inline-block">
-          Overview
+          OVERVIEW
             <span
               ref={underlineRef}
-              className="absolute left-0 bottom-0 h-[2px] bg-yellow-500 w-full"
+              className="absolute left-0 bottom-0  h-[2px] bg-[#058CBF] w-full"
             ></span>
           </span>
         </h2>
@@ -61,7 +61,7 @@ export default function OverviewHeader({ selected, setSelected }) {
         <div className="relative">
         <button 
   onClick={toggleDropdown}
-  className="flex items-center gap-1 px-3 py-1 text-gray-700 bg-white border border-gray-300 rounded-md shadow-[1px_1px_10px_lightgray] hover:bg-gray-50 transition-colors"
+  className="flex items-center gap-1 px-3 py-1 text-gray-700 bg-white border border-gray-300 rounded-md shadow-md hover:bg-gray-50 transition-colors"
 >
   <span>{localSelected}</span>
   <ChevronDown size={16} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -91,7 +91,7 @@ export default function OverviewHeader({ selected, setSelected }) {
         {/* Plus Button */} 
         <button
       onClick={handleClick}
-      className="bg-blue-500 rounded-full p-2 text-white shadow-lg cursor-pointer hover:bg-blue-600 transition-colors"
+      className="bg-[#058CBF] rounded-full p-2 text-white shadow-lg cursor-pointer hover:bg-[#5c95a9e4] transition-colors"
     >
       <Plus size={26} />
     </button>

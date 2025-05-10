@@ -46,7 +46,7 @@ export default function AddTask() {
         <h1 className="text-2xl font-bold text-center mb-8 relative text-gray-800">
           <span
             ref={underlineRef}
-            className="absolute left-0 bottom-0 h-[2px] bg-yellow-500 w-full"
+            className="absolute left-0 bottom-0 h-[2px] bg-[#018ABE] w-full"
           ></span>
          Add Task 
         </h1>

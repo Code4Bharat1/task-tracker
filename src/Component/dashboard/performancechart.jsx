@@ -115,7 +115,7 @@ const PerformanceChart = ({ timeframe = 'This Week' }) => {
   return (
     <div className="bg-white rounded-xl shadow-[1px_4px_10px_lightgray] p-5 w-full max-w-2xl">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">OVERALL PERFORMANCE</h2>
+        <h2 className="text-xl font-medium">OVERALL PERFORMANCE</h2>
         <div className="text-sm text-gray-600">
           Current: <span className="font-medium">{totalProgress}%</span> | 
           Avg Efficiency: <span className="font-medium">{avgEfficiency}%/hr</span>

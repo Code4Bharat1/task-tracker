@@ -22,8 +22,8 @@ const AttendanceChart = ({ selected = 'This Year' }) => {
     <div className="w-auto h-auto bg-white rounded-2xl shadow-[1px_4px_10px_lightgray] p-4 flex flex-col items-center justify-between relative">
       <div className="flex justify-between items-start w-full ">
         <div>
-          <h2 className="text-xl mt-2 font-bold">ATTENDANCE</h2>
-          <p className="text-2xl ml-4 mt-7 font-bold">{present}%</p>
+          <h2 className="text-xl mt-2 font-medium">ATTENDANCE</h2>
+          <p className="text-2xl ml-4 mt-7 font-semibold">{present}%</p>
         </div>
         <div className="text-sm space-y-1">
           <div className="flex items-center">

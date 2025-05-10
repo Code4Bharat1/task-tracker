@@ -1,8 +1,8 @@
-'use client';
+'use client'
+import { useGSAP } from "@gsap/react";
 import { useEffect, useState, useRef } from "react";
 import { Toaster, toast } from 'react-hot-toast';
-import { axiosInstance } from "@/lib/axiosInstance";
-import axios from "axios";
+import gsap from "gsap";
 
 export default function LeaveTable() {
   const [leaves, setLeaves] = useState([]);
@@ -14,39 +14,27 @@ export default function LeaveTable() {
   const [toDate, setToDate] = useState('');
   const [reason, setReason] = useState('');
 
-  const [wordCount, setWordCount] = useState(0);
-  const fileInputRef = useRef(null);
+  const [wordCount, setWordCount] = useState(0); // For word count tracking
 
-  const today = new Date().toISOString().split('T')[0];
+  const fileInputRef = useRef(null); // Reference for the file input
 
-  const approvers = [
-    { name: 'Ayaan Raje', id: 'Ayaan Raje' },
-    { name: 'Prashant Patil', id: 'Prashant Patil' },
-    { name: 'Shams Ali Shaikh', id: 'Shams Ali Shaikh' },
-    { name: 'Awab Fakih', id: 'Awab Fakih' },
-  ];
+  const today = new Date().toISOString().split('T')[0]; // Default today's date
 
   useEffect(() => {
-    const fetchLeaves = async () => {
-      try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_API}/leave/userLeave`, {
-          withCredentials: true,
-        });
-        setLeaves(response.data?.leaves || []);
-      } catch (error) {
-        console.error("Error fetching leaves:", error);
-        toast.error('Failed to fetch leave data.');
-      }
-    };
-    fetchLeaves();
-  }, []);
+    const storedLeaves = JSON.parse(localStorage.getItem("leaves") || "[]");
+    setLeaves(storedLeaves);
+
+    // Set the default value for both fromDate and toDate to today's date
+    setFromDate(today);
+    setToDate(today);
+  }, [today]);
 
   const refreshLeaves = () => {
     const updatedLeaves = JSON.parse(localStorage.getItem("leaves") || "[]");
     setLeaves(updatedLeaves);
   };
 
-  const submitLeave = async () => {  // Made this function async
+  const submitLeave = () => {
     if (
       !leaveType || leaveType === 'Select' ||
       !approvalTo || approvalTo === 'Select' ||
@@ -56,8 +44,8 @@ export default function LeaveTable() {
       return;
     }
 
-    // Check if Reason For Leave has at least 24 words
-    if (wordCount < 24) {
+    // Check if Reason For Leave has at least 24 characters
+    if (reason.split(/\s+/).length < 24) {
       toast.error('Reason for Leave must be at least 24 words long.', { duration: 3000 });
       return;
     }
@@ -67,81 +55,80 @@ export default function LeaveTable() {
       return;
     }
 
-    if (leaveType === 'Sick Leave' && !fileInputRef.current?.files[0]) {
-      toast.error('Attachment is required for Sick Leave.');
-      return;
-    }
+    const newLeave = {
+      leaveType,
+      approvalTo,
+      fromDate,
+      toDate,
+      reason,
+      applyDate: today,
+      totalDays: calculateDays(fromDate, toDate),
+      status: 'Pending',
+    };
 
-    const selectedApprover = approvers.find(a => a.name === approvalTo);
-    if (!selectedApprover) {
-      toast.error('Invalid approver selected.');
-      return;
-    }
+    const existingLeaves = JSON.parse(localStorage.getItem('leaves') || '[]');
+    existingLeaves.push(newLeave);
+    localStorage.setItem('leaves', JSON.stringify(existingLeaves));
 
-    const formData = new FormData();
-    formData.append('fromDate', fromDate);
-    formData.append('toDate', toDate);
-    formData.append('leaveType', leaveType);
-    formData.append('reason', reason);
-    formData.append('managerId', selectedApprover.id);
+    toast.success('Leave Submitted Successfully!', { duration: 3000 });
+    setShowModal(false);
 
-    if (fileInputRef.current?.files[0]) {
-      formData.append('attachment', fileInputRef.current.files[0]);
-    }
+    // Reset form
+    setLeaveType('');
+    setApprovalTo('');
+    setFromDate(today); // Reset to today's date
+    setToDate(today); // Reset to today's date
+    setReason('');
 
-    try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/leave/apply`,
-        formData,
-        {
-          headers: { 'Content-Type': 'multipart/form-data' },
-          withCredentials: true,
-        }
-      );
+    refreshLeaves();
+  };
 
-      if (response.status === 201) {
-        toast.success('Leave Submitted Successfully!');
-        setShowModal(false);
-        setLeaveType('');
-        setApprovalTo('');
-        setFromDate('');
-        setToDate('');
-        setReason('');
-        setWordCount(0);
+  const calculateDays = (start, end) => {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const diff = (endDate - startDate) / (1000 * 60 * 60 * 24) + 1;
+    return diff || 0;
+  };
 
-        // Refresh leaves data
-        try {
-          const updatedResponse = await axiosInstance.get("/leave/userLeave");
-          setLeaves(updatedResponse.data.leaves || []);
-        } catch (error) {
-          console.error("Error refreshing leaves:", error);
-          toast.error('Failed to refresh leave data.');
-        }
-      } else {
-        toast.error('Failed to submit leave.');
-      }
-    } catch (error) {
-      console.error('Submit error:', error);
-      toast.error(error.response?.data?.message || 'Error submitting leave. Try again later.');
+  const handleDeleteFile = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''; // Reset file input
     }
   };
 
+  // Update word count whenever the reason text area changes
   const handleReasonChange = (e) => {
     const updatedReason = e.target.value;
     setReason(updatedReason);
+
+    // Split by spaces to count words
     const words = updatedReason.trim().split(/\s+/);
     setWordCount(words.filter(word => word).length);
   };
 
+  const underlineRef = useRef(null);
+  useGSAP(() => {
+    gsap.fromTo(
+      underlineRef.current,
+      { width: "0%" },
+      { width: "100%", duration: 1, ease: "power2.out" }
+    );
+  }, []);
   return (
     <div className="p-6 bg-white min-h-screen relative">
       <Toaster />
-      <h1 className="text-2xl font-bold mb-2">My Leave</h1>
-      <div className="w-24 h-1 bg-red-500 mb-6"></div>
+      <h1 className="text-2xl font-bold mb-2 relative inline-block text-gray-800">
+        <span
+          ref={underlineRef}
+          className="absolute left-0 bottom-0 h-[2px] bg-yellow-500 w-full"
+        ></span>
+        My Leave
+      </h1>
+      <div className="w-190 h-1 bg-white mb-6"></div>
 
       <button
         onClick={() => setShowModal(true)}
-        className="mb-6 px-5 py-2 bg-[#018ABE] text-white rounded-full hover:bg-[#017ba9] transition"
+        className="mb-6 px-5 py-2 bg-[#018ABE] cursor-pointer text-white rounded-full hover:bg-[#017ba9] transition"
       >
         Leave Application
       </button>
@@ -160,13 +147,22 @@ export default function LeaveTable() {
               <div className="flex items-center space-x-2">
                 <label htmlFor="fromDate" className="font-bold px-2 whitespace-nowrap">From Date</label>
                 <input
-                  type="date"
-                  id="fromDate"
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                  min={today}
-                  className="rounded px-4 py-2 w-[250px] shadow-md outline-none focus:ring-2 focus:ring-blue-300"
-                />
+  type="date"
+  id="fromDate"
+  value={fromDate}
+  onChange={(e) => {
+    const newFromDate = e.target.value;
+    setFromDate(newFromDate);
+
+    // If toDate is still the same as the previous fromDate or not manually changed, update it
+    if (!toDate || toDate === fromDate) {
+      setToDate(newFromDate);
+    }
+  }}
+  min={today}
+  className="rounded px-4 py-2 w-[250px] shadow-md outline-none focus:ring-2 focus:ring-blue-300"
+/>
+
               </div>
 
               <div className="flex items-center space-x-2">
@@ -182,20 +178,28 @@ export default function LeaveTable() {
               </div>
             </div>
 
+
             <div className="mb-4 flex items-center space-x-10 gap-20">
-              <div className="flex items-center space-x-2">
-                <label htmlFor="leaveType" className="font-bold px-1 whitespace-nowrap">Leave Type</label>
-                <select
-                  id="leaveType"
-                  value={leaveType}
-                  onChange={(e) => setLeaveType(e.target.value)}
-                  className="rounded px-4 py-2 w-[250px] shadow-lg outline-none focus:ring-2 focus:ring-blue-300"
-                >
-                  <option>Select</option>
-                  <option>Sick Leave</option>
-                  <option>Casual Leave</option>
-                </select>
-              </div>
+            <div className="flex items-center space-x-2">
+  <label htmlFor="leaveType" className="font-bold px-1 whitespace-nowrap">
+    Leave Type
+  </label>
+  <select
+    id="leaveType"
+    value={leaveType}
+    onChange={(e) => setLeaveType(e.target.value)}
+    className="rounded px-4 py-2 w-[250px] shadow-lg outline-none focus:ring-2 focus:ring-blue-300"
+  >
+    {/* Placeholder option that shows initially but isn't in the dropdown */}
+    {!leaveType && (
+      <option value="" disabled hidden>
+        Select
+      </option>
+    )}
+    <option value="Sick Leave">Sick Leave</option>
+    <option value="Casual Leave">Casual Leave</option>
+  </select>
+</div>
 
               <div className="flex items-center space-x-3">
                 <label htmlFor="approvalTo" className="font-bold px-1.5 whitespace-nowrap">Select for Approval</label>
@@ -205,108 +209,117 @@ export default function LeaveTable() {
                   onChange={(e) => setApprovalTo(e.target.value)}
                   className="rounded px-4 py-2 w-[250px] shadow-lg outline-none focus:ring-2 focus:ring-blue-300"
                 >
-                  <option>Select</option>
-                  {approvers.map(approver => (
-                    <option key={approver.id} value={approver.name}>{approver.name}</option>
-                  ))}
+                    {/* Placeholder option that shows initially but isn't in the dropdown */}
+    {!approvalTo && (
+      <option value="" disabled hidden>
+        Select
+      </option>
+    )}
+                 
+                  <option>Ayaan Raje</option>
+                  <option>Prashant Patil</option>
+                  <option>Shams Ali Shaikh</option>
+                  <option>Awab Fakih</option>
                 </select>
               </div>
             </div>
 
-            <div className="mb-6">
-              <label className="font-bold block mb-1">
-                Attachment {leaveType === 'Sick Leave' ? '(required)' : '(optional)'}
-              </label>
-              <input
-                type="file"
-                name="attachment"
-                ref={fileInputRef}
-                className="block w-full text-sm bg-gray-50 text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:rounded-md file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-              />
-            </div>
+            <div className="flex items-center space-x-4">
+              <label htmlFor="fileInput" className="font-semibold text-lg">Attachment</label>
 
-            <div className="mb-6 mt-6 flex items-start space-x-4">
-              <label htmlFor="reason" className="font-bold mt-2 whitespace-nowrap">Reason For Leave</label>
-              <div className="flex flex-col">
-                <textarea
-                  id="reason"
-                  value={reason}
-                  onChange={handleReasonChange}
-                  className="rounded px-4 py-2 w-[750px] h-[130px] resize-none shadow-lg"
-                ></textarea>
-                <div className="text-right text-gray-600 text-sm">{wordCount}/24 words</div>
+              <div className="flex items-center space-x-2">
+                {leaveType === 'Sick Leave' && (
+                  <div className="flex items-center border rounded-md bg-[#877575] px-2 py-2 w-[300px] shadow-md">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      id="fileInput"
+                      className="text-black file:mr-4 file:py-1 file:px-3
+                                file:rounded file:border file:border-gray-300
+                                file:text-sm file:font-medium
+                                file:bg-white file:text-black
+                                hover:file:bg-gray-200"
+                    />
+                  </div>
+                )}
+                {leaveType === 'Casual Leave' && (
+                  <p className="text-gray-500">No file required for Casual Leave</p>
+                )}
+
+                <button type="button" onClick={handleDeleteFile} className="text-black hover:text-red-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="h-5 w-5">
+                    <path d="M3 6h18v2H3V6zm2 3h14l-1.5 12.5a1 1 0 01-1 .5H7.5a1 1 0 01-1-.5L5 9zm5 2v8h2v-8H10zm4 0v8h2v-8h-2z" />
+                  </svg>
+                </button>
               </div>
             </div>
 
-            <div className="text-center space-x-4">
+            <div className="mb-6 mt-6 flex items-start space-x-4">
+  <label htmlFor="reason" className="font-bold mt-2 whitespace-nowrap">Reason For Leave</label>
+  <div className="flex flex-col">
+    <textarea
+      id="reason"
+      value={reason}
+      onChange={handleReasonChange}
+      className="rounded px-4 py-2 w-[750px] h-[130px] resize-none shadow-lg"></textarea>
+
+    <div className="text-right text-gray-600 text-sm">{wordCount}/ 24</div>
+  </div>
+</div>
+
+
+            <div className="text-center space-x-6">
               <button
                 onClick={() => setShowModal(false)}
-                className="border border-blue-500 text-blue-500 bg-white px-8 py-3 shadow-md hover:bg-blue-50 font-bold self-start mt-6 rounded-lg"
+                className="border border-blue-500 text-blue-500 bg-white px-8 py-3  shadow-md hover:bg-blue-50 font-bold self-start mt-6 rounded-lg"
               >
                 Cancel
               </button>
 
               <button
                 onClick={submitLeave}
-                className="bg-[#018ABE] font-bold text-white px-8 py-3 hover:bg-[#017ba9] self-start mt-3 rounded-lg"
+                className="bg-[#018ABE] font-bold text-white px-8 py-3  hover:bg-#018ABE self-start mt-3 rounded-lg"
               >
                 Submit
               </button>
             </div>
+
           </div>
         </div>
       )}
 
-      {/* Table */}
-      <div className="rounded-lg shadow-lg overflow-hidden mt-6">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm border-separate border-spacing-0">
-            <thead style={{ backgroundColor: '#018ABE' }} className="text-white">
-              <tr>
-                <th className="p-3 border-r border-white rounded-tl-lg">Sr No.</th>
-                <th className="p-3 border-r border-white">Request To</th>
-                <th className="p-3 border-r border-white">Reason</th>
-                <th className="p-3 border-r border-white">Apply Date</th>
-                <th className="p-3 border-r border-white">From</th>
-                <th className="p-3 border-r border-white">To</th>
-                <th className="p-3 border-r border-white">Days</th>
-                <th className="p-3">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leaves.length === 0 ? (
-                <tr>
-                  <td colSpan="8" className="text-center text-gray-500 py-4">
-                    No leave applications found.
-                  </td>
-                </tr>
-              ) : (
-                leaves.map((leave, index) => (
-                  <tr key={leave._id || index} className="hover:bg-gray-50">
-                    <td className="p-3 border-t">{index + 1}</td>
-                    <td className="p-3 border-t">{leave.managerId || 'N/A'}</td>
-                    <td className="p-3 border-t">{leave.reason}</td>
-                    <td className="p-3 border-t">{leave.createdAt?.split('T')[0]}</td>
-                    <td className="p-3 border-t">{new Date(leave.fromDate).toLocaleDateString('en-GB')}</td>
-                    <td className="p-3 border-t">{new Date(leave.toDate).toLocaleDateString('en-GB')}</td>
-                    <td className="p-3 border-t">{leave.days || '-'}</td>
-                    <td className="p-3 border-t">
-                      <span
-                        className={`px-2 py-1 rounded-full text-white ${leave.status === 'Accepted' ? 'bg-green-500' :
-                            leave.status === 'Rejected' ? 'bg-red-500' :
-                              leave.status === 'Pending' ? 'bg-yellow-500' :
-                                'bg-gray-500'
-                          }`}
-                      >
-                        {leave.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      {/* LEAVE TABLE */}
+      <div className="rounded-lg shadow-lg overflow-hidden">
+      <table className="table-fixed w-full border-collapse">
+  <thead className="bg-[#018ABE] text-white">
+    <tr>
+      <th className="w-[5%] py-2 px-2">Sr No.</th>
+      <th className="w-[10%] py-2 px-2">Request to</th>
+      <th className="w-[30%] py-2 px-2">Reason for Leave</th>
+      <th className="w-[10%] py-2 px-2">Apply Date</th>
+      <th className="w-[10%] py-2 px-2">From Date</th>
+      <th className="w-[10%] py-2 px-2">To Date</th>
+      <th className="w-[10%] py-2 px-2">Total Days</th>
+      <th className="w-[10%] py-2 px-2">Status</th>
+    </tr>
+  </thead>
+  <tbody className="text-sm">
+    {leaves.map((leave, index) => (
+      <tr key={index} className="">
+        <td className="relative py-2 text-center px-2">{index + 1}</td>
+        <td className="relative py-2  text-center px-2 break-words"><span className="custom-border-left"></span>{leave.approvalTo}</td>
+        <td className="relative py-2 px-2 break-words"><span className="custom-border-left"></span>{leave.reason}</td>
+        <td className="relative py-2  text-center px-2"><span className="custom-border-left"></span>{leave.applyDate}</td>
+        <td className="relative py-2 text-center px-2"><span className="custom-border-left"></span>{leave.fromDate}</td>
+        <td className="relative py-2  text-center  px-2"><span className="custom-border-left"></span>{leave.toDate}</td>
+        <td className="relative py-2  text-center px-2"><span className="custom-border-left"></span>{leave.totalDays}</td>
+        <td className="relative py-2  text-center px-2"><span className="custom-border-left"></span>{leave.status}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
+
       </div>
     </div>
   );

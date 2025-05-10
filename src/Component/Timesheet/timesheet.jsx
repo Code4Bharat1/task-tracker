@@ -20,6 +20,9 @@ export default function Timeline() {
     const [showDropdown, setShowDropdown] = useState(false);
     const [todayHours, setTodayHours] = useState([]);
     const [totalTime, setTotalTime] = useState("00:00");
+    const [validationErrors, setValidationErrors] = useState({});
+    // Define bucket options for dropdown
+    const bucketOptions = ["Project", "Meeting", "Miscellaneous"];
 
     const router = useRouter();
     const underlineRef = useRef(null);
@@ -78,9 +81,9 @@ export default function Timeline() {
             return {
                 timeRange: `${formatTime(start)} - ${formatTime(end)}`,
                 task: "",
-                type: "work",
+                type: "Work",
                 duration: "01:00",
-                bucket: "work",
+                bucket: "Project",
             };
         });
 
@@ -89,6 +92,7 @@ export default function Timeline() {
         setSelectedManagers([]);
         setItems(defaultTimes);
         setTodayHours(defaultDurations);
+        setValidationErrors({});
         setTimeout(() => {
             setTotalTime(calculateTotalTime(defaultDurations));
         }, 0);
@@ -169,7 +173,7 @@ export default function Timeline() {
         return `${formatTime(start)} - ${formatTime(end)}`;
     };
 
-    const addTimelineItem = (type) => {
+    const addTimelineItem = () => {
         if (isFilledTimesheet) {
             toast.error("Cannot modify an already submitted timesheet");
             return;
@@ -178,8 +182,9 @@ export default function Timeline() {
         const newItem = {
             timeRange: getNextTimeRange(),
             duration: "01:00",
-            type,
-            bucket: type,
+            type: "Work",
+            bucket: "Project",
+            task: "",
         };
 
         setItems((prev) => [...prev, newItem]);
@@ -191,6 +196,13 @@ export default function Timeline() {
                 setTotalTime(calculateTotalTime(updatedHours));
             }, 0);
             return updatedHours;
+        });
+
+        // Clear validation errors for this new item
+        setValidationErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors[`task-${items.length}`];
+            return newErrors;
         });
 
         setTimeout(() => {
@@ -215,6 +227,15 @@ export default function Timeline() {
         const updated = [...items];
         updated[index][field] = value;
         setItems(updated);
+
+        // Clear validation error for this field when it's updated
+        if (field === 'task' && value.trim() !== '') {
+            setValidationErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[`task-${index}`];
+                return newErrors;
+            });
+        }
     };
 
     const handleDurationChange = (index, value) => {
@@ -257,11 +278,74 @@ export default function Timeline() {
             }, 0);
             return updated;
         });
+
+        // Update validation errors after deleting an item
+        setValidationErrors(prev => {
+            const newErrors = { ...prev };
+            
+            // Remove the error for the deleted item
+            delete newErrors[`task-${index}`];
+            
+            // Adjust error keys for items after the deleted one
+            Object.keys(newErrors).forEach(key => {
+                if (key.startsWith('task-')) {
+                    const itemIndex = parseInt(key.split('-')[1]);
+                    if (itemIndex > index) {
+                        newErrors[`task-${itemIndex-1}`] = newErrors[key];
+                        delete newErrors[key];
+                    }
+                }
+            });
+            
+            return newErrors;
+        });
+    };
+
+    const validateForm = () => {
+        const errors = {};
+        
+        // Validate project name
+        if (!projectName.trim()) {
+            errors.projectName = "Project name is required";
+        }
+        
+        // Validate managers selection
+        if (selectedManagers.length === 0) {
+            errors.managers = "At least one manager must be selected";
+        }
+        
+        // Validate each task entry
+        items.forEach((item, index) => {
+            if (!item.task || !item.task.trim()) {
+                errors[`task-${index}`] = "Task description is required";
+            }
+        });
+        
+        setValidationErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
     const handleSubmit = async () => {
         if (isFilledTimesheet) {
             toast.error("This timesheet has already been submitted");
+            return;
+        }
+
+        // Validate the form before submission
+        if (!validateForm()) {
+            // Focus on the first input with an error
+            if (validationErrors.projectName) {
+                inputRefs.current.projectName?.focus();
+            } else {
+                for (let i = 0; i < items.length; i++) {
+                    if (validationErrors[`task-${i}`]) {
+                        inputRefs.current.items[i]?.task?.focus();
+                        break;
+                    }
+                }
+            }
+            
+            toast.error("Please fill all required fields");
             return;
         }
 
@@ -336,17 +420,17 @@ export default function Timeline() {
             <h2 className="text-2xl font-bold mb-1 relative inline-block text-gray-800">
                 <span
                     ref={underlineRef}
-                    className="absolute left-0 bottom-0 h-[2px] bg-yellow-500 w-full"
+                    className="absolute left-0 bottom-0 h-[2px] bg-[#018ABE] w-full"
                 ></span>
                 Add Time
             </h2>
             <span className="text-2xl font-bold text-gray-800">sheet</span>
 
             <div className="flex justify-end gap-8 mb-4">
-                <button onClick={handleEditTimesheet} className="bg-[#018ABE] cursor-pointer  hover:bg-[#0177a6] text-white font-semibold px-4 py-2 rounded-md">
+                <button onClick={handleEditTimesheet} className="bg-[#018ABE] cursor-pointer hover:bg-[#0177a6] text-white font-semibold px-4 py-2 rounded-md">
                     Edit Timesheet
                 </button>
-                <button onClick={handleAddTask} className="bg-[#018ABE] cursor-pointer  hover:bg-[#0177a6] text-white font-semibold px-4 py-2 rounded-md">
+                <button onClick={handleAddTask} className="bg-[#018ABE] cursor-pointer hover:bg-[#0177a6] text-white font-semibold px-4 py-2 rounded-md">
                     Add Task
                 </button>
             </div>
@@ -363,164 +447,189 @@ export default function Timeline() {
                 </div>
 
                 <div className="flex flex-col w-[260px] relative">
-  <label className="mb-1 font-medium text-gray-700">Select Manager</label>
-  <button
-    onClick={() => !isFilledTimesheet && setShowDropdown(!showDropdown)}
-    className={`border border-gray-300 cursor-pointer rounded-md px-4 py-2 flex items-center justify-between ${isFilledTimesheet ? 'bg-gray-100 cursor-not-allowed' : 'cursor-pointer'}`}
-    disabled={isFilledTimesheet}
-  >
-    <span className="text-sm text-gray-800">{`All Selected (${selectedManagers.length})`}</span>
-    <FiChevronDown className="text-gray-600 text-lg" />
-  </button>
-  {showDropdown && !isFilledTimesheet && (
-    <div
-      className="absolute top-full mt-1 bg-white border border-gray-200 rounded-md w-full z-10"
-      onMouseLeave={() => setShowDropdown(false)} // Close dropdown when mouse leaves
-    >
-      {["Awab Fakih", "Ayaan Raje", "Prashant Patil"].map((managerName) => (
-        <label key={managerName} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer">
-          <input
-            className="w-5 h-5 text-blue-600"
-            type="checkbox"
-            checked={selectedManagers.includes(managerName)}
-            onChange={() =>
-              setSelectedManagers((prev) =>
-                prev.includes(managerName)
-                  ? prev.filter((m) => m !== managerName)
-                  : [...prev, managerName]
-              )
-            }
-          />
-          {managerName}
-        </label>
-      ))}
-    </div>
-  )}
-</div>
+                    <label className="mb-1 font-medium text-gray-700">Select Manager</label>
+                    <button
+                        onClick={() => !isFilledTimesheet && setShowDropdown(!showDropdown)}
+                        className={`border ${validationErrors.managers ? 'border-red-500' : 'border-gray-300'} cursor-pointer rounded-md px-4 py-2 flex items-center justify-between ${isFilledTimesheet ? 'bg-gray-100 cursor-not-allowed' : 'cursor-pointer'}`}
+                        disabled={isFilledTimesheet}
+                    >
+                        <span className="text-sm text-gray-800">{`All Selected (${selectedManagers.length})`}</span>
+                        <FiChevronDown className="text-gray-600 text-lg" />
+                    </button>
+                    {validationErrors.managers && (
+                        <p className="text-red-500 text-sm mt-1">{validationErrors.managers}</p>
+                    )}
+                    {showDropdown && !isFilledTimesheet && (
+                        <div
+                            className="absolute top-full mt-1 bg-white border border-gray-200 rounded-md w-full z-10"
+                            onMouseLeave={() => setShowDropdown(false)} // Close dropdown when mouse leaves
+                        >
+                            {["Awab Fakih", "Ayaan Raje", "Prashant Patil"].map((managerName) => (
+                                <label key={managerName} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                                    <input
+                                        className="w-5 h-5 text-blue-600"
+                                        type="checkbox"
+                                        checked={selectedManagers.includes(managerName)}
+                                        onChange={() =>
+                                            setSelectedManagers((prev) => {
+                                                const updated = prev.includes(managerName)
+                                                    ? prev.filter((m) => m !== managerName)
+                                                    : [...prev, managerName];
+                                                    
+                                                // Clear validation error if managers are selected
+                                                if (updated.length > 0) {
+                                                    setValidationErrors(prev => {
+                                                        const newErrors = { ...prev };
+                                                        delete newErrors.managers;
+                                                        return newErrors;
+                                                    });
+                                                }
+                                                
+                                                return updated;
+                                            })
+                                        }
+                                    />
+                                    {managerName}
+                                </label>
+                            ))}
+                        </div>
+                    )}
+                </div>
 
                 <div className="flex gap-4">
                     <button
-                        onClick={() => addTimelineItem("Meeting")}
-                        className={`px-4 py-2 cursor-pointer  rounded-lg ${isFilledTimesheet ? 'bg-gray-400 ' : 'bg-[#018ABE] text-white  '}`}
+                        onClick={addTimelineItem}
+                        className={`px-4 py-2 cursor-pointer rounded-lg ${isFilledTimesheet ? 'bg-gray-400' : 'bg-[#018ABE] text-white'}`}
                         disabled={isFilledTimesheet}
                     >
-                        Add Meeting
-                    </button>
-                    <button
-                        onClick={() => addTimelineItem("Miscellaneous")}
-                        className={`px-4 py-2 cursor-pointer rounded-lg ${isFilledTimesheet ? 'bg-gray-400 ' : 'bg-[#018ABE] text-white  '}`}
-                        disabled={isFilledTimesheet}
-                    >
-                        Add Miscellaneous
+                        Add Row
                     </button>
                 </div>
             </div>
 
             <div className="flex items-center gap-4 mb-4">
                 <label className="text-sm font-medium text-gray-800">Project Name</label>
-                <input
-                    type="text"
-                    placeholder="Project name"
-                    value={projectName}
-                    onChange={(e) => !isFilledTimesheet && setProjectName(e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(e, 'projectName')}
-                    ref={el => inputRefs.current.projectName = el}
-                    className={`border border-gray-400 rounded-md px-4 py-2 w-full max-w-md focus:outline-none focus:ring-2 focus:ring-blue-400 ${isFilledTimesheet ? 'bg-gray-100' : ''}`}
-                    readOnly={isFilledTimesheet}
-                />
+                <div className="w-full max-w-md">
+                    <input
+                        type="text"
+                        placeholder="Project name"
+                        value={projectName}
+                        onChange={(e) => {
+                            if (!isFilledTimesheet) {
+                                setProjectName(e.target.value);
+                                
+                                // Clear validation error if field is filled
+                                if (e.target.value.trim() !== '') {
+                                    setValidationErrors(prev => {
+                                        const newErrors = { ...prev };
+                                        delete newErrors.projectName;
+                                        return newErrors;
+                                    });
+                                }
+                            }
+                        }}
+                        onKeyDown={(e) => handleKeyDown(e, 'projectName')}
+                        ref={el => inputRefs.current.projectName = el}
+                        className={`border ${validationErrors.projectName ? 'border-red-500' : 'border-gray-400'} rounded-md px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 ${isFilledTimesheet ? 'bg-gray-100' : ''}`}
+                        readOnly={isFilledTimesheet}
+                    />
+                    {validationErrors.projectName && (
+                        <p className="text-red-500 text-sm mt-1">{validationErrors.projectName}</p>
+                    )}
+                </div>
             </div>
 
             <div className="rounded-md overflow-x-auto mb-4 border-t-2 border-[#018ABE]">
-  <table className="w-full table-auto border-separate border-spacing-0">
-    <thead>
-      <tr className="bg-[#018ABE] text-white text-center">
-        <th className="px-4 py-3 w-[14%] whitespace-nowrap rounded-tl-md">Bucket</th>
-        <th className="px-4 py-3 border-l border-white w-[40%] whitespace-nowrap">Task</th>
-        <th className="px-4 py-3 border-l border-white w-[20%] whitespace-nowrap">Time</th>
-        <th className="px-4 py-3 border-l border-white w-[10%] whitespace-nowrap">Duration</th>
-        <th className="px-4 py-3 border-l border-white w-[5%] whitespace-nowrap rounded-tr-md">Action</th>
-      </tr>
-    </thead>
-  
-
+                <table className="w-full table-auto border-separate border-spacing-0">
+                    <thead>
+                        <tr className="bg-[#018ABE] text-white text-center">
+                            <th className="px-4 py-3 w-[14%] whitespace-nowrap rounded-tl-md">Bucket</th>
+                            <th className="px-4 py-3 border-l border-white w-[40%] whitespace-nowrap">Task</th>
+                            <th className="px-4 py-3 border-l border-white w-[20%] whitespace-nowrap">Time</th>
+                            <th className="px-4 py-3 border-l border-white w-[10%] whitespace-nowrap">Duration</th>
+                            <th className="px-4 py-3 border-l border-white w-[5%] whitespace-nowrap rounded-tr-md">Action</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         {items.map((item, index) => (
-                           <tr key={index} ref={(el) => (rowRefs.current[index] = el)} className="hover:bg-gray-100">
-                           <td className="relative px-4 py-2 border-4 border-white">
-                            
-                             <textarea
-                               className={`w-full h-10 border text-center border-gray-500 rounded p-1 resize-none overflow-hidden ${isFilledTimesheet ? 'bg-gray-100' : ''}`}
-                               readOnly
-                               value={item.bucket}
-                             />
-                           </td>
-                         
-                           <td className="relative px-4 py-2 border-4 border-white">
-                             <span className="custom-border-left"></span>
-                             <textarea
-                               className={`w-full h-10 border border-gray-500 rounded p-1 resize-none overflow-hidden ${isFilledTimesheet ? 'bg-gray-100' : ''}`}
-                               value={item.task}
-                               onChange={(e) => updateItem(index, "task", e.target.value)}
-                               onKeyDown={(e) => handleKeyDown(e, 'task', index)}
-                               ref={(el) => {
-                                 if (inputRefs.current.items[index]) {
-                                   inputRefs.current.items[index].task = el;
-                                 }
-                               }}
-                               readOnly={isFilledTimesheet}
-                             />
-                           </td>
-                         
-                           <td className="relative px-4 py-2 border-4 border-white">
-                             <span className="custom-border-left"></span>
-                             <textarea
-                               className={`w-full h-10 text-center border border-gray-500 rounded p-1 resize-none overflow-hidden ${isFilledTimesheet ? 'bg-gray-100' : ''}`}
-                               readOnly
-                               value={item.timeRange}
-                             />
-                           </td>
-                         
-                           <td className="relative px-4 py-2 border-4 border-white">
-                             <span className="custom-border-left"></span>
-                             <input
-                               type="text"
-                               value={item.duration}
-                               onChange={(e) => handleDurationChange(index, e.target.value)}
-                               onKeyDown={(e) => handleKeyDown(e, 'duration', index)}
-                               ref={(el) => {
-                                 if (inputRefs.current.items[index]) {
-                                   inputRefs.current.items[index].duration = el;
-                                 }
-                               }}
-                               className={`border border-black rounded px-2 py-1 w-20 text-center ${isFilledTimesheet ? 'bg-gray-100' : ''}`}
-                               readOnly={isFilledTimesheet}
-                             />
-                           </td>
-                         
-                           <td className="relative px-4 py-2 border-4 border-white text-black text-center">
-                             <span className="custom-border-left"></span>
-                             <button
-                               onClick={() => deleteItem(index)}
-                               aria-label="Delete item"
-                               className={isFilledTimesheet ? 'opacity-30 cursor-not-allowed' : ''}
-                               disabled={isFilledTimesheet}
-                             >
-                               <AiFillDelete className="text-lg hover:text-red-700" />
-                             </button>
-                           </td>
-                         </tr>
-                         
-                          
+                            <tr key={index} ref={(el) => (rowRefs.current[index] = el)} className="hover:bg-gray-100">
+                                <td className="relative px-4 py-2 border-4 border-white">
+                                    <select 
+                                        className={`w-full h-10 border text-center border-gray-500 rounded p-1 ${isFilledTimesheet ? 'bg-gray-100 cursor-not-allowed' : 'cursor-pointer'}`}
+                                        value={item.bucket}
+                                        onChange={(e) => updateItem(index, "bucket", e.target.value)}
+                                        disabled={isFilledTimesheet}
+                                    >
+                                        {bucketOptions.map(option => (
+                                            <option key={option} value={option}>
+                                                {option}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </td>
+                                <td className="relative px-4 py-2 border-4 border-white">
+                                    <span className="custom-border-left"></span>
+                                    <div>
+                                        <textarea
+                                            className={`w-full h-10 border ${validationErrors[`task-${index}`] ? 'border-red-500' : 'border-gray-500'} rounded p-1 resize-none overflow-hidden ${isFilledTimesheet ? 'bg-gray-100' : ''}`}
+                                            value={item.task}
+                                            onChange={(e) => updateItem(index, "task", e.target.value)}
+                                            onKeyDown={(e) => handleKeyDown(e, 'task', index)}
+                                            ref={(el) => {
+                                                if (inputRefs.current.items[index]) {
+                                                    inputRefs.current.items[index].task = el;
+                                                }
+                                            }}
+                                            readOnly={isFilledTimesheet}
+                                            placeholder="Enter task description"
+                                        />
+                                        {validationErrors[`task-${index}`] && (
+                                            <p className="text-red-500 text-xs mt-1">{validationErrors[`task-${index}`]}</p>
+                                        )}
+                                    </div>
+                                </td>
+                                <td className="relative px-4 py-2 border-4 border-white">
+                                    <span className="custom-border-left"></span>
+                                    <textarea
+                                        className={`w-full h-10 text-center border border-gray-500 rounded p-1 resize-none overflow-hidden ${isFilledTimesheet ? 'bg-gray-100' : ''}`}
+                                        readOnly
+                                        value={item.timeRange}
+                                    />
+                                </td>
+                                <td className="relative px-4 py-2 border-4 border-white">
+                                    <span className="custom-border-left"></span>
+                                    <input
+                                        type="text"
+                                        value={item.duration}
+                                        onChange={(e) => handleDurationChange(index, e.target.value)}
+                                        onKeyDown={(e) => handleKeyDown(e, 'duration', index)}
+                                        ref={(el) => {
+                                            if (inputRefs.current.items[index]) {
+                                                inputRefs.current.items[index].duration = el;
+                                            }
+                                        }}
+                                        className={`border border-black rounded px-2 py-1 w-20 text-center ${isFilledTimesheet ? 'bg-gray-100' : ''}`}
+                                        readOnly={isFilledTimesheet}
+                                    />
+                                </td>
+                                <td className="relative px-4 py-2 border-4 border-white text-black text-center">
+                                    <span className="custom-border-left"></span>
+                                    <button
+                                        onClick={() => deleteItem(index)}
+                                        aria-label="Delete item"
+                                        className={isFilledTimesheet ? 'opacity-30 cursor-not-allowed' : ''}
+                                        disabled={isFilledTimesheet}
+                                    >
+                                        <AiFillDelete className="text-lg hover:text-red-700" />
+                                    </button>
+                                </td>
+                            </tr>
                         ))}
                         <tr className="bg-gray-100 font-semibold">
-
-
-                        <td className="text-right relative right-0 px-16 py-2" colSpan={3}>
-  Total Hours
-</td>
-
-<td className="px-4 py-2 text-center border-l-2 border-r-2 border-white">
-
+                            <td className="text-right relative right-0 px-16 py-2" colSpan={3}>
+                                Total Hours
+                            </td>
+                            <td className="px-4 py-2 text-center border-l-2 border-r-2 border-white">
                                 <span className={`px-2 py-1 rounded ${isLessThanEightHours ? "bg-[#fc6a5d] text-black" : "bg-[#61c973] text-black"}`}>
                                     {totalTime}
                                 </span>

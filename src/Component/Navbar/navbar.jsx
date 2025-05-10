@@ -59,7 +59,7 @@ export default function NavBar() {
 
       <div className="ml-auto flex items-center gap-12 mr-10">
         <button title="Video Call" onClick={toggleMeetingPopup}>
-          <FaVideo className="w-6 h-7 text-gray-50 cursor-pointer" />
+          <FaVideo className="w-6 h-7 text-black cursor-pointer" />
         </button>
 
         {showMeetingPopup && (
@@ -181,7 +181,7 @@ export default function NavBar() {
         {/* Notifications */}
         <div className="relative">
           <FaRegBell
-            className="cursor-pointer text-gray-50 w-10 h-6"
+            className="cursor-pointer text-black w-10 h-6"
             onClick={() => setShowNotifications((prev) => !prev)}
           />
           {showNotifications && (
@@ -214,7 +214,7 @@ export default function NavBar() {
             }}
             className="focus:outline-none"
           >
-            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white hover:border-gray-300 transition-all">
+            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-black hover:border-gray-300 transition-all">
               <Image
                 src="/profile.png"
                 width={500}
@@ -226,7 +226,7 @@ export default function NavBar() {
           </button>
 
           {showProfileMenu && (
-            <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg z-10">
+            <div className="absolute right-0 mt-2 w-64 bg-black rounded-lg shadow-lg z-10">
               <div className="p-4 border-b">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 rounded-full overflow-hidden">

@@ -4,23 +4,32 @@ import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
-import { toast } from 'react-toastify' // If you're using react-toastify for notifications
+import { toast } from 'react-toastify'
 import { axiosInstance } from '@/lib/axiosInstance'
 
+// Import icons
+import { RxDashboard } from "react-icons/rx";
+import { FaRegCalendarAlt } from "react-icons/fa";
+import { FaSignOutAlt } from 'react-icons/fa'
+import { MdAccessTime, MdPolicy } from 'react-icons/md'
+import { AiOutlineUserSwitch } from 'react-icons/ai'
+import { BiMoney } from 'react-icons/bi'
+import { IoMdListBox } from 'react-icons/io'
+
 const menuItems = [
-  { label: 'Dashboard', img: '/dashboard.png', href: '/dashboard' },
-  { label: 'Attendance', img: '/attendance.png', href: '/attendance' },
-  { label: 'Add TimeSheet', img: '/timesheet.png', href: '/timesheet' },
-  { label: 'Calendar', img: '/calendar.png', href: '/calendar' },
-  { label: 'Leave', img: '/leave.png', href: '/leavetable' },
-  { label: 'Salary', img: '/salary.png', href: '/salary' },
-  { label: 'Company Policies', img: '/company.png', href: '/companyPolicy' },
-  { label: 'Logout', img: '/logout.png', href: '/' }
+  { label: 'Dashboard', icon: <RxDashboard />, href: '/dashboard' },
+  { label: 'Attendance', icon: <AiOutlineUserSwitch />, href: '/attendance' },
+  { label: 'Add TimeSheet', icon: <MdAccessTime />, href: '/timesheet' },
+  { label: 'Calendar', icon: <FaRegCalendarAlt />, href: '/calendar' },
+  { label: 'Leave', icon: <IoMdListBox />, href: '/leavetable' },
+  { label: 'Salary', icon: <BiMoney />, href: '/salary' },
+  { label: 'Company Policies', icon: <MdPolicy />, href: '/companyPolicy' },
+  { label: 'Logout', icon: <FaSignOutAlt />, href: '/' }
 ]
 
 export default function Sidebar() {
   const pathname = usePathname()
-  const router = useRouter() // Hook to navigate programmatically
+  const router = useRouter()
 
   const handleLogout = async () => {
     try {
@@ -49,32 +58,33 @@ export default function Sidebar() {
       {/* Menu */}
       <nav className="flex flex-col gap-2 w-full px-4">
         {menuItems.map((item, index) => {
-          const isActive = pathname === item.href
-          return (
-            item.label === 'Logout' ? (
-              <button
-                key={index}
-                onClick={handleLogout}
-                className={`flex items-center gap-4 px-3 py-2 rounded-lg transition duration-200 hover:bg-white hover:text-sky-700`}
-              >
-                <div className="w-6 h-6 flex items-center justify-center">
-                  <Image src={item.img} alt={item.label} width={24} height={24} />
-                </div>
-                <span className="text-md font-medium">{item.label}</span>
-              </button>
-            ) : (
-              <Link
-                key={index}
-                href={item.href}
-                className={`flex items-center gap-4 px-3 py-2 rounded-lg transition duration-200 ${isActive ? 'bg-white text-sky-700' : 'hover:bg-white hover:text-sky-700'}`}
-              >
-                <div className="w-6 h-6 flex items-center justify-center">
-                  <Image src={item.img} alt={item.label} width={24} height={24} />
-                </div>
-                <span className="text-md font-medium">{item.label}</span>
-              </Link>
-            )
-          )
+          const isActive = pathname === item.href;
+          const commonClasses = "flex items-center gap-4 px-3 py-2 rounded-lg transition duration-200";
+          const activeClasses = isActive ? 'bg-white text-sky-700' : 'hover:bg-white hover:text-sky-700';
+
+          return item.label === 'Logout' ? (
+            <button
+              key={index}
+              onClick={handleLogout}
+              className={`${commonClasses} ${activeClasses}`}
+            >
+              <div className="w-6 h-6 flex items-center justify-center text-lg">
+                {item.icon}
+              </div>
+              <span className="text-md font-medium">{item.label}</span>
+            </button>
+          ) : (
+            <Link
+              key={index}
+              href={item.href}
+              className={`${commonClasses} ${activeClasses}`}
+            >
+              <div className="w-6 h-6 flex items-center justify-center text-lg">
+                {item.icon}
+              </div>
+              <span className="text-md font-medium">{item.label}</span>
+            </Link>
+          );
         })}
       </nav>
     </div>

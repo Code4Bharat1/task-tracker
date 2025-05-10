@@ -48,7 +48,7 @@ const PerformanceSummary = ({ selected = 'This Year' }) => {
 
   return (
     <div className="w-auto h-[390px] bg-white rounded-2xl shadow-[1px_4px_10px_lightgray] p-4 font-sans">
-      <h2 className="text-xl font-bold mb-4">PERFORMANCE SUMMARY</h2>
+      <h2 className="text-xl font-medium mb-4">PERFORMANCE SUMMARY</h2>
 
       <div className="flex items-center space-x-4 mb-2 ml-2">
         <div className="flex items-center text-xs">
@@ -65,7 +65,7 @@ const PerformanceSummary = ({ selected = 'This Year' }) => {
         </div>
       </div>
 
-      <div className="w-full h-60">
+      <div className="w-full mt-10 h-60">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data}>
             <CartesianGrid stroke="#000" strokeWidth={0.2} />

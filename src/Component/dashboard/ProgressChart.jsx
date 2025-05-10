@@ -65,7 +65,7 @@ const ProgressChart = ({ selected = 'This Year' }) => {
     <div className="rounded-[20px] bg-white shadow-[1px_4px_10px_lightgray] p-5 max-w-[400px] font-sans">
 
 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
-  <h2 style={{ fontWeight: 'bold', fontSize: '1.25rem', marginTop: '0.5rem' }}>PROGRESS</h2>
+  <h2 className='font-medium text-xl '>PROGRESS</h2>
 
 
         <span
@@ -84,8 +84,8 @@ const ProgressChart = ({ selected = 'This Year' }) => {
           {Math.abs(progressPercent)}% {isPositive ? 'Increase' : 'Decrease'}
         </span>
       </div>
+      <h1 className="font-semibold text-2xl my-[10px] pl-[12px]">
 
-      <h1 style={{ fontWeight: '800', margin: '10px 0', paddingLeft: '12px' }}>
         {Math.abs(progressPercent)}%
       </h1>
 

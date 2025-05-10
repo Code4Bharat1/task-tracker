@@ -238,7 +238,7 @@ export default function SalarySlipPage() {
             <div className="text-right mb-4">
                 <button 
                     onClick={handleDownloadPdf}
-                    className="bg-[#058CBF] hover:bg-orange-600 text-white font-bold cursor-pointer py-2 px-4 rounded"
+                    className="bg-[#058CBF] hover:bg-[#81c9e4] text-white font-bold cursor-pointer py-2 px-4 rounded"
                 >
                     Download PDF
                 </button>
@@ -252,7 +252,7 @@ export default function SalarySlipPage() {
                         Salary Payslip
                         <span
                             ref={underlineRef}
-                            className="absolute left-0 bottom-0 h-[2px] bg-yellow-500 w-full"
+                            className="absolute left-0 bottom-0 h-[2px] bg-[#018ABE] w-full"
                         ></span>
                     </span>
                 </h2>

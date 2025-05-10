@@ -7,6 +7,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { FiChevronDown } from "react-icons/fi";
 import * as XLSX from "xlsx";
 import { axiosInstance } from "@/lib/axiosInstance";
+import { useGSAP } from "@gsap/react";
 
 export default function EditTimeSheet() {
     const [items, setItems] = useState([]);
@@ -36,14 +37,14 @@ export default function EditTimeSheet() {
     }, [date]);
 
     // Animation for underline
-    useEffect(() => {
+    useGSAP(() => {
         gsap.fromTo(
             underlineRef.current,
             { width: "0%" },
             { width: "100%", duration: 1, ease: "power2.out" }
         );
     }, []);
-
+   
     // Fetch timesheet data from the backend
     const fetchTimesheetData = async (selectedDate) => {
         setIsLoading(true);
@@ -331,7 +332,7 @@ export default function EditTimeSheet() {
             <h2 className="text-2xl font-bold mb-1 relative inline-block text-gray-800">
                 <span
                     ref={underlineRef}
-                    className="absolute left-0 bottom-0 h-[2px] bg-yellow-500 w-full"
+                    className="absolute left-0 bottom-0 h-[2px] bg-[#018ABE] w-full"
                 ></span>
                 Edit Time
             </h2>
