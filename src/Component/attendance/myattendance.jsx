@@ -162,8 +162,8 @@ export default function AttendancePage() {
     const trimmedReason = emergencyReason.trim();
     const wordCount = trimmedReason.split(/\s+/).filter(Boolean).length;
 
-    if (wordCount < 5) {
-      toast.error("Please provide at least 5 words explaining the reason.");
+    if (wordCount < 1) {
+      toast.error("Please provide the reason.");
       return;
     }
 

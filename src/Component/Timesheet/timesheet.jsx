@@ -374,6 +374,10 @@ export default function Timeline() {
             // Check if there's a timesheet for the current date
             await checkFilledOrNotTimesheet(todayDate);
 
+            if (response.status === 200) {
+                toast.success("Timesheet submitted successfully!", 1000);
+            }
+
         } catch (error) {
             console.error("Error submitting timesheet:", error);
             toast.error(error.response?.data?.message || "Failed to submit timesheet.");

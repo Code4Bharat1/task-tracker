@@ -6,6 +6,7 @@ import Sidebar from "@/Component/Usersidebar/usersidebar";
 import Image from "next/image";
 import { FaRegEdit } from "react-icons/fa";
 import toast from "react-hot-toast";
+import axios from "axios";
 import { Loader, Save } from 'lucide-react';
 import FancyLoader from "@/Component/FancyLoader";
 
@@ -55,28 +56,27 @@ function Page() {
         });
     };
 
-    console.log('Profile:', formData);
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/profile/updateProfile`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
-                credentials: 'include',  // Ensure you're sending cookies for authentication
-            });
+            const res = await axios.put(
+                `${process.env.NEXT_PUBLIC_BACKEND_API}/profile/updateProfile`,
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    withCredentials: true,
+                }
+            );
 
-            if (res.ok) {
-                const data = await res.json();
+            if (res.status === 200) {
                 toast.success('Profile updated successfully!');
-            } else {
-                console.error('Failed to update profile');
+                setIsEditing(false);
             }
         } catch (error) {
-            console.error('Error updating profile:', error);
+            console.error('Failed to update profile', error);
+            toast.error(error.response?.data?.message || 'Something went wrong');
         }
     };
 
@@ -102,10 +102,27 @@ function Page() {
                         </div>
                         <button
                             className="px-7 rounded-2xl h-12 text-lg font-semibold flex items-center gap-3 bg-[#018ABE] cursor-pointer text-white"
-                            onClick={() => setIsEditing(!isEditing)}
+                            onClick={
+                                isEditing
+                                    ? handleSubmit
+                                    : () => {
+                                        setIsEditing(true);
+                                        toast.success("You are now in edit mode!");
+                                    }
+                            }
                         >
-                            {isEditing ? (<button className="flex items-center gap-2" onClick={handleSubmit}><Save />Save</button>) : (<><FaRegEdit />Edit</>)}
+                            {isEditing ? (
+                                <>
+                                    <Save /> Save
+                                </>
+                            ) : (
+                                <>
+                                    <FaRegEdit /> Edit
+                                </>
+                            )}
                         </button>
+
+
                     </div>
 
                     <div className="w-full h-78 bg-linear-to-b from-[#018ABE] to-[#004058] rounded-2xl relative shadow-xl mb-8">
