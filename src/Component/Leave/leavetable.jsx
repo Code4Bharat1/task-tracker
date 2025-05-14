@@ -101,7 +101,9 @@ export default function LeaveTable() {
         setReason('');
         setWordCount(0);
 
-        const updatedLeaves = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_API}/leave/userLeave`);
+        const updatedLeaves = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_API}/leave/userLeave`, {
+          withCredentials: true,
+        });
         setLeaves(updatedLeaves.data.leaves || []);
       } else {
         toast.error('Failed to submit leave.');
@@ -259,8 +261,8 @@ export default function LeaveTable() {
                   <td className="p-3 border-t">
                     <span
                       className={`px-2 py-1 rounded-full text-white ${leave.status === 'Accepted' ? 'bg-green-500' :
-                          leave.status === 'Rejected' ? 'bg-red-500' :
-                            leave.status === 'Pending' ? 'bg-yellow-500' : 'bg-gray-500'
+                        leave.status === 'Rejected' ? 'bg-red-500' :
+                          leave.status === 'Pending' ? 'bg-yellow-500' : 'bg-gray-500'
                         }`}
                     >
                       {leave.status}
