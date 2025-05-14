@@ -1,11 +1,12 @@
-"use client";
 
+"use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
 import TaskForm from "../calendar/craetetask";
-import SchedualPage from "../calendar/schedual";
 import TaskPage from "../calendar/event";
+import SchedualPage from "../calendar/schedual";
+
+
 
 export default function Categories() {
   const [showTabs, setShowTabs] = useState(false);
@@ -14,8 +15,8 @@ export default function Categories() {
 
   const tabs = [
     { label: "Event", key: "Event", content: <TaskForm /> },
-    { label: "Task", key: "Task", content: <TaskPage /> },
-    { label: "Schedule Meeting", key: "Schedule", content: <SchedualPage /> },
+    { label: "Task", key: "Task", content: <TaskPage/> },
+    { label: "Schedule Meeting", key: "Schedule", content: <SchedualPage/> },
   ];
 
   const handleRangeChange = (e) => {
@@ -35,7 +36,7 @@ export default function Categories() {
       onChange={handleRangeChange}
       className="block w-full appearance-none px-3 py-2 border border-gray-300 bg-white rounded-md shadow-lg text-sm cursor-pointer pr-8"
     >
-      <option value="/daycalendar">Day</option>
+      <option value="/daycalendar">Personal calendar</option>
       <option value="/calendar">Month</option>
       <option value="/yearcalendar">Year</option>
     </select>

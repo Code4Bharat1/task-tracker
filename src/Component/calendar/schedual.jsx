@@ -3,7 +3,19 @@
 import { useState, useEffect } from 'react';
 import { LuCalendarClock } from 'react-icons/lu';
 import { IoMdArrowDropdown } from 'react-icons/io';
-import toast from 'react-hot-toast';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+// ✅ Helper to store data by date for calendar display
+const saveEventToLocalStorage = (date, category) => {
+  const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const existing = JSON.parse(localStorage.getItem('calendarEvents')) || {};
+  if (!existing[key]) {
+    existing[key] = [];
+  }
+  existing[key].push(category);
+  localStorage.setItem('calendarEvents', JSON.stringify(existing));
+};
 
 export default function SchedualPage({ initialDate, addEvent, closeModal }) {
   const [selectedDate, setSelectedDate] = useState(initialDate || '');
@@ -41,11 +53,11 @@ export default function SchedualPage({ initialDate, addEvent, closeModal }) {
   };
 
   const handleSchedule = () => {
-    const validStart = !!startTime;
-    const validEnd = !!endTime;
+    const validStart = !!startTime && times.includes(startTime);
+    const validEnd = !!endTime && times.includes(endTime);
     const validRange = validStart && validEnd && parseTime(startTime) < parseTime(endTime);
 
-    if (selectedDate && title && validStart && validRange && participants) {
+    if (selectedDate && title.trim() && validStart && validRange && participants) {
       const meeting = {
         date: selectedDate,
         startTime,
@@ -53,11 +65,40 @@ export default function SchedualPage({ initialDate, addEvent, closeModal }) {
         title,
         participants,
       };
-      addEvent(meeting);
+
+      const existingMeetings = JSON.parse(localStorage.getItem('meetings') || '[]');
+      existingMeetings.push(meeting);
+      localStorage.setItem('meetings', JSON.stringify(existingMeetings));
+
+      // ✅ Save for calendar usage
+      saveEventToLocalStorage(new Date(selectedDate), {
+        type: 'Meeting',
+        title,
+        startTime,
+        endTime,
+        participants,
+      });
+
+      if (typeof addEvent === 'function') {
+        addEvent(meeting);
+      }
+
       toast.success('Meeting scheduled successfully!');
-      closeModal();
+
+      // Reset
+      setSelectedDate('');
+      setStartTime('');
+      setEndTime('');
+      setTitle('');
+      setParticipants('');
+
+      setTimeout(() => {
+        if (typeof closeModal === 'function') {
+          closeModal();
+        }
+      }, 100);
     } else {
-      toast.error('Please enter valid time, date, title, and participants.');
+      toast.error('Please fill all the information');
     }
   };
 
@@ -67,7 +108,7 @@ export default function SchedualPage({ initialDate, addEvent, closeModal }) {
     setEndTime('');
     setTitle('');
     setParticipants('');
-    closeModal();
+    if (typeof closeModal === 'function') closeModal();
   };
 
   return (
@@ -81,7 +122,7 @@ export default function SchedualPage({ initialDate, addEvent, closeModal }) {
             value={selectedDate}
             min={new Date().toISOString().split('T')[0]}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="ml-2 w-full max-w-[180px] focus:outline-none py-1 text-sm text-gray-700 rounded px-2 appearance-none"
+            className="ml-2 w-full max-w-[180px] focus:outline-none py-1 text-sm text-gray-700 rounded px-2 appearance-none cursor-pointer"
           />
         </label>
       </div>
@@ -94,7 +135,7 @@ export default function SchedualPage({ initialDate, addEvent, closeModal }) {
         <div className="relative">
           <button
             onClick={() => setIsStartOpen(!isStartOpen)}
-            className="flex items-center justify-between gap-1 -ml-5 px-4 py-[2px] text-sm rounded-full bg-[#F1F2F8] text-[#333] w-[120px] border border-gray-200"
+            className="cursor-pointer flex items-center justify-between gap-1 -ml-5 px-4 py-[2px] text-sm rounded-full bg-[#F1F2F8] text-[#333] w-[120px] border border-gray-200"
           >
             <span className="truncate">{startTime || 'Start'}</span>
             <IoMdArrowDropdown className="text-gray-600 text-base" />
@@ -112,7 +153,7 @@ export default function SchedualPage({ initialDate, addEvent, closeModal }) {
                     setStartTime(time);
                     setIsStartOpen(false);
                   }}
-                  className={`w-full text-sm text-left px-2 py-[4px] rounded-full ${
+                  className={`cursor-pointer w-full text-sm text-left px-2 py-[4px] rounded-full ${
                     startTime === time ? 'bg-blue-500 text-white' : 'text-gray-800 bg-white'
                   } hover:bg-blue-100`}
                 >
@@ -123,14 +164,13 @@ export default function SchedualPage({ initialDate, addEvent, closeModal }) {
           )}
         </div>
 
-        {/* Dash */}
         <span className="text-[#717171] text-sm">-</span>
 
         {/* End Time */}
         <div className="relative">
           <button
             onClick={() => setIsEndOpen(!isEndOpen)}
-            className="flex items-center justify-between gap-1 px-4 py-[2px] text-sm rounded-full bg-[#F1F2F8] text-[#333] w-[120px] border border-gray-200"
+            className="cursor-pointer flex items-center justify-between gap-1 px-4 py-[2px] text-sm rounded-full bg-[#F1F2F8] text-[#333] w-[120px] border border-gray-200"
           >
             <span className="truncate">{endTime || 'End'}</span>
             <IoMdArrowDropdown className="text-gray-600 text-base" />
@@ -148,7 +188,7 @@ export default function SchedualPage({ initialDate, addEvent, closeModal }) {
                     setEndTime(time);
                     setIsEndOpen(false);
                   }}
-                  className={`w-full text-sm text-left px-2 py-[4px] rounded-full ${
+                  className={`cursor-pointer w-full text-sm text-left px-2 py-[4px] rounded-full ${
                     endTime === time ? 'bg-green-500 text-white' : 'text-gray-800 bg-white'
                   } hover:bg-green-100`}
                 >
@@ -162,29 +202,24 @@ export default function SchedualPage({ initialDate, addEvent, closeModal }) {
 
       {/* Participants */}
       <div className="mb-4">
-        <label className="text-sm font-medium text-[#717171] block mb-1 px-2 py-1 font-poppins">
-          Add Participants:
-        </label>
+        <label className="text-sm font-medium text-[#717171] block mb-1">Add Participants:</label>
         <div className="relative">
           <select
             value={participants}
             onChange={(e) => setParticipants(e.target.value)}
-            className="w-58 border border-[#877575] rounded-lg px-2 py-2 text-sm text-[#717171] bg-[#F8FDFF] font-poppins appearance-none cursor-pointer"
-            style={{ boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.15)' }}
+            className="cursor-pointer w-58 border border-[#877575] rounded-lg px-2 py-2 text-sm text-[#717171] bg-[#F8FDFF] appearance-none"
           >
-            <option value="" disabled>
-              Select Email Address
-            </option>
+            <option value="" disabled>Select Email Address</option>
             <option value="user1@example.com">user1@example.com</option>
             <option value="user2@example.com">user2@example.com</option>
             <option value="user3@example.com">user3@example.com</option>
             <option value="user4@example.com">user4@example.com</option>
           </select>
-          <IoMdArrowDropdown className="absolute top-1/2 right-[20%] transform -translate-y-1/2 text-gray-600 pointer-events-none" />
+          <IoMdArrowDropdown className="absolute top-1/2 right-[15%] transform -translate-y-1/2 text-gray-600 pointer-events-none" />
         </div>
       </div>
 
-      {/* Title */}
+      {/* Meeting Title */}
       <div className="mb-6">
         <input
           type="text"
@@ -197,13 +232,23 @@ export default function SchedualPage({ initialDate, addEvent, closeModal }) {
 
       {/* Action Buttons */}
       <div className="flex justify-end items-center gap-6 text-sm font-semibold">
-        <button onClick={handleCancel} className="text-black hover:underline">
+        <button onClick={handleCancel} className="text-black hover:underline cursor-pointer">
           Cancel
         </button>
-        <button onClick={handleSchedule} className="text-[#058CBF] hover:underline">
+        <button onClick={handleSchedule} className="text-[#058CBF] hover:underline cursor-pointer">
           Schedule Meeting
         </button>
       </div>
+
+      {/* Toast Messages */}
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        pauseOnHover
+      />
     </div>
   );
 }

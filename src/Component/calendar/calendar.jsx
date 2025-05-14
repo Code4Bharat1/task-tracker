@@ -1,11 +1,10 @@
 "use client";
 import { FiChevronDown, FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import { TbCalendarPlus } from "react-icons/tb";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import TaskForm from "./craetetask";
-import EventPage from "./event";
-import SchedualPage from "./schedual";
+import TaskForm from "../calendar/craetetask";
+import EventPage from "../calendar/eventpage";
+import SchedualPage from "../calendar/schedual";
 
 const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -24,12 +23,6 @@ const tabs = [
   { label: "Schedule Meeting", key: "Schedule", content: <SchedualPage /> },
 ];
 
-const eventDates = {
-  "2025-05-01": ["Daily Task"],
-  "2025-05-03": ["Daily Task", "Meeting"],
-  "2025-05-05": ["Deadline"],
-};
-
 export default function CalendarPage() {
   const initialDate = new Date(2025, 4); // May 2025
   const [currentDate, setCurrentDate] = useState(initialDate);
@@ -37,14 +30,23 @@ export default function CalendarPage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState("Task");
+  const [events, setEvents] = useState({});
   const dropdownRef = useRef(null);
+  const [hoverInfo, setHoverInfo] = useState({ show: false, x: 0, y: 0, events: [] });
 
   useEffect(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const key = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     setTodayKey(key);
+
+    const storedEvents = JSON.parse(localStorage.getItem("calendar-events")) || {};
+    setEvents(storedEvents);
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("calendar-events", JSON.stringify(events));
+  }, [events]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -53,13 +55,36 @@ export default function CalendarPage() {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleMonthChange = (direction) => {
     setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + direction));
+  };
+
+  const addEvent = (date, type, title) => {
+    setEvents((prev) => {
+      const existing = prev[date] || [];
+      return { ...prev, [date]: [...existing, { type, title }] };
+    });
+    setShowModal(false);
+  };
+
+  const showEventInfo = (e, dayEvents, date) => {
+    if (dayEvents && dayEvents.length > 0) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setHoverInfo({
+        show: true,
+        x: rect.left + window.scrollX,
+        y: rect.bottom + window.scrollY,
+        events: dayEvents,
+        date: date
+      });
+    }
+  };
+
+  const hideEventInfo = () => {
+    setHoverInfo({ show: false, x: 0, y: 0, events: [] });
   };
 
   const month = currentDate.getMonth();
@@ -75,20 +100,18 @@ export default function CalendarPage() {
         <h1 className="text-3xl font-bold underline underline-offset-8 decoration-4 decoration-red-500 font-[Poppins,sans-serif]">
           My Calendar
         </h1>
-
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setShowDropdown((prev) => !prev)}
-            className="flex items-center gap-2 px-5 py-2 rounded-lg border border-[#877575] bg-white text-black font-medium transition duration-200 ease-in-out hover:bg-gray-100 hover:shadow ml-auto"
+            className="flex items-center gap-2 px-5 py-2 rounded-lg border border-[#877575] bg-white text-black font-medium transition hover:bg-gray-100 hover:shadow ml-auto"
           >
-            Day
+            Month
             <FiChevronDown className={`transition-transform duration-300 ${showDropdown ? "rotate-180" : ""}`} />
           </button>
-
           {showDropdown && (
             <div className="absolute top-full mt-2 right-0 bg-white rounded-lg shadow z-10 w-40">
               {[
-                { label: "Day", href: "/daycalendar" },
+                { label: "Personal calendar", href: "/daycalendar" },
                 { label: "Month", href: "/calendar" },
                 { label: "Year", href: "/yearcalendar" },
               ].map((item) => (
@@ -130,10 +153,7 @@ export default function CalendarPage() {
 
         <div className="grid grid-cols-7 gap-3 mt-3">
           {Array.from({ length: firstDay }).map((_, i) => (
-            <div
-              key={`start-${i}`}
-              className="h-20 rounded-xl bg-[#f2f4ff] shadow-sm text-sm text-gray-400 flex items-center justify-center"
-            >
+            <div key={`start-${i}`} className="h-20 rounded-xl bg-[#f2f4ff] shadow-sm text-sm text-gray-400 flex items-center justify-center">
               <span className="invisible">0</span>
             </div>
           ))}
@@ -141,10 +161,11 @@ export default function CalendarPage() {
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1;
             const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-            const events = eventDates[dateKey] || [];
+            const dayEvents = events[dateKey] || [];
             const weekday = (firstDay + day - 1) % 7;
             const isSunday = weekday === 0;
             const isToday = dateKey === todayKey;
+            const formattedDate = `${String(month + 1).padStart(2, "0")}/${String(day).padStart(2, "0")}/${year}`;
 
             let bgClass = "bg-[#f2f4ff] text-black";
             if (isSunday) bgClass = "bg-sky-400 text-white";
@@ -153,70 +174,67 @@ export default function CalendarPage() {
             return (
               <div
                 key={day}
-                className={`h-20 rounded-xl flex flex-col justify-center items-center text-sm font-medium shadow-sm cursor-pointer hover:bg-sky-400 transition ${bgClass}`}
+                className={`h-20 rounded-xl flex flex-col justify-center items-center text-sm font-medium shadow-sm cursor-pointer hover:bg-sky-400 transition relative ${bgClass}`}
+                onMouseEnter={(e) => showEventInfo(e, dayEvents, formattedDate)}
+                onMouseLeave={hideEventInfo}
               >
-               <span className="text-lg md:text-xl font-bold">{day}</span>
-
-                <div className="flex gap-1 mt-1">
-                  {events.map((event, idx) => (
-                    <span
-                      key={idx}
-                      className={`w-4 h-4 rounded-sm ${categoryColors[event] || ""} hover:opacity-75`}
-                    ></span>
+                <span className="text-lg md:text-xl font-bold">{day}</span>
+                <div className="flex flex-col gap-1 mt-1 items-start">
+                  {dayEvents.slice(0, 2).map((event, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-xs">
+                      <span
+                        className={`w-3 h-3 mt-1 rounded-sm ${categoryColors[event.type] || "bg-gray-400"}`}
+                        title={event.title}
+                      ></span>
+                      <div className="truncate max-w-[60px]" title={event.title}>
+                        {event.title.slice(0, 10)}{event.title.length > 10 ? '...' : ''}
+                      </div>
+                    </div>
                   ))}
+                  {dayEvents.length > 2 && (
+                    <div className="text-xs font-semibold">+{dayEvents.length - 2} more</div>
+                  )}
                 </div>
               </div>
             );
           })}
 
           {Array.from({ length: endOffset }).map((_, i) => (
-            <div
-              key={`end-${i}`}
-              className="h-20 rounded-xl bg-[#f2f4ff] shadow-sm text-sm text-gray-400 flex items-center justify-center"
-            >
+            <div key={`end-${i}`} className="h-20 rounded-xl bg-[#f2f4ff] shadow-sm text-sm text-gray-400 flex items-center justify-center">
               <span className="invisible">0</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Categories + Create Button */}
-      <div className="flex flex-col md:flex-row items-start justify-between bg-white p-4 rounded-xl shadow-md mt-6 gap-4">
-        <div>
-          <h2 className="text-xl font-bold mb-2">Categories</h2>
-          <div className="flex gap-10 text-sm font-medium">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-4 bg-blue-600 rounded-sm"></span> Daily Task
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-4 bg-red-500 rounded-sm"></span> Meeting
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-4 bg-green-500 rounded-sm"></span> Reminder
-              </div>
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-4 bg-purple-600 rounded-sm"></span> Deadline
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-4 bg-yellow-400 rounded-sm"></span> Leaves
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-[#058CBF] text-white font-bold px-5 py-2 rounded-lg drop-shadow-lg hover:bg-[#D9D9D9] transition"
+      {/* Event Hover Info Box */}
+      {hoverInfo.show && (
+        <div 
+          className="fixed bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50 w-64"
+          style={{
+            top: `${hoverInfo.y}px`,
+            left: `${hoverInfo.x}px`,
+          }}
         >
-          <TbCalendarPlus className="h-5 w-5 text-black" />
-          CREATE
-        </button>
-      </div>
+          <div className="font-bold text-lg mb-2">{hoverInfo.date}</div>
+          {hoverInfo.events.length === 0 ? (
+            <p className="text-gray-500">No events scheduled</p>
+          ) : (
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {hoverInfo.events.map((event, idx) => (
+                <div key={idx} className="border-l-4 pl-2 py-1" style={{
+                  borderColor: Object.entries(categoryColors).find(([key]) => key === event.type)?.[1]?.replace('bg-', 'rgb(59, 130, 246)') || 'rgb(156, 163, 175)'
+                }}>
+                  <div className="font-semibold">{event.type}</div>
+                  <div className="text-sm">{event.title}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
-      {/* Modal */}
+      {/* Modal (kept for functionality but not shown by default) */}
       {showModal && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-md bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-8 relative">
@@ -226,7 +244,6 @@ export default function CalendarPage() {
             >
               &times;
             </button>
-
             <div className="flex justify-around mb-4 shadow-md">
               {tabs.map((tab) => (
                 <button
@@ -238,8 +255,11 @@ export default function CalendarPage() {
                 </button>
               ))}
             </div>
-
-            <div className="space-y-3">{tabs.find((tab) => tab.key === activeTab)?.content}</div>
+            <div className="space-y-3">
+              {activeTab === "Task" && <EventPage onSave={addEvent} />}
+              {activeTab === "Event" && <TaskForm onSave={addEvent} />}
+              {activeTab === "Schedule" && <SchedualPage onSave={addEvent} />}
+            </div>
           </div>
         </div>
       )}

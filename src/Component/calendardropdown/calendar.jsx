@@ -14,24 +14,49 @@ const categoryColors = {
   Other: "bg-orange-400",
 };
 
-const eventDates = {
-  "2025-05-01": ["Daily Task"],
-  "2025-05-03": ["Daily Task", "Meeting"],
-  "2025-05-05": ["Deadline"],
-};
-
 export default function Calendar() {
   const initialDate = new Date(2025, 4); // May 2025
   const [currentDate, setCurrentDate] = useState(initialDate);
   const [todayKey, setTodayKey] = useState("");
+  const [eventDates, setEventDates] = useState({});
 
+  // ✅ Set today key
   useEffect(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const key = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(
-      today.getDate()
-    ).padStart(2, "0")}`;
+    const key = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     setTodayKey(key);
+  }, []);
+
+  // ✅ Load events from localStorage
+  const loadEvents = () => {
+    const stored = localStorage.getItem("calendarEvents");
+    setEventDates(stored ? JSON.parse(stored) : {});
+  };
+
+  useEffect(() => {
+    loadEvents();
+
+    // Listen for changes in localStorage (e.g., from other tabs or components)
+    const handleStorageChange = (event) => {
+      if (event.key === "calendarEvents") {
+        loadEvents();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  // Re-fetch events on tab visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        loadEvents();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
 
   const underlineRef = useRef(null);
@@ -56,36 +81,25 @@ export default function Calendar() {
 
   return (
     <div className="w-[700px] p-2">
-      {/* Header */}
       <div className="mb-4">
         <h1 className="text-left font-semibold text-gray-800 text-2xl mb-6">
           <span className="relative inline-block">
             MyCalendar
-            <span
-              ref={underlineRef}
-              className="absolute left-0 bottom-0 h-[2px] bg-red-500 w-full"
-            ></span>
+            <span ref={underlineRef} className="absolute left-0 bottom-0 h-[2px] bg-red-500 w-full"></span>
           </span>
         </h1>
       </div>
 
-      {/* Calendar */}
       <div className="bg-white rounded-xl shadow p-2">
         <div className="flex items-center justify-between mb-2">
           <div className="text-lg font-bold text-gray-800">
             {currentDate.toLocaleString("default", { month: "long", year: "numeric" })}
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={() => handleMonthChange(-1)}
-              className="p-1 rounded hover:bg-gray-200 transition"
-            >
+            <button onClick={() => handleMonthChange(-1)} className="p-1 rounded hover:bg-gray-200 transition">
               <FiChevronLeft size={20} />
             </button>
-            <button
-              onClick={() => handleMonthChange(1)}
-              className="p-1 rounded hover:bg-gray-200 transition"
-            >
+            <button onClick={() => handleMonthChange(1)} className="p-1 rounded hover:bg-gray-200 transition">
               <FiChevronRight size={20} />
             </button>
           </div>
@@ -101,17 +115,14 @@ export default function Calendar() {
         </div>
 
         <div className="grid grid-cols-7 gap-1 mt-2">
-          {/* Empty cells at start */}
+          {/* Empty placeholders for days before the 1st of the month */}
           {Array.from({ length: firstDay }).map((_, i) => (
-            <div
-              key={`start-${i}`}
-              className="h-16 rounded-lg bg-[#f2f4ff] shadow-sm text-xs text-gray-400 flex items-center justify-center"
-            >
+            <div key={`start-${i}`} className="h-16 rounded-lg bg-[#f2f4ff] shadow-sm text-xs text-gray-400 flex items-center justify-center">
               <span className="invisible">0</span>
             </div>
           ))}
 
-          {/* Actual days */}
+          {/* Calendar day cells */}
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1;
             const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -126,29 +137,51 @@ export default function Calendar() {
 
             return (
               <div
-  key={day}
-  className={`h-16 rounded-lg flex flex-col justify-center items-center text-[10px] font-medium shadow-sm ${bgClass} hover:bg-blue-200 transition duration-200 cursor-pointer`}
->
-
+                key={day}
+                className={`group relative h-16 rounded-lg flex flex-col justify-center items-center text-[10px] font-medium shadow-sm ${bgClass} hover:bg-blue-200 transition duration-200 cursor-pointer`}
+              >
                 <span className="text-lg font-bold">{day}</span>
                 <div className="flex gap-[2px] mt-[2px]">
                   {events.map((event, idx) => (
                     <span
                       key={idx}
-                      className={`w-3 h-3 ${categoryColors[event] || ""}`}
+                      className={`w-3 h-3 rounded-full ${categoryColors[event.type] || ""}`}
+                      title={event.title || event.type}
                     ></span>
                   ))}
                 </div>
+
+                {events.length > 0 && (
+                  <div className="absolute z-10 bottom-full mb-2 w-52 bg-white text-gray-700 text-[12px] shadow-lg rounded p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                    <ul className="space-y-2">
+                      {events.map((event, index) => (
+                        <li key={index}>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`inline-block w-2 h-2 rounded-full ${categoryColors[event.type] || ""}`}></span>
+                            <span className="font-semibold truncate">{event.title || event.type}</span>
+                          </div>
+                          {event.email && (
+                            <div className="text-[11px] text-gray-600 truncate">
+                              📧 {event.email}
+                            </div>
+                          )}
+                          {event.description && (
+                            <div className="text-[11px] text-gray-500 truncate">
+                              📝 {event.description}
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             );
           })}
 
-          {/* Empty cells at end */}
+          {/* Empty placeholders after the last day of the month */}
           {Array.from({ length: endOffset }).map((_, i) => (
-            <div
-              key={`end-${i}`}
-              className="h-16 rounded-lg bg-[#f2f4ff] shadow-sm text-xs text-gray-400 flex items-center justify-center"
-            >
+            <div key={`end-${i}`} className="h-16 rounded-lg bg-[#f2f4ff] shadow-sm text-xs text-gray-400 flex items-center justify-center">
               <span className="invisible">0</span>
             </div>
           ))}
