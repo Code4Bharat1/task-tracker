@@ -87,7 +87,7 @@ export default function SalaryPage() {
 
         <div className="overflow-x-auto mt-12">
         {/* min-w-full  */}
-          <table className="  border border-black text-center rounded-xl border-collapse w-[1137px] "> 
+          <table className="  border border-black text-center rounded-xl border-collapse min-w-full "> 
             <thead className="bg-[#018ABE] text-white">
               <tr>
                 <th className="border border-black px-4 py-2">Sr.No</th>

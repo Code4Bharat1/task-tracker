@@ -22,7 +22,7 @@ const menuItems = [
   { label: 'Add TimeSheet', icon: <MdAccessTime />, href: '/timesheet' },
   { label: 'Calendar', icon: <FaRegCalendarAlt />, href: '/calendar' },
   { label: 'Leave', icon: <IoMdListBox />, href: '/leavetable' },
-  { label: 'Salary', icon: <BiMoney />, href: '/salary' },
+  { label: 'Salary', icon: <BiMoney />, href: '/salarypage' },
   { label: 'Company Policies', icon: <MdPolicy />, href: '/companyPolicy' },
   { label: 'Expense', icon: <MdPolicy />, href: '/expense' },
   { label: 'Logout', icon: <FaSignOutAlt />, href: '/' }
