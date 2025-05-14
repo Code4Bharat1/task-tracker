@@ -14,6 +14,10 @@ export default function LeaveTable() {
   const [wordCount, setWordCount] = useState(0);
   const fileInputRef = useRef(null);
   const today = new Date().toISOString().split('T')[0];
+  const isDateOverlap = (start1, end1, start2, end2) => {
+    return !(new Date(end1) < new Date(start2) || new Date(start1) > new Date(end2));
+  };
+
 
   const approvers = [
     { name: 'Ayaan Raje', id: '660c1234567890abcdef1234' },
@@ -60,6 +64,27 @@ export default function LeaveTable() {
 
     if (new Date(toDate) < new Date(fromDate)) {
       toast.error('To Date cannot be before From Date.');
+      return;
+    }
+
+    // 🚫 Check for overlapping leave dates
+    const hasOverlap = leaves.some((leave) =>
+      isDateOverlap(fromDate, toDate, leave.fromDate, leave.toDate)
+    );
+
+    if (hasOverlap) {
+      toast('You already have leave applied during these dates.', {
+        icon: '📅',
+        duration: 5000,
+        style: {
+          border: '1px solid #3182ce',
+          padding: '12px 16px',
+          color: '#2b6cb0',
+          background: '#ebf8ff',
+          fontWeight: '500',
+        },
+      });
+      
       return;
     }
 
