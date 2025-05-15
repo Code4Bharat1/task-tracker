@@ -124,6 +124,7 @@ export default function BankInformation() {
                 className="w-[400px] p-2 border border-gray-300 rounded-md shadow-lg"
                 value={formData.branchNameLeft}
                 onChange={handleChange}
+                placeholder='Branch Name'
               />
             </div>
           </div>
@@ -132,7 +133,7 @@ export default function BankInformation() {
           <div className="space-y-6">
             <div>
               <label className="block text-lg font-medium mb-2" htmlFor="branchNameRight">
-                Branch Name
+                Bank Name
               </label>
               <input
                 type="text"
@@ -140,6 +141,7 @@ export default function BankInformation() {
                 className="w-[400px] p-2 border border-gray-300 rounded-md shadow-lg"
                 value={formData.branchNameRight}
                 onChange={handleChange}
+                placeholder='Bank Name'
               />
             </div>
             
@@ -152,7 +154,7 @@ export default function BankInformation() {
                   type={showConfirmPassword ? "text" : "password"}
                   id="confirmAccountNumber"
                   placeholder="Re-enter account number"
-                  className={`w-[400px] p-2 border rounded-md shadow-sm ${
+                  className={`w-[400px] p-2 border rounded-md shadow-lg ${
                     errors.confirmAccountNumber ? 'border-red-500' : 'border-gray-300'
                   }`}
                   value={formData.confirmAccountNumber}
@@ -160,7 +162,7 @@ export default function BankInformation() {
                 />
                 <button 
                   type="button"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                  className="absolute right-23 top-1/2 transform -translate-y-1/2 text-gray-500"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -178,9 +180,10 @@ export default function BankInformation() {
               <input
                 type="text"
                 id="ifscCode"
-                className="w-full p-2 border border-gray-300 rounded-md shadow-lg"
+                className="w-[400px] p-2 border border-gray-300 rounded-md shadow-lg"
                 value={formData.ifscCode}
                 onChange={handleChange}
+                placeholder='IFSC Code'
               />
             </div>
           </div>
@@ -197,7 +200,7 @@ export default function BankInformation() {
               <option>Bank Statement</option>
               <option>Cancelled Cheque</option>
             </select>
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+            <div className="absolute left-40 top-1/2 transform -translate-y-1/2 pointer-events-none">
               <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
