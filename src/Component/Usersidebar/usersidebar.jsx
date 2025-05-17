@@ -25,6 +25,7 @@ const menuItems = [
   { label: 'Salary', icon: <BiMoney />, href: '/salarypage' },
   { label: 'Company Policies', icon: <MdPolicy />, href: '/companyPolicy' },
   { label: 'Expense', icon: <MdPolicy />, href: '/expense' },
+  { label: 'Bank Info', icon: <MdPolicy />, href: '/bankinformation' },
   { label: 'Logout', icon: <FaSignOutAlt />, href: '/' }
 ]
 
