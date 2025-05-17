@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import DatePicker from 'react-datepicker';
 import { LuCalendarDays, LuClock } from 'react-icons/lu';
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-datepicker/dist/react-datepicker.css';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function TaskPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -12,12 +14,21 @@ export default function TaskPage() {
   const [description, setDescription] = useState('');
   const [taskName, setTaskName] = useState('');
   const [activeTab, setActiveTab] = useState('task');
+  const userId = "64b81234567890abcdef1234"; // Replace with dynamic user ID
 
   const tabs = [
     { label: 'EVENT', value: 'event' },
     { label: 'Task', value: 'task' },
     { label: 'Schedule Meeting', value: 'meeting' },
   ];
+
+  const formatTime = (date) => {
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
 
   const handleCancel = () => {
     setTitle('');
@@ -28,20 +39,43 @@ export default function TaskPage() {
     setActiveTab('task');
   };
 
-  const handleCreate = () => {
-    const combinedDateTime = new Date(selectedDate);
-    combinedDateTime.setHours(selectedTime.getHours());
-    combinedDateTime.setMinutes(selectedTime.getMinutes());
+  const handleCreate = async () => {
+    if (!title.trim() || !description.trim()) {
+      toast.error('Please fill all required fields');
+      return;
+    }
 
-    console.log({
-      type: activeTab,
+    const taskData = {
+      userId,
+      type: "Task",
       title,
       description,
-      taskName,
-      dateTime: combinedDateTime,
-    });
+      date: selectedDate.toISOString().split('T')[0],
+      time: formatTime(selectedTime),
+      taskName
+    };
 
-    window.location.href = '/next-page'; // Navigate to next page
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/user/calendar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(taskData),
+      });
+
+      if (res.ok) {
+        toast.success('Task created successfully!');
+        setTimeout(() => {
+          window.location.href = '/next-page';
+        }, 1500);
+      } else {
+        toast.error('Failed to create task');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Error connecting to server');
+    }
   };
 
   return (
@@ -96,7 +130,7 @@ export default function TaskPage() {
             timeIntervals={15}
             timeCaption="Time"
             dateFormat="h:mm aa"
-            className="bg-[#F1F2F8] border-gray-300 rounded-md px-3 py-1 w-22    shadow-lg text-sm focus:outline-none"
+            className="bg-[#F1F2F8] border-gray-300 rounded-md px-3 py-1 w-22 shadow-lg text-sm focus:outline-none"
           />
         </div>
 
@@ -130,6 +164,15 @@ export default function TaskPage() {
           </button>
         </div>
       </div>
+
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        pauseOnHover
+      />
     </div>
   );
 }

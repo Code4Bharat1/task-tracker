@@ -15,6 +15,16 @@ const categoryColors = {
   Other: "bg-orange-400",
 };
 
+const priorityOrder = [
+  "Daily Task",
+  "Meeting",
+  "Reminder",
+  "Deadline",
+  "Leaves",
+  "Event",
+  "Other",
+];
+
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [todayKey, setTodayKey] = useState("");
@@ -22,7 +32,6 @@ export default function Calendar() {
   const underlineRef = useRef(null);
   const userId = "64b81234567890abcdef1234";
 
-  // Set today key
   useEffect(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -30,7 +39,6 @@ export default function Calendar() {
     setTodayKey(key);
   }, []);
 
-  // Fetch calendar data
   useEffect(() => {
     const fetchCalendarData = async () => {
       try {
@@ -69,7 +77,6 @@ export default function Calendar() {
     fetchCalendarData();
   }, [currentDate]);
 
-  // Time formatting
   const formatTime = (timeString) => {
     if (!timeString) return "";
     const [hours, minutes] = timeString.includes(" ") 
@@ -81,7 +88,6 @@ export default function Calendar() {
     return `${twelveHour}:${minutes} ${period}`;
   };
 
-  // GSAP animation
   useEffect(() => {
     gsap.fromTo(
       underlineRef.current,
@@ -94,7 +100,6 @@ export default function Calendar() {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + direction));
   };
 
-  // Calendar grid setup
   const month = currentDate.getMonth();
   const year = currentDate.getFullYear();
   const firstDay = new Date(year, month, 1).getDay();
@@ -160,6 +165,26 @@ export default function Calendar() {
             const isSunday = weekday === 0;
             const isToday = dateKey === todayKey;
 
+            // Group events by type
+            const groupedEvents = events.reduce((acc, event) => {
+              acc[event.type] = (acc[event.type] || 0) + 1;
+              return acc;
+            }, {});
+
+            // Sort by priority
+            const sortedEvents = Object.entries(groupedEvents)
+              .map(([type, count]) => ({ type, count }))
+              .sort((a, b) => {
+                const aIndex = priorityOrder.indexOf(a.type);
+                const bIndex = priorityOrder.indexOf(b.type);
+                const aPriority = aIndex === -1 ? Infinity : aIndex;
+                const bPriority = bIndex === -1 ? Infinity : bIndex;
+                return aPriority - bPriority;
+              });
+
+            const displayedEvents = sortedEvents.slice(0, 5);
+            const remainingTypes = Math.max(sortedEvents.length - 5, 0);
+
             let bgClass = "bg-[#f2f4ff] text-black";
             if (isSunday) bgClass = "bg-sky-400 text-white";
             if (isToday) bgClass = "bg-black text-white";
@@ -171,13 +196,24 @@ export default function Calendar() {
               >
                 <span className="text-lg font-bold">{day}</span>
                 <div className="flex gap-[2px] mt-[2px]">
-                  {events.map((event, idx) => (
-                    <span
-                      key={idx}
-                      className={`w-3 h-3 rounded-full ${categoryColors[event.type] || ""}`}
-                      title={event.title || event.type}
-                    ></span>
+                  {displayedEvents.map(({ type, count }) => (
+                    <div key={type} className="flex items-center gap-0.5">
+                      <span
+                        className={`w-3 h-3 rounded-full ${categoryColors[type] || ""}`}
+                        title={`${type}: ${count} event(s)`}
+                      />
+                      {count > 1 && (
+                        <span className="text-[8px] font-medium text-gray-500">
+                          +{count - 1}
+                        </span>
+                      )}
+                    </div>
                   ))}
+                  {remainingTypes > 0 && (
+                    <span className="text-[8px] font-medium text-gray-500 ml-0.5">
+                      +{remainingTypes}
+                    </span>
+                  )}
                 </div>
 
                 {events.length > 0 && (

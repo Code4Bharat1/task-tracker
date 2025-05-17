@@ -25,7 +25,7 @@ export default function TaskForm({ onSave, onClose, selectedDate }) {
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [date, setDate] = useState(selectedDate ? new Date(selectedDate) : new Date());
   const [remindBefore, setRemindBefore] = useState(15);
-  const userId = "64b81234567890abcdef1234";
+  const userId = "64b81234567890abcdef1234"; // Replace with dynamic user ID
 
   const categories = ["Daily Task", "Reminder", "Deadline", "Leaves", "Other"];
 
@@ -45,13 +45,13 @@ export default function TaskForm({ onSave, onClose, selectedDate }) {
 
     const taskData = {
       userId,
-      type: selectedCategory, // Now dynamic based on selection
+      type: "Event",
       title: note,
-      description: "",
+      description: "", // Add description field if needed
       date: date.toISOString().split('T')[0],
       time: startTime,
       category: selectedCategory,
-      reminder: true,
+      reminder: true, // Assuming reminder is always true with time selection
       remindBefore: parseInt(remindBefore, 10)
     };
 
@@ -64,13 +64,11 @@ export default function TaskForm({ onSave, onClose, selectedDate }) {
         body: JSON.stringify(taskData),
       });
 
-      const responseData = await response.json();
-      
       if (!response.ok) {
-        throw new Error(responseData.message || 'Failed to create task');
+        throw new Error('Failed to create task');
       }
 
-      toast.success(`${selectedCategory} created successfully!`);
+      toast.success("Event created successfully!");
       
       if (onSave) {
         onSave(taskData.date, taskData.category, taskData.title);
@@ -87,7 +85,7 @@ export default function TaskForm({ onSave, onClose, selectedDate }) {
 
     } catch (error) {
       console.error('Error creating task:', error);
-      toast.error(error.message || "Failed to create task");
+      toast.error("Failed to create task");
     }
   };
 
