@@ -19,12 +19,19 @@ export default function LeaveTable() {
   };
 
 
-  const approvers = [
-    { name: 'Ayaan Raje', id: '660c1234567890abcdef1234' },
-    { name: 'Prashant Patil', id: '660c1234567890abcdef5678' },
-    { name: 'Shams Ali Shaikh', id: '660c1234567890abcdef9012' },
-    { name: 'Awab Fakih', id: '660c1234567890abcdef3456' },
-  ];
+  const [approvers, setApprovers] = useState([]);
+
+  useEffect(() => {
+    const fetchApprovers = async () => {
+      try {
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_API}/leave/approvers`, { withCredentials: true });
+        setApprovers(res.data.data || []);
+      } catch (error) {
+        console.error("Failed to load approvers", error);
+      }
+    };
+    fetchApprovers();
+  }, []);
 
   useEffect(() => {
     const fetchLeaves = async () => {
@@ -47,6 +54,7 @@ export default function LeaveTable() {
     return () => document.body.classList.remove('overflow-hidden');
   }, [showModal]);
 
+  const approverMap = Object.fromEntries(approvers.map(a => [a.id, a.name]));
   const submitLeave = async () => {
     if (
       !leaveType || leaveType === 'Select' ||
@@ -84,7 +92,7 @@ export default function LeaveTable() {
           fontWeight: '500',
         },
       });
-      
+
       return;
     }
 
@@ -93,11 +101,12 @@ export default function LeaveTable() {
       return;
     }
 
-    const selectedApprover = approvers.find(a => a.name === approvalTo);
+    const selectedApprover = approvers.find(a => a.id === approvalTo);
     if (!selectedApprover) {
       toast.error('Invalid approver selected.');
       return;
     }
+
 
     const formData = new FormData();
     formData.append('fromDate', fromDate);
@@ -207,9 +216,11 @@ export default function LeaveTable() {
                   onChange={(e) => setApprovalTo(e.target.value)}
                   className="w-full rounded px-4 py-2 shadow"
                 >
-                  <option>Select</option>
+                  <option value="">Select</option>
                   {approvers.map((approver) => (
-                    <option key={approver.id} value={approver.name}>{approver.name}</option>
+                    <option key={approver.id} value={approver.id}>
+                      {approver.name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -277,7 +288,7 @@ export default function LeaveTable() {
               {leaves.map((leave, index) => (
                 <tr key={leave._id || index} className="hover:bg-gray-50">
                   <td className="p-3 border-t">{index + 1}</td>
-                  <td className="p-3 border-t">{leave.managerId || 'N/A'}</td>
+                  <td className="p-3 border-t">{approverMap[leave.managerId] || 'N/A'}</td>
                   <td className="p-3 border-t">{leave.reason}</td>
                   <td className="p-3 border-t">{leave.createdAt?.split('T')[0]}</td>
                   <td className="p-3 border-t">{new Date(leave.fromDate).toLocaleDateString('en-GB')}</td>
