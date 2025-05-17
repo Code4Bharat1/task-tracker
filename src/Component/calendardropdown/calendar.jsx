@@ -8,19 +8,21 @@ const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const categoryColors = {
   "Daily Task": "bg-blue-600",
   Meeting: "bg-red-500",
-  Reminder: "bg-green-500",
+  Event: "bg-green-500",
+  Reminder: "bg-purple-500",
   Deadline: "bg-purple-600",
   Leaves: "bg-yellow-400",
   Other: "bg-orange-400",
 };
 
 export default function Calendar() {
-  const initialDate = new Date(2025, 4); // May 2025
-  const [currentDate, setCurrentDate] = useState(initialDate);
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [todayKey, setTodayKey] = useState("");
   const [eventDates, setEventDates] = useState({});
+  const underlineRef = useRef(null);
+  const userId = "64b81234567890abcdef1234";
 
-  // ✅ Set today key
+  // Set today key
   useEffect(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -28,39 +30,58 @@ export default function Calendar() {
     setTodayKey(key);
   }, []);
 
-  // ✅ Load events from localStorage
-  const loadEvents = () => {
-    const stored = localStorage.getItem("calendarEvents");
-    setEventDates(stored ? JSON.parse(stored) : {});
+  // Fetch calendar data
+  useEffect(() => {
+    const fetchCalendarData = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_API}/user/calendar/user/${userId}`
+        );
+        const data = await res.json();
+        
+        const groupedEvents = data.reduce((acc, item) => {
+          const eventDate = new Date(item.date);
+          const dateKey = `${eventDate.getUTCFullYear()}-${String(eventDate.getUTCMonth() + 1).padStart(2, "0")}-${String(eventDate.getUTCDate()).padStart(2, "0")}`;
+          
+          const eventData = {
+            type: item.type,
+            title: item.title,
+            description: item.description,
+            participants: item.participants || [],
+            time: item.time ? formatTime(item.time) : null,
+            startTime: item.startTime ? formatTime(item.startTime) : null,
+            endTime: item.endTime ? formatTime(item.endTime) : null,
+            category: item.category
+          };
+
+          return {
+            ...acc,
+            [dateKey]: [...(acc[dateKey] || []), eventData]
+          };
+        }, {});
+
+        setEventDates(groupedEvents);
+      } catch (err) {
+        console.error("Error fetching calendar data:", err);
+      }
+    };
+
+    fetchCalendarData();
+  }, [currentDate]);
+
+  // Time formatting
+  const formatTime = (timeString) => {
+    if (!timeString) return "";
+    const [hours, minutes] = timeString.includes(" ") 
+      ? timeString.split(" ")[0].split(":")
+      : timeString.split(":");
+    const hour = parseInt(hours, 10);
+    const period = hour >= 12 ? "PM" : "AM";
+    const twelveHour = hour % 12 || 12;
+    return `${twelveHour}:${minutes} ${period}`;
   };
 
-  useEffect(() => {
-    loadEvents();
-
-    // Listen for changes in localStorage (e.g., from other tabs or components)
-    const handleStorageChange = (event) => {
-      if (event.key === "calendarEvents") {
-        loadEvents();
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
-
-  // Re-fetch events on tab visibility change
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        loadEvents();
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, []);
-
-  const underlineRef = useRef(null);
-
+  // GSAP animation
   useEffect(() => {
     gsap.fromTo(
       underlineRef.current,
@@ -70,9 +91,10 @@ export default function Calendar() {
   }, []);
 
   const handleMonthChange = (direction) => {
-    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + direction));
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + direction));
   };
 
+  // Calendar grid setup
   const month = currentDate.getMonth();
   const year = currentDate.getFullYear();
   const firstDay = new Date(year, month, 1).getDay();
@@ -84,7 +106,7 @@ export default function Calendar() {
       <div className="mb-4">
         <h1 className="text-left font-semibold text-gray-800 text-2xl mb-6">
           <span className="relative inline-block">
-            MyCalendar
+            My Calendar
             <span ref={underlineRef} className="absolute left-0 bottom-0 h-[2px] bg-red-500 w-full"></span>
           </span>
         </h1>
@@ -96,10 +118,16 @@ export default function Calendar() {
             {currentDate.toLocaleString("default", { month: "long", year: "numeric" })}
           </div>
           <div className="flex gap-2">
-            <button onClick={() => handleMonthChange(-1)} className="p-1 rounded hover:bg-gray-200 transition">
+            <button 
+              onClick={() => handleMonthChange(-1)} 
+              className="p-1 rounded hover:bg-gray-200 transition"
+            >
               <FiChevronLeft size={20} />
             </button>
-            <button onClick={() => handleMonthChange(1)} className="p-1 rounded hover:bg-gray-200 transition">
+            <button 
+              onClick={() => handleMonthChange(1)} 
+              className="p-1 rounded hover:bg-gray-200 transition"
+            >
               <FiChevronRight size={20} />
             </button>
           </div>
@@ -115,14 +143,15 @@ export default function Calendar() {
         </div>
 
         <div className="grid grid-cols-7 gap-1 mt-2">
-          {/* Empty placeholders for days before the 1st of the month */}
           {Array.from({ length: firstDay }).map((_, i) => (
-            <div key={`start-${i}`} className="h-16 rounded-lg bg-[#f2f4ff] shadow-sm text-xs text-gray-400 flex items-center justify-center">
+            <div 
+              key={`start-${i}`} 
+              className="h-16 rounded-lg bg-[#f2f4ff] shadow-sm text-xs text-gray-400 flex items-center justify-center"
+            >
               <span className="invisible">0</span>
             </div>
           ))}
 
-          {/* Calendar day cells */}
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1;
             const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -152,23 +181,57 @@ export default function Calendar() {
                 </div>
 
                 {events.length > 0 && (
-                  <div className="absolute z-10 bottom-full mb-2 w-52 bg-white text-gray-700 text-[12px] shadow-lg rounded p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                  <div className="absolute z-10 bottom-full mb-2 w-60 bg-white text-gray-700 text-sm shadow-xl rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
                     <ul className="space-y-2">
                       {events.map((event, index) => (
-                        <li key={index}>
+                        <li key={index} className="border-b pb-2 last:border-b-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className={`inline-block w-2 h-2 rounded-full ${categoryColors[event.type] || ""}`}></span>
-                            <span className="font-semibold truncate">{event.title || event.type}</span>
+                            <span className="font-semibold truncate">{event.title}</span>
                           </div>
-                          {event.email && (
-                            <div className="text-[11px] text-gray-600 truncate">
-                              📧 {event.email}
+                          
+                          {event.description && (
+                            <div className="text-xs text-gray-500 mb-1">
+                              {event.description}
                             </div>
                           )}
-                          {event.description && (
-                            <div className="text-[11px] text-gray-500 truncate">
-                              📝 {event.description}
-                            </div>
+
+                          {event.type === "Meeting" ? (
+                            <>
+                              {event.startTime && event.endTime && (
+                                <div className="text-xs text-blue-600">
+                                  🕒 {event.startTime} - {event.endTime}
+                                </div>
+                              )}
+                              {event.participants?.length > 0 && (
+                                <div className="text-xs text-gray-600 mt-1">
+                                  <span className="font-medium">Participants:</span>
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {event.participants.map((participant, pIdx) => (
+                                      <span 
+                                        key={pIdx}
+                                        className="px-2 py-1 bg-gray-100 rounded-full text-xs"
+                                      >
+                                        {participant}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              {event.time && (
+                                <div className="text-xs text-blue-600">
+                                  🕒 {event.time}
+                                </div>
+                              )}
+                              {event.category && (
+                                <div className="text-xs text-gray-600">
+                                  Category: {event.category}
+                                </div>
+                              )}
+                            </>
                           )}
                         </li>
                       ))}
@@ -179,9 +242,11 @@ export default function Calendar() {
             );
           })}
 
-          {/* Empty placeholders after the last day of the month */}
           {Array.from({ length: endOffset }).map((_, i) => (
-            <div key={`end-${i}`} className="h-16 rounded-lg bg-[#f2f4ff] shadow-sm text-xs text-gray-400 flex items-center justify-center">
+            <div 
+              key={`end-${i}`} 
+              className="h-16 rounded-lg bg-[#f2f4ff] shadow-sm text-xs text-gray-400 flex items-center justify-center"
+            >
               <span className="invisible">0</span>
             </div>
           ))}

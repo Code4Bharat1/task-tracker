@@ -6,37 +6,24 @@ import { IoMdArrowDropdown } from 'react-icons/io';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-// ✅ Helper to store data by date for calendar display
-const saveEventToLocalStorage = (date, category) => {
-  const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  const existing = JSON.parse(localStorage.getItem('calendarEvents')) || {};
-  if (!existing[key]) {
-    existing[key] = [];
-  }
-  existing[key].push(category);
-  localStorage.setItem('calendarEvents', JSON.stringify(existing));
-};
-
-export default function SchedualPage({ initialDate, addEvent, closeModal }) {
+export default function SchedulePage({ initialDate, closeModal }) {
   const [selectedDate, setSelectedDate] = useState(initialDate || '');
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState(''); // Added description state
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
-  const [participants, setParticipants] = useState('');
+  const [participant, setParticipant] = useState('');
   const [isStartOpen, setIsStartOpen] = useState(false);
   const [isEndOpen, setIsEndOpen] = useState(false);
 
-  const generateTimes = () => {
-    const times = [];
-    for (let i = 0; i < 24; i++) {
-      const hour = i % 12 === 0 ? 12 : i % 12;
-      const ampm = i < 12 ? 'am' : 'pm';
-      times.push(`${hour.toString().padStart(2, '0')}:00 ${ampm}`);
-    }
-    return times;
-  };
+  // Hardcoded user ID - replace with dynamic value from authentication
+  const userId = "64b81234567890abcdef1234";
 
-  const times = generateTimes();
+  const times = Array.from({ length: 24 }, (_, i) => {
+    const hour = i % 12 === 0 ? 12 : i % 12;
+    const ampm = i < 12 ? 'AM' : 'PM';
+    return `${hour.toString().padStart(2, '0')}:00 ${ampm}`;
+  });
 
   useEffect(() => {
     if (initialDate) {
@@ -47,68 +34,70 @@ export default function SchedualPage({ initialDate, addEvent, closeModal }) {
   const parseTime = (timeStr) => {
     const [time, modifier] = timeStr.split(' ');
     let [hours, minutes] = time.split(':').map(Number);
-    if (modifier === 'pm' && hours !== 12) hours += 12;
-    if (modifier === 'am' && hours === 12) hours = 0;
+    if (modifier === 'PM' && hours !== 12) hours += 12;
+    if (modifier === 'AM' && hours === 12) hours = 0;
     return hours * 60 + minutes;
   };
 
-  const handleSchedule = () => {
-    const validStart = !!startTime && times.includes(startTime);
-    const validEnd = !!endTime && times.includes(endTime);
-    const validRange = validStart && validEnd && parseTime(startTime) < parseTime(endTime);
-
-    if (selectedDate && title.trim() && validStart && validRange && participants) {
+  const handleSchedule = async () => {
+    if (
+      selectedDate &&
+      title.trim() &&
+      description.trim() && // Added description validation
+      times.includes(startTime) &&
+      times.includes(endTime) &&
+      parseTime(startTime) < parseTime(endTime) &&
+      participant
+    ) {
       const meeting = {
+        userId, // Added userId
+        type: "Meeting", // Added type
+        title,
+        description, // Added description
         date: selectedDate,
         startTime,
         endTime,
-        title,
-        participants,
+        participants: [participant],
+        reminder: false,
+        remindBefore: 15,
       };
 
-      const existingMeetings = JSON.parse(localStorage.getItem('meetings') || '[]');
-      existingMeetings.push(meeting);
-      localStorage.setItem('meetings', JSON.stringify(existingMeetings));
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/user/calendar`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(meeting),
+        });
 
-      // ✅ Save for calendar usage
-      saveEventToLocalStorage(new Date(selectedDate), {
-        type: 'Meeting',
-        title,
-        startTime,
-        endTime,
-        participants,
-      });
-
-      if (typeof addEvent === 'function') {
-        addEvent(meeting);
-      }
-
-      toast.success('Meeting scheduled successfully!');
-
-      // Reset
-      setSelectedDate('');
-      setStartTime('');
-      setEndTime('');
-      setTitle('');
-      setParticipants('');
-
-      setTimeout(() => {
-        if (typeof closeModal === 'function') {
-          closeModal();
+        if (res.ok) {
+          toast.success('Meeting scheduled successfully!');
+          setTitle('');
+          setDescription('');
+          setStartTime('');
+          setEndTime('');
+          setParticipant('');
+          setTimeout(() => closeModal?.(), 500);
+        } else {
+          toast.error('Failed to schedule meeting.');
         }
-      }, 100);
+      } catch (err) {
+        console.error(err);
+        toast.error('Error connecting to server.');
+      }
     } else {
-      toast.error('Please fill all the information');
+      toast.error('Please fill all the fields correctly.');
     }
   };
 
   const handleCancel = () => {
-    setSelectedDate('');
+    setTitle('');
+    setDescription('');
     setStartTime('');
     setEndTime('');
-    setTitle('');
-    setParticipants('');
-    if (typeof closeModal === 'function') closeModal();
+    setParticipant('');
+    closeModal?.();
   };
 
   return (
@@ -122,7 +111,7 @@ export default function SchedualPage({ initialDate, addEvent, closeModal }) {
             value={selectedDate}
             min={new Date().toISOString().split('T')[0]}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="ml-2 w-full max-w-[180px] focus:outline-none py-1 text-sm text-gray-700 rounded px-2 appearance-none cursor-pointer"
+            className="ml-2 w-full max-w-[180px] focus:outline-none py-1 text-sm text-gray-700 rounded px-2 cursor-pointer"
           />
         </label>
       </div>
@@ -140,12 +129,8 @@ export default function SchedualPage({ initialDate, addEvent, closeModal }) {
             <span className="truncate">{startTime || 'Start'}</span>
             <IoMdArrowDropdown className="text-gray-600 text-base" />
           </button>
-
           {isStartOpen && (
-            <div
-              onMouseLeave={() => setIsStartOpen(false)}
-              className="absolute z-10 mt-2 w-[120px] bg-white rounded-lg shadow-lg max-h-40 overflow-y-auto p-1"
-            >
+            <div className="absolute z-10 mt-2 w-[120px] bg-white rounded-lg shadow-lg max-h-40 overflow-y-auto p-1">
               {times.map((time, index) => (
                 <button
                   key={`start-${index}`}
@@ -154,7 +139,7 @@ export default function SchedualPage({ initialDate, addEvent, closeModal }) {
                     setIsStartOpen(false);
                   }}
                   className={`cursor-pointer w-full text-sm text-left px-2 py-[4px] rounded-full ${
-                    startTime === time ? 'bg-blue-500 text-white' : 'text-gray-800 bg-white'
+                    startTime === time ? 'bg-blue-500 text-white' : 'text-gray-800'
                   } hover:bg-blue-100`}
                 >
                   {time}
@@ -175,12 +160,8 @@ export default function SchedualPage({ initialDate, addEvent, closeModal }) {
             <span className="truncate">{endTime || 'End'}</span>
             <IoMdArrowDropdown className="text-gray-600 text-base" />
           </button>
-
           {isEndOpen && (
-            <div
-              onMouseLeave={() => setIsEndOpen(false)}
-              className="absolute z-10 mt-2 w-[120px] bg-white rounded-lg shadow-lg max-h-40 overflow-y-auto p-1"
-            >
+            <div className="absolute z-10 mt-2 w-[120px] bg-white rounded-lg shadow-lg max-h-40 overflow-y-auto p-1">
               {times.map((time, index) => (
                 <button
                   key={`end-${index}`}
@@ -189,7 +170,7 @@ export default function SchedualPage({ initialDate, addEvent, closeModal }) {
                     setIsEndOpen(false);
                   }}
                   className={`cursor-pointer w-full text-sm text-left px-2 py-[4px] rounded-full ${
-                    endTime === time ? 'bg-green-500 text-white' : 'text-gray-800 bg-white'
+                    endTime === time ? 'bg-green-500 text-white' : 'text-gray-800'
                   } hover:bg-green-100`}
                 >
                   {time}
@@ -202,30 +183,43 @@ export default function SchedualPage({ initialDate, addEvent, closeModal }) {
 
       {/* Participants */}
       <div className="mb-4">
-        <label className="text-sm font-medium text-[#717171] block mb-1">Add Participants:</label>
+        <label className="text-sm font-medium text-[#717171] block mb-1">Add Participant:</label>
         <div className="relative">
           <select
-            value={participants}
-            onChange={(e) => setParticipants(e.target.value)}
-            className="cursor-pointer w-58 border border-[#877575] rounded-lg px-2 py-2 text-sm text-[#717171] bg-[#F8FDFF] appearance-none"
+            value={participant}
+            onChange={(e) => setParticipant(e.target.value)}
+            className="cursor-pointer w-full border border-[#877575] rounded-lg px-2 py-2 text-sm text-[#717171] bg-[#F8FDFF] appearance-none"
           >
-            <option value="" disabled>Select Email Address</option>
+            <option value="" disabled>
+              Select Email Address
+            </option>
+            <option value="alice@example.com">alice@example.com</option>
+            <option value="bob@example.com">bob@example.com</option>
             <option value="user1@example.com">user1@example.com</option>
             <option value="user2@example.com">user2@example.com</option>
-            <option value="user3@example.com">user3@example.com</option>
-            <option value="user4@example.com">user4@example.com</option>
           </select>
-          <IoMdArrowDropdown className="absolute top-1/2 right-[15%] transform -translate-y-1/2 text-gray-600 pointer-events-none" />
+          <IoMdArrowDropdown className="absolute top-1/2 right-4 transform -translate-y-1/2 text-gray-600 pointer-events-none" />
         </div>
       </div>
 
       {/* Meeting Title */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Add Meeting Title, e.g., Project Stand-up Meeting"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full border-b border-gray-900 focus:outline-none py-1 text-sm placeholder:text-[#717171]"
+        />
+      </div>
+
+      {/* Meeting Description - New Field */}
       <div className="mb-6">
         <input
           type="text"
-          placeholder="Add Meeting Title, e.g, Project Stand-up Meeting"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Meeting Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           className="w-full border-b border-gray-900 focus:outline-none py-1 text-sm placeholder:text-[#717171]"
         />
       </div>

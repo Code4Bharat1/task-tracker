@@ -18,21 +18,16 @@ const CustomDateInput = forwardRef(({ value, onClick }, ref) => (
 ));
 
 export default function TaskForm({ onSave, onClose, selectedDate }) {
-  const [repeat, setRepeat] = useState(false);
   const [note, setNote] = useState("");
   const [startTime, setStartTime] = useState("");
   const [isStartOpen, setIsStartOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("Daily Task");
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [date, setDate] = useState(selectedDate ? new Date(selectedDate) : new Date());
+  const [remindBefore, setRemindBefore] = useState(15);
+  const userId = "64b81234567890abcdef1234";
 
-  const categories = [
-    "Daily Task",
-    "Reminder",
-    "Deadline",
-    "Leaves",
-    "Other"
-  ];
+  const categories = ["Daily Task", "Reminder", "Deadline", "Leaves", "Other"];
 
   const times = [];
   for (let hour = 1; hour <= 12; hour++) {
@@ -42,44 +37,58 @@ export default function TaskForm({ onSave, onClose, selectedDate }) {
     }
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!note.trim() || !startTime) {
-      toast.error("Please fill all the information!");
+      toast.error("Please fill all required fields!");
       return;
     }
 
-    const formattedDate = date.toISOString().split("T")[0];
-
-    if (onSave) {
-      onSave(formattedDate, selectedCategory, note);
-    }
-
-    const task = {
-      note,
-      date: date.toISOString(),
+    const taskData = {
+      userId,
+      type: selectedCategory, // Now dynamic based on selection
+      title: note,
+      description: "",
+      date: date.toISOString().split('T')[0],
       time: startTime,
-      repeat,
       category: selectedCategory,
-      createdAt: new Date().toISOString()
+      reminder: true,
+      remindBefore: parseInt(remindBefore, 10)
     };
 
-    const existingTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-    existingTasks.push(task);
-    localStorage.setItem('tasks', JSON.stringify(existingTasks));
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/user/calendar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(taskData),
+      });
 
-    toast.success("Task created successfully!");
+      const responseData = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(responseData.message || 'Failed to create task');
+      }
 
-    if (repeat) {
-      setTimeout(() => toast.info(`⏰ Reminder: ${note}`), 15 * 60 * 1000);
+      toast.success(`${selectedCategory} created successfully!`);
+      
+      if (onSave) {
+        onSave(taskData.date, taskData.category, taskData.title);
+      }
+
+      // Reset form
+      setNote("");
+      setDate(new Date());
+      setStartTime("");
+      setSelectedCategory("Daily Task");
+      setRemindBefore(15);
+
+      if (onClose) onClose();
+
+    } catch (error) {
+      console.error('Error creating task:', error);
+      toast.error(error.message || "Failed to create task");
     }
-
-    setNote("");
-    setDate(new Date());
-    setStartTime("");
-    setRepeat(false);
-    setSelectedCategory("Daily Task");
-
-    if (onClose) onClose();
   };
 
   return (
@@ -88,7 +97,7 @@ export default function TaskForm({ onSave, onClose, selectedDate }) {
         <div className="mb-4">
           <input
             type="text"
-            placeholder="Add Note - e.g., I have a meeting at 11 a.m."
+            placeholder="Add Title - e.g., Company Annual Picnic"
             className="w-full border-b border-[#71717] focus:outline-none py-1 text-[#71717] placeholder:text-[#71717]"
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -141,16 +150,16 @@ export default function TaskForm({ onSave, onClose, selectedDate }) {
         </div>
 
         <div className="mb-4">
-          <label className="font-semibold text-[#3B3939] block mb-2">Reminder:</label>
+          <label className="font-semibold text-[#3B3939] block mb-2">Reminder Settings:</label>
           <div className="flex flex-col gap-3 ml-2 text-sm text-[#717171]">
             <div className="flex items-center gap-2">
               <span className="min-w-[50px]">Time:</span>
               <div className="relative">
                 <button
                   onClick={() => setIsStartOpen(!isStartOpen)}
-                  className="flex items-center justify-between gap-1 -ml-5 px-4 py-[2px] text-sm rounded-full bg-[#F1F2F8] text-[#333] w-[105px] border border-gray-200 cursor-pointer"
+                  className="flex items-center justify-between gap-1 px-4 py-[2px] text-sm rounded-full bg-[#F1F2F8] text-[#333] w-[105px] border border-gray-200 cursor-pointer"
                 >
-                  <span>{startTime || '09:00'}</span>
+                  <span>{startTime || 'Select Time'}</span>
                   <IoMdArrowDropdown className="text-gray-600 text-base" />
                 </button>
 
@@ -175,20 +184,15 @@ export default function TaskForm({ onSave, onClose, selectedDate }) {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <span>Remind before 15 minutes:</span>
-              <button
-                onClick={() => setRepeat(!repeat)}
-                className={`w-10 h-6 rounded-full relative transition duration-300 ${
-                  repeat ? 'bg-[#018ABE]' : 'bg-gray-300'
-                }`}
-              >
-                <span
-                  className={`block w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${
-                    repeat ? 'translate-x-5' : 'translate-x-0.5'
-                  }`}
-                ></span>
-              </button>
+            <div className="flex items-center gap-2">
+              <span>Remind Before (minutes):</span>
+              <input
+                type="number"
+                value={remindBefore}
+                onChange={(e) => setRemindBefore(e.target.value)}
+                className="w-20 px-2 py-1 border rounded"
+                min="1"
+              />
             </div>
           </div>
         </div>
