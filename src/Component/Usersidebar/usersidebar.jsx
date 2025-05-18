@@ -8,13 +8,14 @@ import { toast } from 'react-toastify'
 import { axiosInstance } from '@/lib/axiosInstance'
 
 // Import icons
-import { RxDashboard } from "react-icons/rx";
-import { FaRegCalendarAlt } from "react-icons/fa";
-import { FaSignOutAlt } from 'react-icons/fa'
-import { MdAccessTime, MdPolicy } from 'react-icons/md'
+import { RxDashboard } from 'react-icons/rx'
+import { FaRegCalendarAlt, FaSignOutAlt, FaUniversity } from 'react-icons/fa'
+import { MdAccessTime } from 'react-icons/md'
 import { AiOutlineUserSwitch } from 'react-icons/ai'
 import { BiMoney } from 'react-icons/bi'
 import { IoMdListBox } from 'react-icons/io'
+import { HiOutlineDocumentText } from 'react-icons/hi'
+import { RiMoneyDollarCircleLine } from 'react-icons/ri'
 
 const menuItems = [
   { label: 'Dashboard', icon: <RxDashboard />, href: '/dashboard' },
@@ -23,9 +24,9 @@ const menuItems = [
   { label: 'Calendar', icon: <FaRegCalendarAlt />, href: '/calendar' },
   { label: 'Leave', icon: <IoMdListBox />, href: '/leavetable' },
   { label: 'Salary', icon: <BiMoney />, href: '/salarypage' },
-  { label: 'Company Policies', icon: <MdPolicy />, href: '/companyPolicy' },
-  { label: 'Expense', icon: <MdPolicy />, href: '/expense' },
-  { label: 'Bank Info', icon: <MdPolicy />, href: '/bankinformation' },
+  { label: 'Company Policies', icon: <HiOutlineDocumentText />, href: '/companyPolicy' },
+  { label: 'Expense', icon: <RiMoneyDollarCircleLine />, href: '/expense' },
+  { label: 'Bank Info', icon: <FaUniversity />, href: '/bankinformation' },
   { label: 'Logout', icon: <FaSignOutAlt />, href: '/' }
 ]
 
@@ -35,12 +36,16 @@ export default function Sidebar() {
 
   const handleLogout = async () => {
     try {
-      await axiosInstance.post('/logout');
-      router.push('/');
-      toast.success("Logged out successfully!");
+      await axiosInstance.post('/logout')
+      toast.success('Logged out successfully!')
+
+      // Delay navigation to allow toast to show
+      setTimeout(() => {
+        router.push('/')
+      }, 1000)
     } catch (error) {
-      console.log("Failed to log out:", error);
-      toast.error('Failed to log out.');
+      console.log('Failed to log out:', error)
+      toast.error('Failed to log out.')
     }
   }
 
@@ -60,9 +65,12 @@ export default function Sidebar() {
       {/* Menu */}
       <nav className="flex flex-col gap-2 w-full px-4">
         {menuItems.map((item, index) => {
-          const isActive = pathname === item.href;
-          const commonClasses = "flex items-center gap-4 px-3 py-2 rounded-lg transition duration-200";
-          const activeClasses = isActive ? 'bg-white text-sky-700' : 'hover:bg-white hover:text-sky-700';
+          const isActive = pathname === item.href
+          const commonClasses =
+            'flex items-center gap-4 px-3 py-2 rounded-lg transition duration-200'
+          const activeClasses = isActive
+            ? 'bg-white text-sky-700'
+            : 'hover:bg-white hover:text-sky-700'
 
           return item.label === 'Logout' ? (
             <button
@@ -86,7 +94,7 @@ export default function Sidebar() {
               </div>
               <span className="text-md font-medium">{item.label}</span>
             </Link>
-          );
+          )
         })}
       </nav>
     </div>

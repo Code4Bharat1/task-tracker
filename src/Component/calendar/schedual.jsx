@@ -52,6 +52,7 @@ export default function SchedulePage({ initialDate, closeModal }) {
       const meeting = {
         userId, // Added userId
         type: "Meeting", // Added type
+        category: "Meeting", // Added category
         title,
         description, // Added description
         date: selectedDate,

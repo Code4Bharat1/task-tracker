@@ -8,8 +8,8 @@ const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const categoryColors = {
   "Daily Task": "bg-blue-600",
   Meeting: "bg-red-500",
-  Event: "bg-green-500",
-  Reminder: "bg-purple-500",
+  Event: "bg-violet-500",
+  Reminder: "bg-green-500",
   Deadline: "bg-purple-600",
   Leaves: "bg-yellow-400",
   Other: "bg-orange-400",
@@ -52,7 +52,6 @@ export default function Calendar() {
           const dateKey = `${eventDate.getUTCFullYear()}-${String(eventDate.getUTCMonth() + 1).padStart(2, "0")}-${String(eventDate.getUTCDate()).padStart(2, "0")}`;
           
           const eventData = {
-            type: item.type,
             title: item.title,
             description: item.description,
             participants: item.participants || [],
@@ -165,18 +164,18 @@ export default function Calendar() {
             const isSunday = weekday === 0;
             const isToday = dateKey === todayKey;
 
-            // Group events by type
+            // Group events by category
             const groupedEvents = events.reduce((acc, event) => {
-              acc[event.type] = (acc[event.type] || 0) + 1;
+              acc[event.category] = (acc[event.category] || 0) + 1;
               return acc;
             }, {});
 
             // Sort by priority
             const sortedEvents = Object.entries(groupedEvents)
-              .map(([type, count]) => ({ type, count }))
+              .map(([category, count]) => ({ category, count }))
               .sort((a, b) => {
-                const aIndex = priorityOrder.indexOf(a.type);
-                const bIndex = priorityOrder.indexOf(b.type);
+                const aIndex = priorityOrder.indexOf(a.category);
+                const bIndex = priorityOrder.indexOf(b.category);
                 const aPriority = aIndex === -1 ? Infinity : aIndex;
                 const bPriority = bIndex === -1 ? Infinity : bIndex;
                 return aPriority - bPriority;
@@ -196,11 +195,11 @@ export default function Calendar() {
               >
                 <span className="text-lg font-bold">{day}</span>
                 <div className="flex gap-[2px] mt-[2px]">
-                  {displayedEvents.map(({ type, count }) => (
-                    <div key={type} className="flex items-center gap-0.5">
+                  {displayedEvents.map(({ category, count }) => (
+                    <div key={category} className="flex items-center gap-0.5">
                       <span
-                        className={`w-3 h-3 rounded-full ${categoryColors[type] || ""}`}
-                        title={`${type}: ${count} event(s)`}
+                        className={`w-3 h-3 rounded-full ${categoryColors[category] || ""}`}
+                        title={`${category}: ${count} event(s)`}
                       />
                       {count > 1 && (
                         <span className="text-[8px] font-medium text-gray-500">
@@ -222,7 +221,7 @@ export default function Calendar() {
                       {events.map((event, index) => (
                         <li key={index} className="border-b pb-2 last:border-b-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className={`inline-block w-2 h-2 rounded-full ${categoryColors[event.type] || ""}`}></span>
+                            <span className={`inline-block w-2 h-2 rounded-full ${categoryColors[event.category] || ""}`}></span>
                             <span className="font-semibold truncate">{event.title}</span>
                           </div>
                           
@@ -232,7 +231,7 @@ export default function Calendar() {
                             </div>
                           )}
 
-                          {event.type === "Meeting" ? (
+                          {event.category === "Meeting" ? (
                             <>
                               {event.startTime && event.endTime && (
                                 <div className="text-xs text-blue-600">
