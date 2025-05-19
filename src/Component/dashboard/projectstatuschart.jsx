@@ -2,38 +2,9 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
-// Dummy backend-like data for different time periods
-const projectDataMap = {
-  'This Year': {
-    total: 10,
-    data: [
-      { name: 'Completed', value: 5 },
-      { name: 'Pursuing', value: 2 },
-      { name: 'Incomplete', value: 3 },
-    ],
-  },
-  'This Month': {
-    total: 8,
-    data: [
-      { name: 'Completed', value: 4 },
-      { name: 'Pursuing', value: 3 },
-      { name: 'Incomplete', value: 1 },
-    ],
-  },
-  'This Week': {
-    total: 5,
-    data: [
-      { name: 'Completed', value: 2 },
-      { name: 'Pursuing', value: 2 },
-      { name: 'Incomplete', value: 1 },
-    ],
-  },
-};
-
-const COLORS = ['#0000FF', '#FFA500', '#FF0000']; // Blue, Orange, Red
+const COLORS = ['blue', 'orange', 'green'];
 const RADIAN = Math.PI / 180;
 
-// Label inside pie slices
 const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -46,37 +17,86 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
   );
 };
 
-const ProjectStatusChart = ({ selected = 'This Year' }) => {
-  const selectedData = projectDataMap[selected] || projectDataMap['This Year'];
-  const { data, total } = selectedData;
+const getStartDateByPeriod = (today, period) => {
+  const start = new Date(today);
+  switch (period) {
+    case 'This Week':
+      start.setDate(start.getDate() - start.getDay());
+      break;
+    case 'This Month':
+      start.setDate(1);
+      break;
+    case 'This Year':
+    default:
+      start.setMonth(0);
+      start.setDate(1);
+      break;
+  }
+  return start;
+};
+
+const filterTasksByPeriod = (tasks, period) => {
+  if (!tasks || tasks.length === 0) return [];
+  
+  const today = new Date();
+  const startDate = getStartDateByPeriod(today, period);
+
+  return tasks.filter(task => {
+    const taskDate = task.createdAt ? new Date(task.createdAt) : 
+                     task.created_at ? new Date(task.created_at) : null;
+    if (!taskDate) return true;
+    return taskDate >= startDate && taskDate <= today;
+  });
+};
+
+const ProjectStatusChart = ({ selected = 'This Year', tasks = [] }) => {
+  const filteredTasks = filterTasksByPeriod(tasks, selected);
+
+  const statusCount = {
+    Open: 0,
+    'In Progress': 0,
+    Completed: 0,
+  };
+
+  filteredTasks.forEach(task => {
+    if (statusCount[task.status] !== undefined) {
+      statusCount[task.status]++;
+    }
+  });
+
+  const chartData = [
+    { name: 'Open', value: statusCount.Open },
+    { name: 'In Progress', value: statusCount['In Progress'] },
+    { name: 'Completed', value: statusCount.Completed },
+  ];
+
+  const total = filteredTasks.length;
 
   return (
     <div className="w-auto h-[390px] bg-white rounded-2xl shadow-[1px_4px_10px_lightgray] p-4 font-sans relative">
-      {/* Header with legend */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
-      <h2 className='font-medium text-xl'>PROJECTS</h2>
+      <div className="flex justify-between items-start w-full">
+        <h2 className="font-medium text-xl">PROJECTS</h2>
         <div className="text-xs space-y-1">
           <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-blue-600 mr-2" />
+            <div className="w-3 h-3 rounded-full bg-blue-700 mr-2" />
+            Open
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-orange-400 mr-2" />
+            In Progress
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-[#127f2c] mr-2" />
             Completed
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2" />
-            Pursuing
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-red-500 mr-2" />
-            Incomplete
           </div>
         </div>
       </div>
 
-      {/* Chart */}
       <div className="w-full h-56 flex items-center justify-center relative">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
-              data={data}
+              data={chartData}
               cx="50%"
               cy="50%"
               innerRadius={40}
@@ -85,18 +105,21 @@ const ProjectStatusChart = ({ selected = 'This Year' }) => {
               label={renderCustomizedLabel}
               labelLine={false}
             >
-              {data.map((entry, index) => (
+              {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index]} />
               ))}
             </Pie>
           </PieChart>
         </ResponsiveContainer>
 
-        {/* Center Total Label */}
         <div className="absolute text-center">
           <p className="text-sm font-semibold">Total</p>
           <p className="text-2xl font-bold">{total}</p>
         </div>
+      </div>
+
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-center">
+        <p className="text-sm text-gray-500">{selected}</p>
       </div>
     </div>
   );

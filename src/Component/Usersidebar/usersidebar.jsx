@@ -50,7 +50,7 @@ export default function Sidebar() {
   }
 
   return (
-    <div className="fixed min-h-screen w-1/6 bg-gradient-to-b from-[#018ABE] from-15% via-[#65B7D4] to-[#E0E2E3] text-white flex flex-col items-center py-6">
+    <div className="fixed min-h-screen w-1/6 bg-gradient-to-b from-[#018ABE] from-15% via-[#65B7D4] via-80% to-[#E0E2E3] text-white flex flex-col items-center py-6">
       {/* Logo */}
       <div className="flex justify-center mb-3">
         <Image
