@@ -30,7 +30,6 @@ export default function Calendar() {
   const [todayKey, setTodayKey] = useState("");
   const [eventDates, setEventDates] = useState({});
   const underlineRef = useRef(null);
-  const userId = "64b81234567890abcdef1234";
 
   useEffect(() => {
     const today = new Date();
@@ -42,15 +41,15 @@ export default function Calendar() {
   useEffect(() => {
     const fetchCalendarData = async () => {
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_API}/user/calendar/user/${userId}`
-        );
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/user/calendar/user/`, {
+          method: "GET",
+          credentials: "include", // ✅ this is correct instead of `withcredentials`
+        });
         const data = await res.json();
-        
         const groupedEvents = data.reduce((acc, item) => {
           const eventDate = new Date(item.date);
           const dateKey = `${eventDate.getUTCFullYear()}-${String(eventDate.getUTCMonth() + 1).padStart(2, "0")}-${String(eventDate.getUTCDate()).padStart(2, "0")}`;
-          
+
           const eventData = {
             title: item.title,
             description: item.description,
@@ -78,7 +77,7 @@ export default function Calendar() {
 
   const formatTime = (timeString) => {
     if (!timeString) return "";
-    const [hours, minutes] = timeString.includes(" ") 
+    const [hours, minutes] = timeString.includes(" ")
       ? timeString.split(" ")[0].split(":")
       : timeString.split(":");
     const hour = parseInt(hours, 10);
@@ -122,14 +121,14 @@ export default function Calendar() {
             {currentDate.toLocaleString("default", { month: "long", year: "numeric" })}
           </div>
           <div className="flex gap-2">
-            <button 
-              onClick={() => handleMonthChange(-1)} 
+            <button
+              onClick={() => handleMonthChange(-1)}
               className="p-1 rounded hover:bg-gray-200 transition"
             >
               <FiChevronLeft size={20} />
             </button>
-            <button 
-              onClick={() => handleMonthChange(1)} 
+            <button
+              onClick={() => handleMonthChange(1)}
               className="p-1 rounded hover:bg-gray-200 transition"
             >
               <FiChevronRight size={20} />
@@ -148,8 +147,8 @@ export default function Calendar() {
 
         <div className="grid grid-cols-7 gap-1 mt-2">
           {Array.from({ length: firstDay }).map((_, i) => (
-            <div 
-              key={`start-${i}`} 
+            <div
+              key={`start-${i}`}
               className="h-16 rounded-lg bg-[#f2f4ff] shadow-sm text-xs text-gray-400 flex items-center justify-center"
             >
               <span className="invisible">0</span>
@@ -224,7 +223,7 @@ export default function Calendar() {
                             <span className={`inline-block w-2 h-2 rounded-full ${categoryColors[event.category] || ""}`}></span>
                             <span className="font-semibold truncate">{event.title}</span>
                           </div>
-                          
+
                           {event.description && (
                             <div className="text-xs text-gray-500 mb-1">
                               {event.description}
@@ -243,7 +242,7 @@ export default function Calendar() {
                                   <span className="font-medium">Participants:</span>
                                   <div className="flex flex-wrap gap-1 mt-1">
                                     {event.participants.map((participant, pIdx) => (
-                                      <span 
+                                      <span
                                         key={pIdx}
                                         className="px-2 py-1 bg-gray-100 rounded-full text-xs"
                                       >
@@ -278,8 +277,8 @@ export default function Calendar() {
           })}
 
           {Array.from({ length: endOffset }).map((_, i) => (
-            <div 
-              key={`end-${i}`} 
+            <div
+              key={`end-${i}`}
               className="h-16 rounded-lg bg-[#f2f4ff] shadow-sm text-xs text-gray-400 flex items-center justify-center"
             >
               <span className="invisible">0</span>

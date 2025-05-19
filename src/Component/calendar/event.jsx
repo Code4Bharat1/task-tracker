@@ -67,7 +67,6 @@ export default function TaskPage() {
   
   const timeButtonRef = useRef(null);
   const dropdownRef = useRef(null);
-  const userId = "64b81234567890abcdef1234"; // Replace with dynamic user ID
 
   // ... Keep existing useEffect hooks and time options generator
 
@@ -93,7 +92,6 @@ export default function TaskPage() {
       const formattedTime = `${parseInt(hours, 10) % 12 || 12}:${minutes} ${hours >= 12 ? 'PM' : 'AM'}`;
 
       const taskData = {
-        userId,
         type: "Task",
         title,
         description,
@@ -103,6 +101,7 @@ export default function TaskPage() {
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/user/calendar`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(taskData),
       });

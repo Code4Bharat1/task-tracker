@@ -22,7 +22,7 @@ export default function Home() {
        <NavBar/>
 
         {/* Page Content */}
-        <main className="px-6 py-6">
+        <main className="px-6 py-6 overflow-x-hidden">
 <CalendarPage/>
 </main>
      

@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { TbCalendarPlus } from "react-icons/tb";
+import { FiX } from "react-icons/fi";
 import TaskForm from "./createtask";
 import TaskPage from "./event";
 import SchedualPage from "./schedual";
@@ -17,6 +18,15 @@ const categoryColors = {
   Leaves: "bg-yellow-400",
   Other: "bg-orange-400",
 };
+
+const priorityOrder = [
+  "Daily Task",
+  "Meeting",
+  "Reminder",
+  "Deadline",
+  "Leaves",
+  "Other",
+];
 
 const tabs = [
   {
@@ -54,10 +64,13 @@ export default function CalendarPage() {
   const [todayKey, setTodayKey] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showDayModal, setShowDayModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedDateEvents, setSelectedDateEvents] = useState([]);
   const [activeTab, setActiveTab] = useState("Task");
   const [eventDates, setEventDates] = useState({});
   const dropdownRef = useRef(null);
-  const userId = "64b81234567890abcdef1234"; // Replace with actual user ID
+  const userId = "6648f3b1a7c2d504d8b0dabc"; // Replace with actual user ID
 
   useEffect(() => {
     const today = new Date();
@@ -82,9 +95,19 @@ export default function CalendarPage() {
             eventDate.getUTCDate()
           ).padStart(2, "0")}`;
           
+          const eventData = {
+            title: item.title,
+            description: item.description,
+            participants: item.participants || [],
+            time: item.time ? formatTime(item.time) : null,
+            startTime: item.startTime ? formatTime(item.startTime) : null,
+            endTime: item.endTime ? formatTime(item.endTime) : null,
+            category: item.category || item.type // Support both category and type fields
+          };
+
           return {
             ...acc,
-            [dateKey]: [...(acc[dateKey] || []), item.type]
+            [dateKey]: [...(acc[dateKey] || []), eventData]
           };
         }, {});
 
@@ -96,6 +119,17 @@ export default function CalendarPage() {
 
     fetchCalendarData();
   }, [currentDate]);
+
+  const formatTime = (timeString) => {
+    if (!timeString) return "";
+    const [hours, minutes] = timeString.includes(" ") 
+      ? timeString.split(" ")[0].split(":")
+      : timeString.split(":");
+    const hour = parseInt(hours, 10);
+    const period = hour >= 12 ? "PM" : "AM";
+    const twelveHour = hour % 12 || 12;
+    return `${twelveHour}:${minutes} ${period}`;
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -111,6 +145,22 @@ export default function CalendarPage() {
 
   const handleMonthChange = (direction) => {
     setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + direction));
+  };
+
+  const handleDateClick = (dateKey, events) => {
+    setSelectedDate(dateKey);
+    setSelectedDateEvents(events);
+    setShowDayModal(true);
+  };
+
+  const formatDateForDisplay = (dateKey) => {
+    const date = new Date(dateKey);
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric',
+      month: 'long', 
+      day: 'numeric' 
+    });
   };
 
   const month = currentDate.getMonth();
@@ -155,8 +205,24 @@ export default function CalendarPage() {
 
       {/* Calendar */}
       <div className="bg-white rounded-xl shadow p-4">
-        <div className="text-xl font-bold text-gray-800 mb-4 text-center">
-          {currentDate.toLocaleString("default", { month: "long", year: "numeric" })}
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-xl font-bold text-gray-800">
+            {currentDate.toLocaleString("default", { month: "long", year: "numeric" })}
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => handleMonthChange(-1)} 
+              className="p-2 rounded hover:bg-gray-200 transition"
+            >
+              <FiChevronLeft size={20} />
+            </button>
+            <button 
+              onClick={() => handleMonthChange(1)} 
+              className="p-2 rounded hover:bg-gray-200 transition"
+            >
+              <FiChevronRight size={20} />
+            </button>
+          </div>
         </div>
 
         <div className="py-6">
@@ -183,21 +249,87 @@ export default function CalendarPage() {
             const isSunday = weekday === 0;
             const isToday = dateKey === todayKey;
 
+            // Group events by category
+            const groupedEvents = events.reduce((acc, event) => {
+              acc[event.category] = (acc[event.category] || 0) + 1;
+              return acc;
+            }, {});
+
+            // Sort by priority
+            const sortedEvents = Object.entries(groupedEvents)
+              .map(([category, count]) => ({ category, count }))
+              .sort((a, b) => {
+                const aIndex = priorityOrder.indexOf(a.category);
+                const bIndex = priorityOrder.indexOf(b.category);
+                const aPriority = aIndex === -1 ? Infinity : aIndex;
+                const bPriority = bIndex === -1 ? Infinity : bIndex;
+                return aPriority - bPriority;
+              });
+
+            const displayedEvents = sortedEvents.slice(0, 5);
+            const remainingTypes = Math.max(sortedEvents.length - 5, 0);
+
             let bgClass = "bg-[#f2f4ff] text-black";
             if (isSunday) bgClass = "bg-sky-400 text-white";
             if (isToday) bgClass = "bg-black text-white";
 
             return (
-              <Link key={day} href={`/day-view?date=${dateKey}`}>
-                <div className={`h-20 rounded-xl flex flex-col justify-center items-center text-sm font-medium shadow-sm cursor-pointer hover:bg-sky-400 transition ${bgClass}`}>
-                  <span>{day}</span>
-                  <div className="flex gap-1 mt-1">
-                    {events.map((event, idx) => (
-                      <span key={idx} className={`w-4 h-4 rounded-sm ${categoryColors[event] || ""} hover:opacity-75`}></span>
-                    ))}
-                  </div>
+              <div 
+                key={day} 
+                onClick={() => handleDateClick(dateKey, events)}
+                className={`group relative h-20 rounded-xl flex flex-col justify-center items-center text-sm font-medium shadow-sm cursor-pointer hover:bg-sky-400 transition ${bgClass}`}
+              >
+                <span className="text-lg font-bold">{day}</span>
+                <div className="flex gap-1 mt-1">
+                  {displayedEvents.map(({ category, count }) => (
+                    <div key={category} className="flex items-center gap-0.5">
+                      <span
+                        className={`w-4 h-4 rounded-sm ${categoryColors[category] || ""}`}
+                        title={`${category}: ${count} event(s)`}
+                      />
+                      {count > 1 && (
+                        <span className="text-xs font-medium text-gray-200">
+                          +{count - 1}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                  {remainingTypes > 0 && (
+                    <span className="text-xs font-medium text-gray-200 ml-0.5">
+                      +{remainingTypes}
+                    </span>
+                  )}
                 </div>
-              </Link>
+
+                {/* Hover Tooltip */}
+                {events.length > 0 && (
+                  <div className="absolute z-50 bottom-full mb-2 w-64 bg-white text-gray-700 text-sm shadow-xl rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none left-1/2 transform -translate-x-1/2">
+                    <div className="text-lg font-bold mb-2 text-gray-800">
+                      {formatDateForDisplay(dateKey)}
+                    </div>
+                    <ul className="space-y-2 max-h-48 overflow-y-auto">
+                      {events.slice(0, 3).map((event, index) => (
+                        <li key={index} className="border-b pb-2 last:border-b-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`inline-block w-3 h-3 rounded-sm ${categoryColors[event.category] || ""}`}></span>
+                            <span className="font-semibold truncate">{event.title}</span>
+                          </div>
+                          {event.time && (
+                            <div className="text-xs text-blue-600">
+                              🕒 {event.time}
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                      {events.length > 3 && (
+                        <div className="text-xs text-gray-500 text-center pt-1">
+                          +{events.length - 3} more events. Click to view all.
+                        </div>
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </div>
             );
           })}
 
@@ -209,44 +341,8 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {/* Categories + Create Button */}
-      <div className="flex flex-col md:flex-row items-start justify-between bg-white p-4 rounded-xl shadow-md mt-6 gap-4">
-        <div>
-          <h2 className="text-xl font-bold mb-2">Categories</h2>
-          <div className="flex gap-10 text-sm font-medium">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-4 bg-blue-600 rounded-sm"></span> Daily Task
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-4 bg-red-500 rounded-sm"></span> Meeting
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-4 bg-green-500 rounded-sm"></span> Reminder
-              </div>
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-4 bg-purple-600 rounded-sm"></span> Deadline
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-4 bg-yellow-400 rounded-sm"></span> Leaves
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Create Button */}
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-[#058CBF] text-white font-bold px-5 py-2 rounded-lg drop-shadow-lg hover:bg-[#0b7bab] transition"
-        >
-          <TbCalendarPlus className="h-5 w-5 text-black" />
-          CREATE
-        </button>
-      </div>
-
-      {/* Modal */}
+      
+      {/* Create Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-md bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-6 relative">
@@ -274,6 +370,117 @@ export default function CalendarPage() {
             {/* Tab Content */}
             <div className="space-y-3">
               {tabs.find((tab) => tab.key === activeTab)?.content}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Day Detail Modal */}
+      {showDayModal && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-md bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white w-full max-w-2xl rounded-xl shadow-lg p-6 relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowDayModal(false)}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition"
+            >
+              <FiX size={20} className="text-gray-500" />
+            </button>
+
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                {formatDateForDisplay(selectedDate)}
+              </h2>
+              <p className="text-gray-600">
+                {selectedDateEvents.length} {selectedDateEvents.length === 1 ? 'event' : 'events'} scheduled
+              </p>
+            </div>
+
+            {selectedDateEvents.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-gray-400 text-lg mb-2">No events scheduled</div>
+                <p className="text-gray-500">This day is free from any scheduled events.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {selectedDateEvents.map((event, index) => (
+                  <div key={index} className="border rounded-lg p-4 hover:bg-gray-50 transition">
+                    <div className="flex items-start gap-3">
+                      <span className={`inline-block w-4 h-4 rounded-sm mt-1 ${categoryColors[event.category] || ""}`}></span>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg text-gray-800 mb-1">
+                          {event.title}
+                        </h3>
+                        
+                        {event.description && (
+                          <p className="text-gray-600 mb-2">
+                            {event.description}
+                          </p>
+                        )}
+
+                        <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium">Category:</span>
+                            <span className={`px-2 py-1 rounded-full text-white text-xs ${categoryColors[event.category] || "bg-gray-400"}`}>
+                              {event.category}
+                            </span>
+                          </div>
+
+                          {event.category === "Meeting" ? (
+                            <>
+                              {event.startTime && event.endTime && (
+                                <div className="flex items-center gap-1">
+                                  <span className="font-medium">Time:</span>
+                                  <span>{event.startTime} - {event.endTime}</span>
+                                </div>
+                              )}
+                              {event.participants?.length > 0 && (
+                                <div className="w-full mt-2">
+                                  <span className="font-medium text-gray-700">Participants:</span>
+                                  <div className="flex flex-wrap gap-2 mt-1">
+                                    {event.participants.map((participant, pIdx) => (
+                                      <span 
+                                        key={pIdx}
+                                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs"
+                                      >
+                                        {participant}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            event.time && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">Time:</span>
+                                <span>{event.time}</span>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-6 pt-4 border-t flex justify-end gap-3">
+              <button
+                onClick={() => setShowDayModal(false)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  setShowDayModal(false);
+                  setShowModal(true);
+                }}
+                className="px-4 py-2 bg-[#058CBF] text-white rounded-lg hover:bg-[#0b7bab] transition"
+              >
+                Add Event
+              </button>
             </div>
           </div>
         </div>

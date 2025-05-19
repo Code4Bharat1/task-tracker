@@ -25,7 +25,6 @@ export default function TaskForm({ onSave, onClose, selectedDate }) {
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [date, setDate] = useState(selectedDate ? new Date(selectedDate) : new Date());
   const [remindBefore, setRemindBefore] = useState(15);
-  const userId = "64b81234567890abcdef1234"; // Replace with dynamic user ID
 
   const categories = ["Daily Task", "Reminder", "Deadline", "Leaves", "Other"];
 
@@ -44,7 +43,6 @@ export default function TaskForm({ onSave, onClose, selectedDate }) {
     }
 
     const taskData = {
-      userId,
       type: "Event",
       title: note,
       description: "", // Add description field if needed
@@ -58,6 +56,7 @@ export default function TaskForm({ onSave, onClose, selectedDate }) {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/user/calendar`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
