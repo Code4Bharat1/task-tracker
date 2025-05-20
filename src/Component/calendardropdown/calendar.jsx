@@ -30,7 +30,7 @@ export default function Calendar() {
   const [todayKey, setTodayKey] = useState("");
   const [eventDates, setEventDates] = useState({});
   const underlineRef = useRef(null);
-
+const calType = "Monthly";
   useEffect(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -41,7 +41,7 @@ export default function Calendar() {
   useEffect(() => {
     const fetchCalendarData = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/user/calendar/user/`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/admin/calendar/user/${calType}`, {
           method: "GET",
           credentials: "include", // ✅ this is correct instead of `withcredentials`
         });

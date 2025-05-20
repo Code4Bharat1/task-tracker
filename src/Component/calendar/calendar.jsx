@@ -70,7 +70,7 @@ export default function CalendarPage() {
   const [activeTab, setActiveTab] = useState("Task");
   const [eventDates, setEventDates] = useState({});
   const dropdownRef = useRef(null);
-   // Replace with actual user ID
+  // Replace with actual user ID
 
   useEffect(() => {
     const today = new Date();
@@ -85,19 +85,19 @@ export default function CalendarPage() {
     const fetchCalendarData = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/calendar/user/`,{
-            method: "GET",
-            credentials: "include",
-          }
+          `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/calendar/user/`, {
+          method: "GET",
+          credentials: "include",
+        }
         );
         const data = await res.json();
-        
+
         const groupedEvents = data.reduce((acc, item) => {
           const eventDate = new Date(item.date);
           const dateKey = `${eventDate.getUTCFullYear()}-${String(eventDate.getUTCMonth() + 1).padStart(2, "0")}-${String(
             eventDate.getUTCDate()
           ).padStart(2, "0")}`;
-          
+
           const eventData = {
             title: item.title,
             description: item.description,
@@ -125,7 +125,7 @@ export default function CalendarPage() {
 
   const formatTime = (timeString) => {
     if (!timeString) return "";
-    const [hours, minutes] = timeString.includes(" ") 
+    const [hours, minutes] = timeString.includes(" ")
       ? timeString.split(" ")[0].split(":")
       : timeString.split(":");
     const hour = parseInt(hours, 10);
@@ -158,11 +158,11 @@ export default function CalendarPage() {
 
   const formatDateForDisplay = (dateKey) => {
     const date = new Date(dateKey);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
       year: 'numeric',
-      month: 'long', 
-      day: 'numeric' 
+      month: 'long',
+      day: 'numeric'
     });
   };
 
@@ -213,14 +213,14 @@ export default function CalendarPage() {
             {currentDate.toLocaleString("default", { month: "long", year: "numeric" })}
           </div>
           <div className="flex gap-2">
-            <button 
-              onClick={() => handleMonthChange(-1)} 
+            <button
+              onClick={() => handleMonthChange(-1)}
               className="p-2 rounded hover:bg-gray-200 transition"
             >
               <FiChevronLeft size={20} />
             </button>
-            <button 
-              onClick={() => handleMonthChange(1)} 
+            <button
+              onClick={() => handleMonthChange(1)}
               className="p-2 rounded hover:bg-gray-200 transition"
             >
               <FiChevronRight size={20} />
@@ -277,8 +277,8 @@ export default function CalendarPage() {
             if (isToday) bgClass = "bg-black text-white";
 
             return (
-              <div 
-                key={day} 
+              <div
+                key={day}
                 onClick={() => handleDateClick(dateKey, events)}
                 className={`group relative h-20 rounded-xl flex flex-col justify-center items-center text-sm font-medium shadow-sm cursor-pointer hover:bg-sky-400 transition ${bgClass}`}
               >
@@ -344,7 +344,7 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      
+
       {/* Create Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-md bg-opacity-50 flex items-center justify-center z-50">
@@ -413,7 +413,7 @@ export default function CalendarPage() {
                         <h3 className="font-semibold text-lg text-gray-800 mb-1">
                           {event.title}
                         </h3>
-                        
+
                         {event.description && (
                           <p className="text-gray-600 mb-2">
                             {event.description}
@@ -441,7 +441,7 @@ export default function CalendarPage() {
                                   <span className="font-medium text-gray-700">Participants:</span>
                                   <div className="flex flex-wrap gap-2 mt-1">
                                     {event.participants.map((participant, pIdx) => (
-                                      <span 
+                                      <span
                                         key={pIdx}
                                         className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs"
                                       >
