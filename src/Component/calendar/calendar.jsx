@@ -70,7 +70,7 @@ export default function CalendarPage() {
   const [activeTab, setActiveTab] = useState("Task");
   const [eventDates, setEventDates] = useState({});
   const dropdownRef = useRef(null);
-  const userId = "6648f3b1a7c2d504d8b0dabc"; // Replace with actual user ID
+   // Replace with actual user ID
 
   useEffect(() => {
     const today = new Date();
@@ -85,7 +85,10 @@ export default function CalendarPage() {
     const fetchCalendarData = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/calendar/user/${userId}`
+          `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/calendar/user/`,{
+            method: "GET",
+            credentials: "include",
+          }
         );
         const data = await res.json();
         
