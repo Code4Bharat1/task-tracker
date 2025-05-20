@@ -1,13 +1,12 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
-
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
 
 /* Add this CSS to style the custom left and right borders */
 .custom-border-left {
   position: absolute;
   top: 50%; /* Center the border vertically */
   left: 0;
-  width: 1px; /* Border width */
+  width: 0.5px; /* Border width */
   height: 20px; /* Set the custom height for the border */
   background-color: gray; /* Border color */
   transform: translateY(-50%); /* Adjust to truly center it */
@@ -18,14 +17,12 @@
   position: absolute;
   bottom: 50%; /* Center the border vertically */
   left: 0;
-  width: 1px;
+  width: 0.5px;
   height: 20px; /* Set the custom height for the border */
-  background-color:lightgray; /* Border color */
+  background-color: lightgray; /* Border color */
   transform: translateY(50%); /* Adjust to truly center it */
 }
 
-
-
 .font-poppins {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
 }

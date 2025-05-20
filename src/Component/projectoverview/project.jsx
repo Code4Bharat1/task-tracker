@@ -3,6 +3,7 @@
 import React from "react";
 import { PieChart, Pie, Cell, Tooltip } from "recharts";
 import { CheckCircle, Circle, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 // Chart Data
 const demoDataMap = {
@@ -56,7 +57,9 @@ const TaskCompletedChart = ({ selected = "This Year" }) => {
 
       <div className="relative w-full h-[250px] flex justify-center items-center">
         <div className="absolute inset-0 flex items-center justify-center z-10">
-          <div className="text-4xl font-bold text-gray-800">{completeValue}%</div>
+          <div className="text-4xl font-bold text-gray-800">
+            {completeValue}%
+          </div>
         </div>
 
         <PieChart width={300} height={300}>
@@ -101,16 +104,16 @@ const TeamMemberCard = ({ name, role, imageIndex }) => {
 };
 
 // Project Status Button Component
-const ProjectStatusButton = ({ icon, color, label }) => {
+const ProjectStatusButton = ({ icon, color, label, filterType }) => {
   return (
-    <button 
-      className={`flex items-center gap-3 px-6 py-3 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 shadow-sm transition-all hover:shadow-md w-full`}
-    >
-      <div className={`flex-shrink-0 text-${color}-500`}>
-        {icon}
-      </div>
-      <span className="font-medium text-gray-800">{label}</span>
-    </button>
+    <Link href={`/projects?filter=${filterType}`}>
+      <button
+        className={`flex items-center gap-3 px-6 py-3 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 shadow-sm transition-all hover:shadow-md w-full`}
+      >
+        <div className={`flex-shrink-0 text-${color}-500`}>{icon}</div>
+        <span className="font-medium text-gray-800">{label}</span>
+      </button>
+    </Link>
   );
 };
 
@@ -123,28 +126,34 @@ export default function ProjectOverview() {
           <h1 className="text-3xl font-bold text-gray-800 mb-2 border-b-4 border-orange-500 inline-block pb-1">
             Project Overview
           </h1>
-          <p className="text-xl font-semibold text-gray-700 mt-2">GKCC Website</p>
+          <p className="text-xl font-semibold text-gray-700 mt-2">
+            GKCC Website
+          </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div className="bg-white p-6 rounded-xl shadow-md">
-          <p className="text-lg font-bold text-gray-800 mb-4">Project Assigned By</p>
-          <TeamMemberCard 
-            name="Shubham Prajapati" 
-            role="Project Manager" 
-            imageIndex={1} 
+          <p className="text-lg font-bold text-gray-800 mb-4">
+            Project Assigned By
+          </p>
+          <TeamMemberCard
+            name="Shubham Prajapati"
+            role="Project Manager"
+            imageIndex={1}
           />
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-md">
-          <p className="text-lg font-bold text-gray-800 mb-4">Project Timeline</p>
+          <p className="text-lg font-bold text-gray-800 mb-4">
+            Project Timeline
+          </p>
           <div className="flex items-center justify-between text-center py-2">
             <div className="text-center">
               <p className="text-gray-600 mb-1">05 May 2025</p>
               <p className="text-xl font-bold text-gray-800">Start</p>
             </div>
-            
+
             <div className="flex-1 px-4 flex justify-center">
               <div className="flex items-center">
                 <div className="h-1 w-16 bg-blue-500"></div>
@@ -152,7 +161,7 @@ export default function ProjectOverview() {
                 <div className="h-1 w-16 bg-blue-500"></div>
               </div>
             </div>
-            
+
             <div className="text-center">
               <p className="text-gray-600 mb-1">16 May 2025</p>
               <p className="text-xl font-bold text-gray-800">End</p>
@@ -177,20 +186,23 @@ export default function ProjectOverview() {
 
       <div className="bg-white p-6 rounded-xl shadow-md">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <ProjectStatusButton 
-            icon={<CheckCircle size={22} />} 
-            color="green" 
-            label="Past Projects" 
+          <ProjectStatusButton
+            icon={<CheckCircle size={22} />}
+            color="green"
+            label="Past Projects"
+            filterType="past"
           />
-          <ProjectStatusButton 
-            icon={<Circle size={22} className="fill-blue-500" />} 
-            color="blue" 
-            label="Current Projects" 
+          <ProjectStatusButton
+            icon={<Circle size={22} className="fill-blue-500" />}
+            color="blue"
+            label="Current Projects"
+            filterType="current"
           />
-          <ProjectStatusButton 
-            icon={<Circle size={22} className="fill-orange-500" />} 
-            color="orange" 
-            label="Upcoming Projects" 
+          <ProjectStatusButton
+            icon={<Circle size={22} className="fill-orange-500" />}
+            color="orange"
+            label="Upcoming Projects"
+            filterType="upcoming"
           />
         </div>
       </div>
