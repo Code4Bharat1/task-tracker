@@ -32,7 +32,7 @@ export default function Expense() {
                 ease: "power3.out"
             });
         }
-        
+
         if (historyBtnRef.current) {
             gsap.from(historyBtnRef.current, {
                 opacity: 0,
@@ -55,7 +55,9 @@ export default function Expense() {
         description: '',
         paymentMethod: '',
         file: null,
-        fileName: 'No file chosen'
+        fileName: 'No file chosen',
+        filePublicId: null,
+        fileResourceType: null,
     }]);
 
     const [toast, setToast] = useState({ show: false, type: '', message: '' });
@@ -76,7 +78,9 @@ export default function Expense() {
             description: '',
             paymentMethod: '',
             file: null,
-            fileName: 'No file chosen'
+            fileName: 'No file chosen',
+            filePublicId: null,
+            fileResourceType: null,
         }]);
 
         // Animate the new form entry
@@ -119,7 +123,8 @@ export default function Expense() {
                 exp.id === id ? {
                     ...exp,
                     file: file,
-                    fileName: file.name
+                    fileName: file.name,
+
                 } : exp
             ));
         }
@@ -130,7 +135,9 @@ export default function Expense() {
             exp.id === id ? {
                 ...exp,
                 file: null,
-                fileName: 'No file chosen'
+                fileName: 'No file chosen',
+                filePublicId: null,
+                fileResourceType: null
             } : exp
         ));
         // Reset file input
@@ -174,19 +181,19 @@ export default function Expense() {
                                 'Content-Type': 'multipart/form-data',
                             },
                         });
-
                         // If successful, add the Cloudinary file info to documents
                         if (uploadResponse.data && uploadResponse.data.fileUrl) {
                             documents.push({
                                 fileName: uploadResponse.data.fileName,
                                 fileUrl: uploadResponse.data.fileUrl,
-                                publicId: uploadResponse.data.publicId, // Store Cloudinary public ID
+                                filePublicId: uploadResponse.data.publicId, // Store Cloudinary public ID
                                 format: uploadResponse.data.format,
-                                resourceType: uploadResponse.data.resourceType
+                                fileResourceType: uploadResponse.data.resourceType
                             });
                         }
                     }
 
+                    // console.log('Cloudinary upload response:', uploadResponse.data);
                     // Return expense data in the format expected by backend
                     return {
                         category: exp.category,
@@ -203,7 +210,6 @@ export default function Expense() {
             const response = await axiosInstance.post('/expense/createExpense', {
                 expenses: expensesWithDocs
             });
-
             if (response.status === 201) {
                 // Show success message
                 showToast('success', 'Expenses submitted successfully!');
@@ -217,7 +223,9 @@ export default function Expense() {
                     description: '',
                     paymentMethod: '',
                     file: null,
-                    fileName: 'No file chosen'
+                    fileName: 'No file chosen',
+                    filePublicId: null,
+                    fileResourceType: null,
                 }]);
 
                 // Animation on submit
@@ -268,10 +276,10 @@ export default function Expense() {
                         className="absolute left-0 bottom-0 h-[3px] bg-cyan-500 w-full scale-x-0"
                     ></span>
                 </div>
-                
+
                 {/* History Button */}
                 <Link href="/expense/expenseHistory">
-                    <div 
+                    <div
                         ref={historyBtnRef}
                         className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-2 rounded-lg transition-colors shadow-sm border border-blue-200"
                     >
