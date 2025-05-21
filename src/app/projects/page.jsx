@@ -1,15 +1,13 @@
+import React, { Suspense } from "react";
 import NavBar from "@/Component/Navbar/navbar";
-
 import AllProject from "@/Component/projectoverview/allproject";
 import Sidebar from "@/Component/Usersidebar/usersidebar";
-
-import React from "react";
 
 function Home() {
   return (
     <div className="min-h-screen md:flex bg-white">
       {/* Desktop Sidebar Section (visible on md+) */}
-      <div className="md:w-1/6 ">
+      <div className="md:w-1/6">
         <Sidebar />
       </div>
 
@@ -18,7 +16,9 @@ function Home() {
         {/* Desktop Navbar (hidden on mobile) */}
         <NavBar />
         <div>
-          <AllProject />
+          <Suspense fallback={<div className="p-4 text-gray-500">Loading projects...</div>}>
+            <AllProject />
+          </Suspense>
         </div>
       </div>
     </div>
