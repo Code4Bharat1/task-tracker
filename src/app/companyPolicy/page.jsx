@@ -12,16 +12,16 @@ function page() {
 
             {/* Desktop Sidebar Section (visible on md+) */}
             <div className="md:w-1/6 ">
-               <Sidebar/>
+                <Sidebar />
             </div>
 
             {/* Main Content */}
             <div className="w-full md:w-5/6 md:flex-1 h-screen bg-white">
                 {/* Desktop Navbar (hidden on mobile) */}
-              <NavBar/>
-<div>
-    <Companypolicy/>
-</div>
+                <NavBar />
+                <div>
+                    <Companypolicy />
+                </div>
 
             </div>
 

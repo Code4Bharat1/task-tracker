@@ -412,7 +412,7 @@ export default function Timeline() {
         }
     };
 
-    const handleEditTimesheet = () => router.push("/edittimesheet");
+    const handleEditTimesheet = () => router.push("/timesheet/edittimesheet");
     const handleAddTask = () => router.push("/task");
 
     const totalMinutes = parseInt(totalTime.split(":")[0]) * 60 + parseInt(totalTime.split(":")[1]);
