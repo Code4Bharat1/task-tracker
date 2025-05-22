@@ -10,6 +10,15 @@ import {
   Info,
   Mail,
   FileText,
+  Bell,
+  Calendar,
+  Briefcase,
+  Users,
+  CheckSquare,
+  Gift,
+  Heart,
+  AlertTriangle,
+  Plane,
 } from "lucide-react";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import EventForm from "./EventForm";
@@ -37,8 +46,10 @@ export default function PersonalCalendar() {
     reminderTime: "15",
   });
 
-  // Refs and animations
+  // Refs for auto-close functionality
   const underlineRef = useRef(null);
+  const hoverCloseTimer = useRef(null);
+
   useGSAP(() => {
     gsap.fromTo(
       underlineRef.current,
@@ -46,6 +57,22 @@ export default function PersonalCalendar() {
       { width: "100%", duration: 1, ease: "power2.out" }
     );
   }, []);
+
+  // Auto-close functions for hover tooltips
+  const startHoverAutoClose = () => {
+    if (hoverCloseTimer.current) {
+      clearTimeout(hoverCloseTimer.current);
+    }
+    hoverCloseTimer.current = setTimeout(() => {
+      setHoveredDay(null);
+    }, 3000);
+  };
+
+  const clearHoverAutoClose = () => {
+    if (hoverCloseTimer.current) {
+      clearTimeout(hoverCloseTimer.current);
+    }
+  };
 
   // Load data from localStorage
   useEffect(() => {
@@ -57,6 +84,24 @@ export default function PersonalCalendar() {
   useEffect(() => {
     localStorage.setItem("calendarEvents", JSON.stringify(events));
   }, [events]);
+
+  // Auto-close hover tooltip after 3 seconds
+  useEffect(() => {
+    if (hoveredDay) {
+      startHoverAutoClose();
+    } else {
+      clearHoverAutoClose();
+    }
+
+    return () => clearHoverAutoClose();
+  }, [hoveredDay]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      clearHoverAutoClose();
+    };
+  }, []);
 
   // Helper functions
   function formatDate(date) {
@@ -144,12 +189,20 @@ export default function PersonalCalendar() {
       eventTitle = `Meeting with ${formData.email}`;
     }
 
+    // Set the category based on activeTab for Events
+    let eventCategory = formData.category;
+    if (activeTab === "Event") {
+      eventCategory = formData.category; // Use the selected category (Reminder, Leaves, Deadline)
+    } else {
+      eventCategory = activeTab; // For Daily Task and Schedule Meeting, use the tab name
+    }
+
     const newEvent = {
       id: Date.now(),
       ...formData,
       title: eventTitle,
       type: activeTab,
-      category: activeTab,
+      category: eventCategory,
     };
 
     setEvents([...events, newEvent]);
@@ -177,8 +230,14 @@ export default function PersonalCalendar() {
     setSelectedDate(newDate);
   };
 
-  const handleDayHover = (day) => setHoveredDay(day);
-  const handleDayLeave = () => setHoveredDay(null);
+  const handleDayHover = (day) => {
+    clearHoverAutoClose(); // Clear any existing timer
+    setHoveredDay(day);
+  };
+
+  const handleDayLeave = () => {
+    startHoverAutoClose(); // Start the auto-close timer
+  };
 
   const prevMonth = () =>
     setCurrentDate(
@@ -261,13 +320,54 @@ export default function PersonalCalendar() {
     return events.filter((event) => event.date === formattedDate);
   };
 
-  // Category colors
+  // Category colors and configurations
+  const categoryConfig = {
+    Reminder: {
+      color: "#10B981",
+      bg: "#ECFDF5",
+      border: "#A7F3D0",
+      icon: Bell,
+    },
+    Deadline: {
+      color: "#8B5CF6",
+      bg: "#F3E8FF",
+      border: "#C4B5FD",
+      icon: AlertTriangle,
+    },
+    Leaves: {
+      color: "#EF4444",
+      bg: "#FEF2F2",
+      border: "#FECACA",
+      icon: Plane,
+    },
+    "Schedule Meeting": {
+      color: "#DC2626",
+      bg: "#FEF2F2",
+      border: "#FECACA",
+      icon: Users,
+    },
+    "Daily Task": {
+      color: "#3B82F6",
+      bg: "#EFF6FF",
+      border: "#BFDBFE",
+      icon: CheckSquare,
+    },
+
+    Birthday: {
+      color: "#EC4899",
+      bg: "#FDF2F8",
+      border: "#FBCFE8",
+      icon: Gift,
+    },
+  };
+
   const categoryDotColors = {
     Reminder: "bg-green-500",
     Deadline: "bg-purple-500",
     Leaves: "bg-red-500",
     "Schedule Meeting": "bg-red-600",
     "Daily Task": "bg-blue-500",
+    Birthday: "bg-pink-500",
   };
 
   // Day styling
@@ -376,26 +476,128 @@ export default function PersonalCalendar() {
                         )}
 
                         {hoveredDay === day && hasEvents(day) && (
-                          <div className="absolute z-10 top-full left-1/2 transform -translate-x-1/2 bg-white p-2 rounded shadow-lg w-48 text-left">
-                            {getEventsForDay(day).map((event, idx) => (
-                              <div
-                                key={idx}
-                                className="mb-2 border-b pb-1 last:border-b-0 last:pb-0"
-                              >
-                                <div className="font-bold text-blue-600">
-                                  {event.title}
+                          <div className="absolute z-50 top-full left-1/2 transform -translate-x-1/2 mt-2 w-72">
+                            <div
+                              className="bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden"
+                              onMouseEnter={clearHoverAutoClose}
+                              onMouseLeave={startHoverAutoClose}
+                            >
+                              <div className="p-4">
+                                <div className="text-sm font-semibold text-gray-500 mb-3 flex items-center">
+                                  <Calendar size={14} className="mr-2" />
+                                  {`${day} ${currentDate.toLocaleDateString(
+                                    "en-US",
+                                    { month: "long" }
+                                  )}`}
                                 </div>
-                                <div className="text-xs text-gray-600 flex items-center">
-                                  <Clock size={12} className="mr-1" />
-                                  {event.startTime && event.endTime
-                                    ? `${event.startTime} - ${event.endTime}`
-                                    : event.time || "All day"}
-                                </div>
-                                <div className="text-xs text-gray-600">
-                                  {event.category || event.type}
+                                <div className="space-y-3 max-h-64 overflow-y-auto">
+                                  {getEventsForDay(day).map((event, idx) => {
+                                    const config =
+                                      categoryConfig[event.category] ||
+                                      categoryConfig[event.type] ||
+                                      categoryConfig.Event;
+                                    const IconComponent = config.icon;
+
+                                    return (
+                                      <div
+                                        key={idx}
+                                        className="group/item hover:scale-105 transition-transform duration-200"
+                                        style={{
+                                          backgroundColor: config.bg,
+                                          borderLeft: `4px solid ${config.color}`,
+                                        }}
+                                      >
+                                        <div className="p-3 rounded-r-lg">
+                                          <div className="flex items-start justify-between">
+                                            <div className="flex-1">
+                                              <div className="flex items-center mb-2">
+                                                <div
+                                                  className="p-1.5 rounded-full mr-3"
+                                                  style={{
+                                                    backgroundColor:
+                                                      config.color + "20",
+                                                  }}
+                                                >
+                                                  <IconComponent
+                                                    size={14}
+                                                    style={{
+                                                      color: config.color,
+                                                    }}
+                                                  />
+                                                </div>
+                                                <div
+                                                  className="font-semibold text-sm"
+                                                  style={{
+                                                    color: config.color,
+                                                  }}
+                                                >
+                                                  {event.title}
+                                                </div>
+                                              </div>
+
+                                              <div className="space-y-1">
+                                                {(event.time ||
+                                                  event.endTime) && (
+                                                  <div className="flex items-center text-xs text-gray-600">
+                                                    <Clock
+                                                      size={12}
+                                                      className="mr-2"
+                                                    />
+                                                    {event.time && event.endTime
+                                                      ? `${event.time} - ${event.endTime}`
+                                                      : event.time || "All day"}
+                                                  </div>
+                                                )}
+
+                                                {event.email && (
+                                                  <div className="flex items-center text-xs text-gray-600">
+                                                    <Mail
+                                                      size={12}
+                                                      className="mr-2"
+                                                    />
+                                                    {event.email}
+                                                  </div>
+                                                )}
+
+                                                <div
+                                                  className="flex items-center text-xs font-medium"
+                                                  style={{
+                                                    color: config.color,
+                                                  }}
+                                                >
+                                                  <div
+                                                    className="w-2 h-2 rounded-full mr-2"
+                                                    style={{
+                                                      backgroundColor:
+                                                        config.color,
+                                                    }}
+                                                  ></div>
+                                                  {event.category || event.type}
+                                                </div>
+                                              </div>
+                                            </div>
+
+                                            {event.description && (
+                                              <div className="ml-2">
+                                                <div className="group/tooltip relative">
+                                                  <FileText
+                                                    size={14}
+                                                    className="text-gray-400 hover:text-gray-600 cursor-help"
+                                                  />
+                                                  <div className="absolute bottom-full right-0 mb-2 w-48 p-2 bg-gray-800 text-white text-xs rounded opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none">
+                                                    {event.description}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </div>
-                            ))}
+                            </div>
                           </div>
                         )}
                       </>
@@ -420,7 +622,7 @@ export default function PersonalCalendar() {
               </div>
               <button
                 onClick={() => setModalOpen(true)}
-                className="w-full bg-[#018ABE] py-2 px-4 rounded-md hover:bg-teal-600 mt-8"
+                className="w-full bg-[#018ABE] py-2 px-4 rounded-md hover:bg-teal-600 mt-8 text-white"
               >
                 CREATE
               </button>
@@ -481,7 +683,7 @@ export default function PersonalCalendar() {
                   Cancel
                 </button>
                 <button
-                  className="bg-[#018ABE]  text-white px-4 py-1 rounded-md"
+                  className="bg-[#018ABE] text-white px-4 py-1 rounded-md"
                   onClick={handleCreateEvent}
                 >
                   {activeTab === "Schedule Meeting" ? "Schedule" : "Create"}
