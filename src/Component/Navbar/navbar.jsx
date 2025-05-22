@@ -9,12 +9,17 @@ import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 
 export default function NavBar() {
-  const [userData, setUserData] = useState({ firstName: "", email: "" });
+  const [userData, setUserData] = useState({
+    firstName: "",
+    email: "",
+    photoUrl: ""
+  });
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMeetingPopup, setShowMeetingPopup] = useState(false);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [imageError, setImageError] = useState(false);
   const notifications = [];
 
   const toggleMeetingPopup = () => {
@@ -36,11 +41,16 @@ export default function NavBar() {
     }
   }
 
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await axiosInstance.get('/profile/getProfile');
         setUserData(response.data);
+        setImageError(false); // Reset image error when new data is fetched
       } catch (error) {
         console.error('Failed to fetch user data:', error);
         toast.error('Failed to fetch user data.');
@@ -49,8 +59,16 @@ export default function NavBar() {
     fetchData();
   }, []);
 
-
   const router = useRouter();
+
+  // Function to get the appropriate image source
+  const getImageSource = () => {
+    if (imageError || !userData.photoUrl) {
+      return "/profile.png"; // Fallback to placeholder
+    }
+    return userData.photoUrl;
+  };
+
   return (
     <div className="bg-gradient-to-r from-[#018ABE] via-[#65B7D4] to-[#E0E2E3] px-6 py-3 flex items-center min-w-full relative">
       <h1 className="text-3xl font-bold text-white absolute left-10 whitespace-nowrap">
@@ -65,13 +83,12 @@ export default function NavBar() {
         {showMeetingPopup && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800/50 backdrop-blur-[1px]"
-            onClick={() => setShowMeetingPopup(false)} // ⬅ closes popup on outside click
+            onClick={() => setShowMeetingPopup(false)}
           >
             <div
               className="bg-white p-8 rounded-lg shadow-md text-center w-full max-w-xl relative"
-              onClick={(e) => e.stopPropagation()} // ⬅ prevents inner click from closing
+              onClick={(e) => e.stopPropagation()}
             >
-
               <h2 className="text-2xl font-bold mb-6 border-b-2 border-black inline-block">
                 SCHEDULE MEETING
               </h2>
@@ -159,13 +176,8 @@ export default function NavBar() {
                   </button>
                 </div>
 
-
-
-
-                {/* Spacer for layout if needed */}
                 <div className="h-16"></div>
 
-                {/* Absolute Create button - outside flow */}
                 <div className="relative">
                   <button
                     onClick={toggleMeetingPopup}
@@ -173,7 +185,8 @@ export default function NavBar() {
                   >
                     Create
                   </button>
-                </div></form>
+                </div>
+              </form>
             </div>
           </div>
         )}
@@ -214,28 +227,30 @@ export default function NavBar() {
             }}
             className="focus:outline-none"
           >
-            <div className="w-10 h-10 rounded-full overflow-hidden border-2  hover:border-gray-300 transition-all">
+            <div className="w-10 h-10 rounded-full overflow-hidden border-2 hover:border-gray-300 transition-all">
               <Image
-                src="/profile.png"
+                src={getImageSource()}
                 width={500}
                 height={500}
                 alt="Profile picture"
                 style={{ objectFit: 'cover' }}
+                onError={handleImageError}
               />
             </div>
           </button>
 
           {showProfileMenu && (
-            <div className="absolute right-0 mt-2 w-64  bg-white rounded-lg shadow-lg z-10">
-              <div className="p-4 ">
+            <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg z-10">
+              <div className="p-4">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 rounded-full overflow-hidden">
                     <Image
-                      src="/profile.png"
+                      src={getImageSource()}
                       width={500}
                       height={500}
                       alt="Profile picture"
                       style={{ objectFit: 'cover' }}
+                      onError={handleImageError}
                     />
                   </div>
                   <div>

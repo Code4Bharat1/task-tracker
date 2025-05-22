@@ -87,17 +87,17 @@ export default function TaskDetails() {
       formData.append('remark', remark);
       if (file) formData.append('attachment', file);
 
-      
-      const response = await axios.post(
-        `http://localhost:4110/api/tasks/${selectedTask._id}/close`,
+
+      const response = await axiosInstance.post(
+        `/api/tasks/${selectedTask._id}/close`,
         formData,
         {
-          withCredentials: true,
           headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+            'Content-Type': 'multipart/form-data',
+          },
         }
       );
+
 
       if (response.data.success) {
         alert("Task closed successfully!");
