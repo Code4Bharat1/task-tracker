@@ -1,6 +1,6 @@
 
 import NavBar from "@/Component/Navbar/navbar";
-import SalarySlipPage from "@/Component/Salary/salaryslip";
+import SalarySlipPage from "@/Component/SalaryPage/Salary/salaryslip";
 import SalaryPage from "@/Component/SalaryPage/SalaryPage";
 
 
