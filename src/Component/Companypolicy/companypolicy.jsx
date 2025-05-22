@@ -11,37 +11,37 @@ const policies = [
     title: "Leave Policy",
     desc: "Our company offers a comprehensive leave policy designed to support the well-being and work-life balance of all employees. Employees are entitled to paid vacation, sick leave, and emergency leaves. We encourage everyone to utilize their time off to recharge and maintain productivity.",
     img: "/policy.png",
-     link: "/policy1"
+     link: "/companyPolicy/policy1"
   },
   {
     title: "Business Travel Policy",
     desc: "A company’s business travel policy outlines the rules, procedures, and expectations for employees traveling on behalf of the organization. It includes booking procedures, reimbursement processes, allowable expenses, and safety guidelines.",
     img: "/business.png",
-     link: "/policy2"
+     link: "/companyPolicy/policy2"
   },
   {
     title: "Health Insurance Policy",
     desc:  "The company offers comprehensive health insurance that covers hospital stays, surgeries, and medical treatments for employees and their immediate family members. Regular health check-ups and wellness programs are also included.",
     img: "/health.png",
-     link: "/policy3"
+     link: "/companyPolicy/policy3"
   },
   {
     title: "Work From Home Policy",
     desc:"Employees need to have completed 6 months of continuous service to be eligible for WFH. WFH is subject to manager approval and availability of necessary equipment. Regular check-ins and performance tracking continue remotely.",
     img: "/home.png",
-     link: "/policy4"
+     link: "/companyPolicy/policy4"
   },
   {
     title: "Employee Conduct Policy",
     desc:  "Employee conduct policies establish the standards of behavior expected from all employees within a company. These include punctuality, professionalism, respect, ethical conduct, and adherence to company rules and laws.",
     img: "/employee.png",
-     link: "/policy5"
+     link: "/companyPolicy/policy5"
   },
   {
     title: "Overtime Policy",
     desc:  "Employees are compensated for working beyond their regular hours in accordance with labor regulations and company guidelines. Overtime work must be pre-approved by managers and is tracked for payroll purposes.",
     img: "/overtime.png",
-    link: "/policy6"
+    link: "/companyPolicy/policy6"
   },
 ];
 export default function Companypolicy() {

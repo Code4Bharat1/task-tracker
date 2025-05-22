@@ -191,41 +191,41 @@ export default function AttendancePage() {
 
   return (
     <>
-     
+
 
       <div className="flex items-center  justify-center mt-15 bg-white p-4">
         <div className="bg-white rounded-xl shadow-md w-full max-w-3xl p-6 border-2 border-gray-300 relative">
-        <div className="flex flex-col mx-4 space-y-4">
-  <button className="bg-[#F4F5FD] px-4 w-30 py-2 text-md rounded-xl shadow-md font-semibold"> 
-    {currentDate}
-  </button>
+          <div className="flex flex-col mx-4 space-y-4">
+            <button className="bg-[#F4F5FD] px-4 w-30 py-2 text-md rounded-xl shadow-md font-semibold">
+              {currentDate}
+            </button>
 
-  <button
-    onClick={() => router.push('/punchhistory')}
-    className="bg-[#058CBF] text-white w-30 whitespace-nowrap px-2 py-2 rounded cursor-pointer hover:bg-[#69b0c9]"
-  >
-    Punch History
-  </button>
-</div>
-<div className="relative -mt-20 mb-8 w-max mx-auto">
-  <h2 className="text-3xl font-medium font-roboto text-gray-700">ATTENDANCE</h2>
-  <span
-    ref={underlineRef}
-    className="absolute left-0 bottom-[-6px] h-[3px] bg-[#058CBF] w-full scale-x-0"
-  ></span>
-</div>
+            <button
+              onClick={() => router.push('/attendance/punchhistory')}
+              className="bg-[#058CBF] text-white w-30 whitespace-nowrap px-2 py-2 rounded cursor-pointer hover:bg-[#69b0c9]"
+            >
+              Punch History
+            </button>
+          </div>
+          <div className="relative -mt-20 mb-8 w-max mx-auto">
+            <h2 className="text-3xl font-medium font-roboto text-gray-700">ATTENDANCE</h2>
+            <span
+              ref={underlineRef}
+              className="absolute left-0 bottom-[-6px] h-[3px] bg-[#058CBF] w-full scale-x-0"
+            ></span>
+          </div>
 
 
-  {/* Spacer */}
-  <div className="flex justify-end    -ml-20 -mt-25  mb-10 items-start w-full h-full pt-4">
-  <div className="w-[70px] h-[70px] rounded-full overflow-hidden flex justify-center items-center">
-    <Image src="/profile.png" alt="avatar" width={70} height={70} />
-  </div>
-</div>
+          {/* Spacer */}
+          <div className="flex justify-end    -ml-20 -mt-25  mb-10 items-start w-full h-full pt-4">
+            <div className="w-[70px] h-[70px] rounded-full overflow-hidden flex justify-center items-center">
+              <Image src="/profile.png" alt="avatar" width={70} height={70} />
+            </div>
+          </div>
 
-  {/* Spacer */}
-  
- 
+          {/* Spacer */}
+
+
 
 
 
@@ -247,26 +247,26 @@ export default function AttendancePage() {
             </div>
 
             <div className="flex justify-center gap-x-10 mt-8 mb-8">
-  <button
-    onClick={handlePunchIn}
-    disabled={hasPunchedIn || isPunchingIn}
-    className="flex  items-center bg-[#058CBF] ml-2 text-lg text-white px-6 py-2 rounded hover:bg-cyan-600 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
-  >
-    <LuAlarmClock className="mr-2" />
-    {isPunchingIn ? 'Punching In...' : 'Punch In'}
-    <TbDoorEnter className="ml-2" />
-  </button>
+              <button
+                onClick={handlePunchIn}
+                disabled={hasPunchedIn || isPunchingIn}
+                className="flex  items-center bg-[#058CBF] ml-2 text-lg text-white px-6 py-2 rounded hover:bg-cyan-600 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <LuAlarmClock className="mr-2" />
+                {isPunchingIn ? 'Punching In...' : 'Punch In'}
+                <TbDoorEnter className="ml-2" />
+              </button>
 
-  <button
-    onClick={handlePunchOut}
-    disabled={!hasPunchedIn || hasPunchedOut || isPunchingOut}
-    className="flex items-center bg-[#058CBF] text-lg  text-white px-6 py-2 rounded hover:bg-cyan-600 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
-  >
-    <LuAlarmClock className="mr-2" />
-    {isPunchingOut ? 'Punching Out...' : 'Punch Out'}
-    <TbDoorExit className="ml-2" />
-  </button>
-</div>
+              <button
+                onClick={handlePunchOut}
+                disabled={!hasPunchedIn || hasPunchedOut || isPunchingOut}
+                className="flex items-center bg-[#058CBF] text-lg  text-white px-6 py-2 rounded hover:bg-cyan-600 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <LuAlarmClock className="mr-2" />
+                {isPunchingOut ? 'Punching Out...' : 'Punch Out'}
+                <TbDoorExit className="ml-2" />
+              </button>
+            </div>
 
 
             <div className="flex items-center gap-2 mb-2">
@@ -274,7 +274,7 @@ export default function AttendancePage() {
               <div className="bg-[#F4F5FD] p-2 rounded-md shadow-md min-w-[80px]">
                 {outTime || '--:--:--'}
               </div>
-             
+
             </div>
 
             <div className="flex items-center gap-2">

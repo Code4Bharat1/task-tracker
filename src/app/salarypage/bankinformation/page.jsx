@@ -1,6 +1,7 @@
 
+import BankInformation from "@/Component/SalaryPage/BankInformation/BankInformation";
 import NavBar from "@/Component/Navbar/navbar";
-import SalarySlipPage from "@/Component/Salary/salaryslip";
+import SalarySlipPage from "@/Component/SalaryPage/Salary/salaryslip";
 
 
 import Sidebar from "@/Component/Usersidebar/usersidebar";
@@ -22,7 +23,7 @@ function page() {
 
         {/* Page Content */}
         <main className="hidden md:block">
-           <SalarySlipPage/>
+           <BankInformation/>
         </main>
 
 

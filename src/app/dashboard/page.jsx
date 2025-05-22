@@ -147,9 +147,10 @@ function Page() {
 
           <div className="grid grid-cols-3 gap-6 mt-6">
             {!hasTasksData && (
-              <div className="bg-gray-100 rounded-lg p-4 flex items-center justify-center">
-                <p className="text-gray-500">No task data available</p>
-              </div>
+              <TaskPriorityChart
+                selected={selected}
+                tasks={dashboardData.tasks}
+              />
             )}
             {hasTasksData && (
               <TaskPriorityChart
@@ -171,9 +172,10 @@ function Page() {
             )}
 
             {!hasTasksData && (
-              <div className="bg-gray-100 rounded-lg p-4 flex items-center justify-center">
-                <p className="text-gray-500">No project status data available</p>
-              </div>
+              <ProjectStatusChart
+                selected={selected}
+                tasks={dashboardData.tasks}
+              />
             )}
             {hasTasksData && (
               <ProjectStatusChart
