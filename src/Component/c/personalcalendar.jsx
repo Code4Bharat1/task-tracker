@@ -368,6 +368,7 @@ export default function PersonalCalendar() {
     "Schedule Meeting": "bg-red-600",
     "Daily Task": "bg-blue-500",
     Birthday: "bg-pink-500",
+    default: "bg-gray-500",
   };
 
   // Day styling
@@ -467,7 +468,8 @@ export default function PersonalCalendar() {
                                 <div
                                   key={idx}
                                   className={`h-1.5 w-1.5 ${
-                                    categoryDotColors[category] || "bg-blue-500"
+                                    categoryDotColors[category] ||
+                                    categoryDotColors.default
                                   } rounded-full`}
                                 ></div>
                               )
@@ -495,16 +497,20 @@ export default function PersonalCalendar() {
                                     const config =
                                       categoryConfig[event.category] ||
                                       categoryConfig[event.type] ||
-                                      categoryConfig.Event;
-                                    const IconComponent = config.icon;
+                                      categoryConfig.default;
+                                    const IconComponent =
+                                      config?.icon || Calendar;
 
                                     return (
                                       <div
                                         key={idx}
                                         className="group/item hover:scale-105 transition-transform duration-200"
                                         style={{
-                                          backgroundColor: config.bg,
-                                          borderLeft: `4px solid ${config.color}`,
+                                          backgroundColor:
+                                            config?.bg || "#F9FAFB",
+                                          borderLeft: `4px solid ${
+                                            config?.color || "#6B7280"
+                                          }`,
                                         }}
                                       >
                                         <div className="p-3 rounded-r-lg">
@@ -515,20 +521,25 @@ export default function PersonalCalendar() {
                                                   className="p-1.5 rounded-full mr-3"
                                                   style={{
                                                     backgroundColor:
-                                                      config.color + "20",
+                                                      (config?.color ||
+                                                        "#6B7280") + "20",
                                                   }}
                                                 >
                                                   <IconComponent
                                                     size={14}
                                                     style={{
-                                                      color: config.color,
+                                                      color:
+                                                        config?.color ||
+                                                        "#6B7280",
                                                     }}
                                                   />
                                                 </div>
                                                 <div
                                                   className="font-semibold text-sm"
                                                   style={{
-                                                    color: config.color,
+                                                    color:
+                                                      config?.color ||
+                                                      "#6B7280",
                                                   }}
                                                 >
                                                   {event.title}
@@ -562,14 +573,17 @@ export default function PersonalCalendar() {
                                                 <div
                                                   className="flex items-center text-xs font-medium"
                                                   style={{
-                                                    color: config.color,
+                                                    color:
+                                                      config?.color ||
+                                                      "#6B7280",
                                                   }}
                                                 >
                                                   <div
                                                     className="w-2 h-2 rounded-full mr-2"
                                                     style={{
                                                       backgroundColor:
-                                                        config.color,
+                                                        config?.color ||
+                                                        "#6B7280",
                                                     }}
                                                   ></div>
                                                   {event.category || event.type}
