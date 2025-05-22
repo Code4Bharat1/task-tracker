@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { FaRegBell, FaVideo, FaUser, FaSignOutAlt, FaRegNewspaper, FaUserPlus,FaRegCalendarAlt } from "react-icons/fa";
-
+import { FiSettings } from "react-icons/fi";
 import { axiosInstance } from '@/lib/axiosInstance';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
@@ -177,7 +177,19 @@ export default function NavBar() {
                   </div>
                 </Link>
 
-                <div className="border-t my-1"></div>
+              <div className="my-1">
+                </div>
+                <Link href="/setting">
+                  <div
+                    onClick={() => handleProfileAction()}
+                    className="w-full px-4 py-2 text-left flex items-center space-x-3 hover:bg-gray-100 cursor-pointer"
+                  >
+                    <FiSettings className="text-gray-600" />
+                    <span>Settings</span>
+                  </div>
+                </Link>
+
+                <div className="my-1"></div>
 
                 <Link href="/">
                   <div

@@ -24,7 +24,7 @@ const menuItems = [
   // { label: 'Calendar', icon: <FaRegCalendarAlt />, href: '/calendar' },
   { label: 'Leave', icon: <IoMdListBox />, href: '/leavetable' },
   { label: 'Salary', icon: <BiMoney />, href: '/salarypage' },
-  { label: 'Company Policies', icon: <HiOutlineDocumentText />, href: '/companyPolicy' },
+  // { label: 'Company Policies', icon: <HiOutlineDocumentText />, href: '/companyPolicy' },
   { label: 'Expense', icon: <RiMoneyDollarCircleLine />, href: '/expense' },
   // { label: 'Bank Info', icon: <FaUniversity />, href: '/bankinformation' },
   { label: 'Logout', icon: <FaSignOutAlt />, href: '/' }
