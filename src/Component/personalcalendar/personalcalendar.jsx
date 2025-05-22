@@ -1,5 +1,8 @@
 "use client";
+
 import React, { useState, useEffect, useRef } from "react";
+
+import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import {
@@ -35,6 +38,7 @@ export default function PersonalCalendar() {
   const [toast, setToast] = useState({ show: false, message: "" });
   const [events, setEvents] = useState([]);
   const [hoveredDay, setHoveredDay] = useState(null);
+  const [clickedDay, setClickedDay] = useState(null);
   const [formData, setFormData] = useState({
     title: "",
     date: formatDate(new Date()),
@@ -45,282 +49,31 @@ export default function PersonalCalendar() {
     email: "",
     reminderTime: "15",
   });
+  const [selectedOption, setSelectedOption] = useState("");
+  const router = useRouter();
 
-  // Refs for auto-close functionality
+  const handleChange = (e) => {
+    const value = e.target.value;
+    setSelectedOption(value);
+
+    switch (value) {
+      case "personal":
+        router.push("/personalcalendar");
+        break;
+      case "month":
+        router.push("/monthlycalendar");
+        break;
+      case "year":
+        router.push("/yearcalendar");
+        break;
+      default:
+        break;
+    }
+  };
   const underlineRef = useRef(null);
   const hoverCloseTimer = useRef(null);
 
-  useGSAP(() => {
-    gsap.fromTo(
-      underlineRef.current,
-      { width: "0%" },
-      { width: "100%", duration: 1, ease: "power2.out" }
-    );
-  }, []);
-
-  // Auto-close functions for hover tooltips
-  const startHoverAutoClose = () => {
-    if (hoverCloseTimer.current) {
-      clearTimeout(hoverCloseTimer.current);
-    }
-    hoverCloseTimer.current = setTimeout(() => {
-      setHoveredDay(null);
-    }, 3000);
-  };
-
-  const clearHoverAutoClose = () => {
-    if (hoverCloseTimer.current) {
-      clearTimeout(hoverCloseTimer.current);
-    }
-  };
-
-  // Load data from localStorage
-  useEffect(() => {
-    const storedEvents = localStorage.getItem("calendarEvents");
-    if (storedEvents) setEvents(JSON.parse(storedEvents));
-  }, []);
-
-  // Save to localStorage when data changes
-  useEffect(() => {
-    localStorage.setItem("calendarEvents", JSON.stringify(events));
-  }, [events]);
-
-  // Auto-close hover tooltip after 3 seconds
-  useEffect(() => {
-    if (hoveredDay) {
-      startHoverAutoClose();
-    } else {
-      clearHoverAutoClose();
-    }
-
-    return () => clearHoverAutoClose();
-  }, [hoveredDay]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      clearHoverAutoClose();
-    };
-  }, []);
-
-  // Helper functions
-  function formatDate(date) {
-    const d = new Date(date);
-    return [
-      d.getDate().toString().padStart(2, "0"),
-      (d.getMonth() + 1).toString().padStart(2, "0"),
-      d.getFullYear(),
-    ].join("-");
-  }
-
-  function displayDate(date) {
-    const d = new Date(date);
-    return [
-      d.getDate().toString().padStart(2, "0"),
-      (d.getMonth() + 1).toString().padStart(2, "0"),
-      d.getFullYear(),
-    ].join("/");
-  }
-
-  function calculateDuration(start, end) {
-    if (!start || !end) return "";
-    const startParts = start.split(":");
-    const endParts = end.split(":");
-
-    const startDate = new Date();
-    startDate.setHours(
-      parseInt(startParts[0], 10),
-      parseInt(startParts[1], 10),
-      0
-    );
-
-    const endDate = new Date();
-    endDate.setHours(parseInt(endParts[0], 10), parseInt(endParts[1], 10), 0);
-
-    if (endDate < startDate) endDate.setDate(endDate.getDate() + 1);
-
-    const diffMs = endDate - startDate;
-    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-
-    return `${diffHrs}h ${diffMins}m`;
-  }
-
-  // Toast notification
-  const showToast = (message) => {
-    setToast({ show: true, message });
-    setTimeout(() => setToast({ show: false, message: "" }), 3000);
-  };
-
-  // Form handling
-  const handleInputChange = (e) => {
-    const { name, value, type } = e.target;
-    let processedValue = value;
-
-    if (name === "date" && type === "date") {
-      const [year, month, day] = value.split("-");
-      processedValue = `${day}-${month}-${year}`;
-    }
-
-    setFormData((prev) => ({ ...prev, [name]: processedValue }));
-  };
-
-  // Event creation
-  const handleCreateEvent = () => {
-    // Validate required fields based on tab
-    if (
-      (activeTab === "Event" || activeTab === "Daily Task") &&
-      (!formData.title || !formData.date)
-    ) {
-      showToast("Please fill in required fields");
-      return;
-    }
-
-    if (
-      activeTab === "Schedule Meeting" &&
-      (!formData.date || !formData.time || !formData.endTime || !formData.email)
-    ) {
-      showToast("Please fill in all meeting fields");
-      return;
-    }
-
-    let eventTitle = formData.title;
-    if (activeTab === "Schedule Meeting" && !eventTitle) {
-      eventTitle = `Meeting with ${formData.email}`;
-    }
-
-    // Set the category based on activeTab for Events
-    let eventCategory = formData.category;
-    if (activeTab === "Event") {
-      eventCategory = formData.category; // Use the selected category (Reminder, Leaves, Deadline)
-    } else {
-      eventCategory = activeTab; // For Daily Task and Schedule Meeting, use the tab name
-    }
-
-    const newEvent = {
-      id: Date.now(),
-      ...formData,
-      title: eventTitle,
-      type: activeTab,
-      category: eventCategory,
-    };
-
-    setEvents([...events, newEvent]);
-    showToast(`${activeTab} created successfully!`);
-    setModalOpen(false);
-    setFormData({
-      title: "",
-      date: formatDate(new Date()),
-      category: "Reminder",
-      time: "",
-      endTime: "",
-      description: "",
-      email: "",
-      reminderTime: "15",
-    });
-  };
-
-  // Calendar navigation
-  const handleDayClick = (day) => {
-    const newDate = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      day
-    );
-    setSelectedDate(newDate);
-  };
-
-  const handleDayHover = (day) => {
-    clearHoverAutoClose(); // Clear any existing timer
-    setHoveredDay(day);
-  };
-
-  const handleDayLeave = () => {
-    startHoverAutoClose(); // Start the auto-close timer
-  };
-
-  const prevMonth = () =>
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
-    );
-
-  const nextMonth = () =>
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
-    );
-
-  // Calendar utils
-  const generateCalendarDays = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    const days = [];
-    for (let i = 0; i < firstDay; i++) days.push(null);
-    for (let i = 1; i <= daysInMonth; i++) days.push(i);
-    return days;
-  };
-
-  const isSameDay = (date1, date2) =>
-    date1.getDate() === date2.getDate() &&
-    date1.getMonth() === date2.getMonth() &&
-    date1.getFullYear() === date2.getFullYear();
-
-  const hasEvents = (day) => {
-    if (!day) return false;
-    const date = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      day
-    );
-    const formattedDate = formatDate(date);
-
-    // Only check events, not todos (as requested)
-    return events.some((event) => event.date === formattedDate);
-  };
-
-  const getUniqueEventCategoriesForDay = (day) => {
-    if (!day) return [];
-    const date = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      day
-    );
-    const formattedDate = formatDate(date);
-
-    // Filter only events (exclude To-Do items)
-    const dayEvents = events.filter(
-      (event) => event.date === formattedDate && event.type !== "To-Do"
-    );
-
-    // Get unique categories
-    const uniqueCategories = [];
-    const seen = new Set();
-
-    dayEvents.forEach((item) => {
-      const category = item.category || item.type;
-      if (!seen.has(category)) {
-        seen.add(category);
-        uniqueCategories.push(category);
-      }
-    });
-
-    return uniqueCategories.slice(0, 5); // Show up to 5 dots
-  };
-
-  const getEventsForDay = (day) => {
-    if (!day) return [];
-    const date = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      day
-    );
-    const formattedDate = formatDate(date);
-    return events.filter((event) => event.date === formattedDate);
-  };
-
-  // Category colors and configurations
+  // Configurations
   const categoryConfig = {
     Reminder: {
       color: "#10B981",
@@ -334,12 +87,7 @@ export default function PersonalCalendar() {
       border: "#C4B5FD",
       icon: AlertTriangle,
     },
-    Leaves: {
-      color: "#EF4444",
-      bg: "#FEF2F2",
-      border: "#FECACA",
-      icon: Plane,
-    },
+    Leaves: { color: "#EF4444", bg: "#FEF2F2", border: "#FECACA", icon: Plane },
     "Schedule Meeting": {
       color: "#DC2626",
       bg: "#FEF2F2",
@@ -352,7 +100,6 @@ export default function PersonalCalendar() {
       border: "#BFDBFE",
       icon: CheckSquare,
     },
-
     Birthday: {
       color: "#EC4899",
       bg: "#FDF2F8",
@@ -371,45 +118,215 @@ export default function PersonalCalendar() {
     default: "bg-gray-500",
   };
 
-  // Day styling
+  // Animations
+  useGSAP(() => {
+    gsap.fromTo(
+      underlineRef.current,
+      { width: "0%" },
+      { width: "100%", duration: 1, ease: "power2.out" }
+    );
+  }, []);
+
+  // Auto-close hover functionality
+  const startHoverAutoClose = () => {
+    clearTimeout(hoverCloseTimer.current);
+    hoverCloseTimer.current = setTimeout(() => setHoveredDay(null), 3000);
+  };
+
+  const clearHoverAutoClose = () => clearTimeout(hoverCloseTimer.current);
+
+  // Effects
+  useEffect(() => {
+    const storedEvents = localStorage.getItem("calendarEvents");
+    if (storedEvents) setEvents(JSON.parse(storedEvents));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("calendarEvents", JSON.stringify(events));
+  }, [events]);
+
+  useEffect(() => {
+    if (hoveredDay) startHoverAutoClose();
+    else clearHoverAutoClose();
+    return clearHoverAutoClose;
+  }, [hoveredDay]);
+
+  // Helper functions
+  function formatDate(date) {
+    const d = new Date(date);
+    return [
+      d.getDate().toString().padStart(2, "0"),
+      (d.getMonth() + 1).toString().padStart(2, "0"),
+      d.getFullYear(),
+    ].join("-");
+  }
+
+  const showToast = (message) => {
+    setToast({ show: true, message });
+    setTimeout(() => setToast({ show: false, message: "" }), 3000);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, type } = e.target;
+    let processedValue = value;
+    if (name === "date" && type === "date") {
+      const [year, month, day] = value.split("-");
+      processedValue = `${day}-${month}-${year}`;
+    }
+    setFormData((prev) => ({ ...prev, [name]: processedValue }));
+  };
+
+  const handleCreateEvent = () => {
+    // Validation
+    if (
+      (activeTab === "Event" || activeTab === "Daily Task") &&
+      (!formData.title || !formData.date)
+    ) {
+      return showToast("Please fill in required fields");
+    }
+    if (
+      activeTab === "Schedule Meeting" &&
+      (!formData.date || !formData.time || !formData.endTime || !formData.email)
+    ) {
+      return showToast("Please fill in all meeting fields");
+    }
+
+    const eventTitle =
+      formData.title ||
+      (activeTab === "Schedule Meeting"
+        ? `Meeting with ${formData.email}`
+        : "");
+    const eventCategory = activeTab === "Event" ? formData.category : activeTab;
+
+    const newEvent = {
+      id: Date.now(),
+      ...formData,
+      title: eventTitle,
+      type: activeTab,
+      category: eventCategory,
+    };
+    setEvents([...events, newEvent]);
+    showToast(`${activeTab} created successfully!`);
+    setModalOpen(false);
+    setFormData({
+      title: "",
+      date: formatDate(new Date()),
+      category: "Reminder",
+      time: "",
+      endTime: "",
+      description: "",
+      email: "",
+      reminderTime: "15",
+    });
+  };
+
+  const handleDayClick = (day) => {
+    setSelectedDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+    );
+    if (hasEvents(day)) {
+      setClickedDay(day);
+    }
+  };
+
+  const handleDayHover = (day) => {
+    clearHoverAutoClose();
+    setHoveredDay(day);
+  };
+
+  const prevMonth = () =>
+    setCurrentDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
+    );
+  const nextMonth = () =>
+    setCurrentDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
+    );
+
+  const generateCalendarDays = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const days = [];
+    for (let i = 0; i < firstDay; i++) days.push(null);
+    for (let i = 1; i <= daysInMonth; i++) days.push(i);
+    return days;
+  };
+
+  const isSameDay = (date1, date2) =>
+    date1.getDate() === date2.getDate() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getFullYear() === date2.getFullYear();
+
+  const hasEvents = (day) => {
+    if (!day) return false;
+    const formattedDate = formatDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+    );
+    return events.some((event) => event.date === formattedDate);
+  };
+
+  const getUniqueEventCategoriesForDay = (day) => {
+    if (!day) return [];
+    const formattedDate = formatDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+    );
+    const dayEvents = events.filter(
+      (event) => event.date === formattedDate && event.type !== "To-Do"
+    );
+    const uniqueCategories = [
+      ...new Set(dayEvents.map((item) => item.category || item.type)),
+    ];
+    return uniqueCategories.slice(0, 5);
+  };
+
+  const getEventsForDay = (day) => {
+    if (!day) return [];
+    const formattedDate = formatDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+    );
+    return events.filter((event) => event.date === formattedDate);
+  };
+
   const getDayBackgroundColor = (day) => {
     if (!day) return "";
-
     const date = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth(),
       day
     );
 
-    if (isSameDay(date, selectedDate)) {
-      return "bg-blue-100";
-    }
-
+    if (isSameDay(date, selectedDate)) return "bg-blue-100";
     if (
       day === new Date().getDate() &&
       currentDate.getMonth() === new Date().getMonth() &&
       currentDate.getFullYear() === new Date().getFullYear()
-    ) {
-      return "bg-[#02587b] text-white ";
-    }
-
-    if (date.getDay() === 0) {
-      return "bg-[#67B2CF] text-white"; // Sunday
-    }
-
+    )
+      return "bg-[#02587b] text-white";
+    if (date.getDay() === 0) return "bg-[#67B2CF] text-white";
     return "bg-[#ECEEFD]";
   };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-2xl font-bold mb-8 relative inline-block text-gray-800">
-          <span
-            ref={underlineRef}
-            className="absolute left-0 bottom-0 h-[2px] bg-[#02587b] w-full"
-          ></span>
-          My calendar
-        </h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold relative inline-block text-gray-800">
+            <span className="absolute left-0 bottom-0 h-[2px] bg-[#02587b] w-full"></span>
+            My calendar
+          </h2>
+
+          <select
+            className="border border-gray-300 bg-white rounded px-4 py-2"
+            value={selectedOption}
+            onChange={handleChange}
+          >
+            <option value="personal">Personal Calendar</option>
+            <option value="month">Month Calendar</option>
+            <option value="year">Year Calendar</option>
+          </select>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Calendar */}
@@ -451,12 +368,12 @@ export default function PersonalCalendar() {
                   <div
                     key={index}
                     className={`relative h-12 rounded p-1 text-center cursor-pointer transition-colors group
-                      ${day ? "hover:bg-gray-100" : ""}
-                      ${getDayBackgroundColor(day)}
-                    `}
+                      ${day ? "hover:bg-gray-100" : ""} ${getDayBackgroundColor(
+                      day
+                    )}`}
                     onClick={() => day && handleDayClick(day)}
                     onMouseEnter={() => day && handleDayHover(day)}
-                    onMouseLeave={handleDayLeave}
+                    onMouseLeave={startHoverAutoClose}
                   >
                     {day && (
                       <>
@@ -496,8 +413,7 @@ export default function PersonalCalendar() {
                                   {getEventsForDay(day).map((event, idx) => {
                                     const config =
                                       categoryConfig[event.category] ||
-                                      categoryConfig[event.type] ||
-                                      categoryConfig.default;
+                                      categoryConfig[event.type];
                                     const IconComponent =
                                       config?.icon || Calendar;
 
@@ -644,7 +560,138 @@ export default function PersonalCalendar() {
           </div>
         </div>
 
-        {/* Todo List Section - Imported as a component */}
+        {/* Day Click Popup Modal */}
+        {clickedDay && (
+          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg mx-4 max-h-[80vh] overflow-hidden">
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    {new Date(
+                      currentDate.getFullYear(),
+                      currentDate.getMonth(),
+                      clickedDay
+                    ).toLocaleDateString("en-US", {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {getEventsForDay(clickedDay).length} events scheduled
+                  </p>
+                </div>
+                <button
+                  onClick={() => setClickedDay(null)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X size={20} className="text-gray-500" />
+                </button>
+              </div>
+
+              {/* Events List */}
+              <div className="p-6 max-h-96 overflow-y-auto">
+                <div className="space-y-4">
+                  {getEventsForDay(clickedDay).map((event, idx) => {
+                    const config =
+                      categoryConfig[event.category] ||
+                      categoryConfig[event.type];
+                    const IconComponent = config?.icon || Calendar;
+
+                    return (
+                      <div
+                        key={idx}
+                        className="border border-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow"
+                      >
+                        {/* Event Header */}
+                        <div className="flex items-center mb-3">
+                          <div
+                            className="w-4 h-4 rounded-full mr-3"
+                            style={{
+                              backgroundColor: config?.color || "#6B7280",
+                            }}
+                          ></div>
+                          <h4 className="font-semibold text-gray-800 flex-1">
+                            {event.title}
+                          </h4>
+                        </div>
+
+                        {/* Event Details */}
+                        {event.description && (
+                          <p className="text-gray-600 text-sm mb-3">
+                            {event.description}
+                          </p>
+                        )}
+
+                        <div className="space-y-2">
+                          <div className="flex items-center text-sm">
+                            <span className="text-gray-500 w-20">
+                              Category:
+                            </span>
+                            <span
+                              className="px-2 py-1 rounded-full text-xs font-medium"
+                              style={{
+                                backgroundColor: config?.bg || "#F9FAFB",
+                                color: config?.color || "#6B7280",
+                              }}
+                            >
+                              {event.category || event.type}
+                            </span>
+                          </div>
+
+                          {(event.time || event.endTime) && (
+                            <div className="flex items-center text-sm">
+                              <Clock size={16} className="text-gray-500 mr-2" />
+                              <span className="text-gray-500 w-16">Time:</span>
+                              <span className="text-gray-800">
+                                {event.time && event.endTime
+                                  ? `${event.time} - ${event.endTime}`
+                                  : event.time || "All day"}
+                              </span>
+                            </div>
+                          )}
+
+                          {event.email && (
+                            <div className="flex items-center text-sm">
+                              <Mail size={16} className="text-gray-500 mr-2" />
+                              <span className="text-gray-500 w-16">Email:</span>
+                              <span className="text-gray-800">
+                                {event.email}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+                <button
+                  onClick={() => setClickedDay(null)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    setClickedDay(null);
+                    setModalOpen(true);
+                  }}
+                  className="bg-[#018ABE] text-white px-4 py-2 rounded-md hover:bg-[#016a94] transition-colors flex items-center"
+                >
+                  <span className="mr-2">+</span>
+                  Add Event
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <ToDoList selectedDate={selectedDate} />
 
         {/* Modal */}
@@ -707,7 +754,7 @@ export default function PersonalCalendar() {
           </div>
         )}
 
-        {/* Toast notification */}
+        {/* Toast */}
         {toast.show && (
           <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-md shadow-lg flex items-center z-50">
             <Info size={20} className="mr-2" />

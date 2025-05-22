@@ -114,7 +114,7 @@ const EventForm = ({ formData, handleInputChange, categoryDotColors }) => {
         name="title"
         placeholder="Add Title"
         className="w-full border-b border-gray-300 py-2 mb-4 focus:outline-none"
-        value={formData.title}
+        value={formData.title || ""}
         onChange={handleInputChange}
       />
 
@@ -124,11 +124,10 @@ const EventForm = ({ formData, handleInputChange, categoryDotColors }) => {
           type="date"
           name="date"
           className="border-b border-gray-300 py-2 focus:outline-none"
-          value={formData.date}
+          value={formData.date.split("-").reverse().join("-")}
           onChange={handleInputChange}
         />
       </div>
-
       {/* Category Dropdown */}
       <div
         className="mb-4"
@@ -257,7 +256,7 @@ const EventForm = ({ formData, handleInputChange, categoryDotColors }) => {
             id="repeat-after-15"
             type="checkbox"
             className="sr-only peer"
-            checked={formData.repeatAfter15Min}
+            checked={formData.repeatAfter15Min || false}
             onChange={(e) =>
               handleInputChange({
                 target: {
