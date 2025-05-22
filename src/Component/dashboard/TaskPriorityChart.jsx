@@ -1,12 +1,20 @@
 'use client';
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
 
 const PRIORITY_COLORS = {
-  High: "red",
-  Medium: "orange",
-  Low: "green",
-  Unknown: "#cbd5e1",
+  High: 'red',
+  Medium: 'orange',
+  Low: 'green',
 };
 
 const CustomTooltip = ({ active, payload }) => {
@@ -14,7 +22,7 @@ const CustomTooltip = ({ active, payload }) => {
     const { name, value } = payload[0].payload;
     return (
       <div className="bg-white border border-gray-200 px-3 py-1 rounded shadow text-sm">
-        <strong>{name}:</strong> {value} task{value > 1 ? "s" : ""}
+        <strong>{name}:</strong> {value} task{value > 1 ? 's' : ''}
       </div>
     );
   }
@@ -24,13 +32,13 @@ const CustomTooltip = ({ active, payload }) => {
 const getStartDateByPeriod = (today, period) => {
   const start = new Date(today);
   switch (period) {
-    case "This Week":
+    case 'This Week':
       start.setDate(start.getDate() - start.getDay());
       break;
-    case "This Month":
+    case 'This Month':
       start.setDate(1);
       break;
-    case "This Year":
+    case 'This Year':
       start.setMonth(0);
       start.setDate(1);
       break;
@@ -60,23 +68,26 @@ const filterTasksByPeriod = (tasks, period) => {
   });
 };
 
-const TaskPriorityChart = ({ selected = "This Year", tasks = [] }) => {
+const TaskPriorityChart = ({ selected = 'This Year', tasks = [] }) => {
   const filteredTasks = filterTasksByPeriod(tasks, selected);
 
   const priorityCounts = filteredTasks.reduce((acc, task) => {
-    const priority = task.priority || "Unknown";
+    const rawPriority = task.priority;
+    const priority = ['High', 'Medium', 'Low'].includes(rawPriority)
+      ? rawPriority
+      : '';
     acc[priority] = (acc[priority] || 0) + 1;
     return acc;
   }, {});
 
-  const priorityOrder = ["High", "Medium", "Low", "Unknown"];
-  const priorityData = Object.entries(priorityCounts)
-    .map(([name, value]) => ({
-      name,
-      value,
-      color: PRIORITY_COLORS[name] || PRIORITY_COLORS.Unknown,
-    }))
-    .sort((a, b) => priorityOrder.indexOf(a.name) - priorityOrder.indexOf(b.name));
+  const priorityOrder = ['High', 'Medium', 'Low'];
+
+  // Ensure all priorities are present even if count is 0
+  const priorityData = priorityOrder.map((priority) => ({
+    name: priority,
+    value: priorityCounts[priority] || 0,
+    color: PRIORITY_COLORS[priority],
+  }));
 
   const total = priorityData.reduce((sum, item) => sum + item.value, 0);
 
@@ -108,7 +119,7 @@ const TaskPriorityChart = ({ selected = "This Year", tasks = [] }) => {
             <XAxis dataKey="name" />
             <YAxis allowDecimals={false} />
             <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="value" fill="#8884d8" >
+            <Bar dataKey="value" fill="#8884d8">
               {priorityData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
