@@ -1,4 +1,5 @@
-import PersonalCalendar from "@/Component/c/personalcalendar";
+
+import CalendarPage from "@/Component/calendar/calendar";
 import NavBar from "@/Component/Navbar/navbar";
 import Sidebar from "@/Component/Usersidebar/usersidebar";
 
@@ -17,7 +18,7 @@ function page() {
         {/* Desktop Navbar (hidden on mobile) */}
         <NavBar />
         <div>
-          <PersonalCalendar />
+        <CalendarPage/>
         </div>
       </div>
     </div>

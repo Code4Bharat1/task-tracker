@@ -82,20 +82,20 @@ export default function NavBar() {
           <FaVideo className="w-6 h-7 text-black cursor-pointer" />
         </button>
 
-        {/* Add Team Members */}
-        <button title="Add Team Members">
-          <FaUserPlus className="w-6 h-6 text-black cursor-pointer" />
-        </button>
+      {/* Add Team Members */}
+      <button title="Add Team Members" onClick={() => router.push('/addteam')}>
+        <FaUserPlus className="w-6 h-6 text-black cursor-pointer" />
+      </button>
 
-        {/* Calendar */}
-        <button title="Calendar">
-          <FaRegCalendarAlt className="w-6 h-6 text-black cursor-pointer" />
-        </button>
+      {/* Calendar */}
+      <button title="Calendar" onClick={() => router.push('/calendar')}>
+        <FaRegCalendarAlt className="w-6 h-6 text-black cursor-pointer" />
+      </button>
 
-        {/* View Posts */}
-        <button title="View Posts">
-          <FaRegNewspaper className="w-6 h-6 text-black cursor-pointer" />
-        </button>
+      {/* View Posts */}
+      <button title="View Posts" onClick={() => router.push('/viewpost')}>
+        <FaRegNewspaper className="w-6 h-6 text-black cursor-pointer" />
+      </button>
 
         {/* Notifications */}
         <div className="relative">

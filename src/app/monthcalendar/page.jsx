@@ -1,6 +1,5 @@
-import Calendar from '@/Component/calendardropdown/calendar';
-import Categories from '@/Component/calendardropdown/categerious';
-import ToDo from '@/Component/calendardropdown/todo';
+
+import CalendarPage from '@/Component/monthcalendar/calendar';
 import NavBar from '@/Component/Navbar/navbar';
 import Sidebar from '@/Component/Usersidebar/usersidebar';
 
@@ -21,13 +20,7 @@ export default function Home() {
 
             {/* Main Content Area */}
             <div className="grid grid-cols-2 gap-4 mt-[60px] ml-[16.6667%] h-[calc(100vh-60px)] overflow-y-auto p-4 bg-white">
-                <Calendar />
-
-                <Categories />
-
-                <div className="col-span-2">
-                    <ToDo />
-                </div>
+                <CalendarPage/>
             </div>
         </div>
     );
