@@ -8,6 +8,8 @@ import Sidebar from "@/Component/Usersidebar/usersidebar";
 import NavBar from "@/Component/Navbar/navbar";
 import TaskPriorityChart from "@/Component/dashboard/TaskPriorityChart";
 import { axiosInstance } from '@/lib/axiosInstance';
+import PerformanceSummary from "@/Component/dashboard/performancesummary";
+import PerformanceChart from "@/Component/dashboard/performancechart";
 
 function Page() {
   const [selected, setSelected] = useState("This Year");
@@ -183,6 +185,8 @@ function Page() {
                 tasks={dashboardData.tasks}
               />
             )}
+
+            <PerformanceChart selected={selected} />
           </div>
         </main>
 
