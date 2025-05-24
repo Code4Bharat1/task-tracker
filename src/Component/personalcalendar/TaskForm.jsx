@@ -1,164 +1,221 @@
-import React, { useState, useEffect, useRef } from "react";
-import { CalendarIcon, ChevronDown } from "lucide-react";
+'use client';
+import { useState, forwardRef, useCallback, useRef, useEffect } from 'react';
+import { LuCalendarClock, LuClock } from 'react-icons/lu';
+import { IoIosArrowDown } from 'react-icons/io';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-const TaskForm = ({ formData, handleInputChange }) => {
-  const [isTimeDropdownOpen, setIsTimeDropdownOpen] = useState(false);
 
-  // Ref for auto-close timer
-  const timeCloseTimer = useRef(null);
+const CustomDateInput = forwardRef(({ value, onClick }, ref) => (
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      onClick(e);
+    }}
+    ref={ref}
+    type="button"
+    className="flex items-center justify-between w-full px-4 py-2 text-gray-600 bg-white border rounded-lg border-gray-300 hover:border-blue-500 focus:border-blue-500 transition-colors"
+  >
+    <span>{value || 'Select date'}</span>
+    <LuCalendarClock className="text-gray-400 ml-2" />
+  </button>
+));
+CustomDateInput.displayName = 'CustomDateInput';
 
-  // Generate time options from 6:00 AM to 12:00 AM (midnight)
-  const timeOptions = Array.from({ length: 72 }).map((_, i) => {
-    const totalMinutes = 6 * 60 + i * 15; // Start from 6:00 AM
-    const hours = Math.floor(totalMinutes / 60) % 24;
-    const minutes = totalMinutes % 60;
-    const value = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
-      2,
-      "0"
-    )}`;
-    const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-    const period = hours < 12 ? "AM" : "PM";
-    const label = `${displayHours}:${String(minutes).padStart(
-      2,
-      "0"
-    )} ${period}`;
-    return { value, label };
-  });
-
-  // Auto-close functions
-  const startTimeAutoClose = () => {
-    if (timeCloseTimer.current) {
-      clearTimeout(timeCloseTimer.current);
-    }
-    timeCloseTimer.current = setTimeout(() => {
-      setIsTimeDropdownOpen(false);
-    }, 3000);
+const TimeDropdown = ({ times, selectedTime, setSelectedTime, setShowTimeDropdown }) => {
+  const formatTime = (time) => {
+    const [hour, minute] = time.split(':');
+    const date = new Date();
+    date.setHours(hour);
+    date.setMinutes(minute);
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   };
-
-  const clearTimeAutoClose = () => {
-    if (timeCloseTimer.current) {
-      clearTimeout(timeCloseTimer.current);
-    }
-  };
-
-  // Effect to start auto-close when dropdown opens
-  useEffect(() => {
-    if (isTimeDropdownOpen) {
-      startTimeAutoClose();
-    } else {
-      clearTimeAutoClose();
-    }
-
-    return () => clearTimeAutoClose();
-  }, [isTimeDropdownOpen]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      clearTimeAutoClose();
-    };
-  }, []);
-
-  const handleTimeSelect = (value) => {
-    clearTimeAutoClose();
-    handleInputChange({ target: { name: "time", value } });
-    setIsTimeDropdownOpen(false);
-  };
-
-  const selectedTimeLabel = formData.time
-    ? timeOptions.find((option) => option.value === formData.time)?.label ||
-      "Select Time"
-    : "Select Time";
 
   return (
-    <div>
-      <input
-        type="text"
-        name="title"
-        placeholder="Add Task Title"
-        className="w-full border-b border-gray-300 py-2 mb-4 focus:outline-none"
-        value={formData.title}
-        onChange={handleInputChange}
-      />
-
-      <div className="flex items-center mb-4">
-        <input
-          type="date"
-          name="date"
-          className="border-b border-gray-300 py-2 focus:outline-none"
-          value={formData.date.split("-").reverse().join("-")}
-          onChange={handleInputChange}
-        />
-      </div>
-
-      {/* Time Dropdown */}
-      <div
-        className="mb-4"
-        onMouseEnter={clearTimeAutoClose}
-        onMouseLeave={startTimeAutoClose}
-      >
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Select Time
-        </label>
-        <div className="relative">
-          <button
-            type="button"
-            className="w-full bg-gray-100 rounded-md py-2 px-3 pr-8 focus:outline-none focus:ring-2 focus:ring-[#058CBF] transition duration-200 text-left flex items-center justify-between"
-            onClick={() => {
-              clearTimeAutoClose();
-              setIsTimeDropdownOpen(!isTimeDropdownOpen);
-            }}
-          >
-            <span className={formData.time ? "text-black" : "text-gray-500"}>
-              {selectedTimeLabel}
-            </span>
-            <ChevronDown
-              size={16}
-              className={`transition-transform duration-200 ${
-                isTimeDropdownOpen ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-
-          {isTimeDropdownOpen && (
-            <div
-              className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-md shadow-lg z-10 mt-1"
-              onMouseEnter={clearTimeAutoClose}
-              onMouseLeave={startTimeAutoClose}
-            >
-              <div className="max-h-32 overflow-y-auto">
-                {timeOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    className={`w-full text-left px-3 py-2 hover:bg-gray-100 transition-colors duration-150 ${
-                      formData.time === option.value
-                        ? "bg-blue-50 text-[#058CBF]"
-                        : "text-gray-700"
-                    }`}
-                    onClick={() => handleTimeSelect(option.value)}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <textarea
-        name="description"
-        placeholder="Add Task Description"
-        className="w-full h-16 border rounded-md p-2 mb-4 bg-blue-50 focus:outline-none resize-none"
-        value={formData.description}
-        onChange={handleInputChange}
-      ></textarea>
-
-      {/* Hidden field to ensure tasks are properly categorized */}
-      <input type="hidden" name="category" value="Daily Task" />
+    <div className="absolute z-10 w-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-60 overflow-y-auto">
+      {times.map((time) => (
+        <button
+          key={time}
+          onClick={() => {
+            setSelectedTime(time);
+            setShowTimeDropdown(false);
+          }}
+          className={`w-full px-4 py-2 text-left text-sm ${selectedTime === time
+            ? 'bg-blue-50 text-blue-600'
+            : 'text-gray-600 hover:bg-gray-50'
+            } transition-colors`}
+        >
+          {formatTime(time)}
+        </button>
+      ))}
     </div>
   );
 };
 
-export default TaskForm;
+export default function TaskForm() {
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedTime, setSelectedTime] = useState('09:00');
+  const [description, setDescription] = useState('');
+  const [title, setTitle] = useState('');
+  const [showTimeDropdown, setShowTimeDropdown] = useState(false);
+  const timeButtonRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  const times = [];
+  for (let hour = 0; hour < 24; hour++) {
+    for (let minute of ['00', '15', '30', '45']) {
+      times.push(`${hour.toString().padStart(2, '0')}:${minute}`);
+    }
+  }
+
+  const formatDisplayTime = () => {
+    if (!selectedTime) return 'Select time';
+    const [hours, minutes] = selectedTime.split(':');
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+  };
+
+  const handleCancel = useCallback((e) => {
+    e?.preventDefault();
+    setTitle('');
+    setDescription('');
+    setSelectedDate(new Date());
+    setSelectedTime('09:00');
+  }, []);
+
+  const handleCreate = useCallback(async (e) => {
+    e?.preventDefault();
+
+    if (!title.trim() || !description.trim()) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      const formattedDate = selectedDate.toISOString().split('T')[0];
+      const taskData = {
+        type: "Task",
+        title,
+        description,
+        date: formattedDate,
+        time: formatDisplayTime(),
+        calType: "Personal"
+      };
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/user/calendar`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(taskData),
+      });
+
+      if (!response.ok) throw new Error('Failed to create task');
+
+      toast.success('Task created successfully!');
+      handleCancel();
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to create task');
+    }
+  }, [title, description, selectedDate, selectedTime, handleCancel]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowTimeDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="w-full">
+      <ToastContainer position="top-center" autoClose={3000} />
+
+      <input
+        type="text"
+        placeholder="Add Title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        className="text-xl font-semibold text-gray-700 mb-4 bg-transparent focus:outline-none w-full placeholder-gray-400 border-b-2 border-gray-200 focus:border-blue-500 pb-2 transition-colors"
+      />
+
+      <div className="space-y-6">
+        <div className="mb-4">
+          <label htmlFor="date" className="block mb-2 text-sm font-medium text-gray-700">
+            Select Date:
+          </label>
+          <input
+            type="date"
+            id="date"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={selectedDate.toISOString().split('T')[0]}
+            onChange={(e) => setSelectedDate(new Date(e.target.value))}
+            min={new Date().toISOString().split('T')[0]}
+          />
+        </div>
+
+
+
+        <div>
+          <label htmlFor="time" className="block mb-2 text-sm font-medium text-gray-700">Select Time:</label>
+          <div className="flex items-center gap-3 relative">
+          <LuClock className="text-xl text-gray-500" />
+          <div className="relative w-full" ref={dropdownRef}>
+            <button
+              ref={timeButtonRef}
+              onClick={() => setShowTimeDropdown(!showTimeDropdown)}
+              className="flex items-center justify-between w-full px-4 py-2 text-gray-600 bg-white 
+                      border rounded-lg border-gray-300 hover:border-blue-500 focus:border-blue-500 
+                      transition-colors"
+            >
+              <span>{formatDisplayTime() || 'Select time'}</span>
+              <IoIosArrowDown className="text-gray-400 ml-2" />
+            </button>
+            {showTimeDropdown && (
+              <TimeDropdown
+                times={times}
+                selectedTime={selectedTime}
+                setSelectedTime={setSelectedTime}
+                setShowTimeDropdown={setShowTimeDropdown}
+              />
+            )}
+          </div>
+        </div>
+        </div>
+
+        <textarea
+          placeholder="Add Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 
+                   focus:ring-2 focus:ring-blue-200 placeholder-gray-400 text-gray-700 
+                   transition-all resize-none"
+          rows={3}
+        />
+
+        <div className="flex justify-end gap-4">
+          <button
+            onClick={handleCancel}
+            className="px-6 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 
+                     transition-colors font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleCreate}
+            className="px-6 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 
+                     transition-colors font-medium shadow-md"
+          >
+            Create Task
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
