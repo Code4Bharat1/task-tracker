@@ -147,7 +147,7 @@ function Page() {
         <main className="hidden md:block px-6 py-6">
           <OverviewHeader selected={selected} setSelected={setSelected} />
 
-          <div className="grid grid-cols-3 gap-6 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             {!hasTasksData && (
               <TaskPriorityChart
                 selected={selected}

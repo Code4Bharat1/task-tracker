@@ -73,8 +73,8 @@ const ProjectStatusChart = ({ selected = 'This Year', tasks = [] }) => {
   const total = filteredTasks.length;
 
   return (
-    <div className="w-auto h-[390px] bg-white rounded-2xl shadow-[1px_4px_10px_lightgray] p-4 font-sans relative">
-      <div className="flex justify-between items-start w-full">
+    <div className="flex flex-col gap-28 items-center w-auto h-full bg-white rounded-2xl shadow-[1px_4px_10px_lightgray] p-4 font-sans relative">
+      <div className="flex justify-between items-center w-full">
         <h2 className="font-medium text-xl">PROJECTS</h2>
         <div className="text-xs space-y-1">
           <div className="flex items-center">

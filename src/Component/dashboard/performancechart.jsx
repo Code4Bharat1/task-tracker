@@ -62,8 +62,54 @@ const PerformanceChart = ({ selected = "This Week" }) => {
     } catch (err) {
       console.error("Error fetching performance data:", err);
       setError("Failed to load performance data");
+      // Set empty data structure instead of null
+      setPerformanceData(getEmptyDataStructure(selected));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getEmptyDataStructure = (period) => {
+    if (period === 'This Week') {
+      return {
+        score: [{
+          timesheetScore: 0,
+          attendanceScore: 0,
+          behaviourScore: 0,
+          totalScore: 0
+        }],
+        remark: 'No data available for this period'
+      };
+    } else {
+      const dataPoints = period === 'This Month' ? 4 : 12;
+      const data = [];
+
+      for (let i = 1; i <= dataPoints; i++) {
+        if (period === 'This Month') {
+          data.push({
+            week: i,
+            avgTimesheetScore: 0,
+            avgAttendanceScore: 0,
+            avgBehaviourScore: 0,
+            remark: 'No data available'
+          });
+        } else {
+          data.push({
+            month: `Month ${i}`,
+            monthNumber: i,
+            avgTimesheetScore: 0,
+            avgAttendanceScore: 0,
+            avgBehaviourScore: 0,
+            remark: 'No data available'
+          });
+        }
+      }
+
+      return {
+        data: data,
+        overallAvgScore: 0,
+        remark: 'No data available for this period'
+      };
     }
   };
 
@@ -123,30 +169,23 @@ const PerformanceChart = ({ selected = "This Week" }) => {
     );
   }
 
-  if (error || !performanceData) {
-    return (
-      <div className="bg-white rounded-xl shadow-md p-5 w-full max-w-md mx-auto">
-        <div className="text-center text-red-500 py-8">
-          {error || "No performance data available"}
-        </div>
-      </div>
-    );
+  // Ensure we have data structure even if API fails
+  if (!performanceData) {
+    setPerformanceData(getEmptyDataStructure(selected));
   }
 
   // Render pie chart for weekly data
   if (selected === 'This Week') {
-    if (!performanceData.score || performanceData.score.length === 0) {
-      return (
-        <div className="bg-white rounded-xl shadow-md p-5 w-full max-w-md mx-auto">
-          <div className="text-center text-gray-500 py-8">
-            No weekly performance data available
-          </div>
-        </div>
-      );
-    }
+    // Always show chart, even with zero values
+    const scoreData = performanceData?.score?.[0] || {
+      timesheetScore: 0,
+      attendanceScore: 0,
+      behaviourScore: 0,
+      totalScore: 0
+    };
 
-    const { timesheetScore, attendanceScore, behaviourScore, totalScore } = performanceData.score[0];
-    const backendRemark = performanceData.remark || 'No remark available';
+    const { timesheetScore, attendanceScore, behaviourScore, totalScore } = scoreData;
+    const backendRemark = performanceData?.remark || 'No data available for this period';
 
     const pieData = {
       labels: ['Timesheet', 'Attendance', 'Behaviour'],
@@ -199,6 +238,11 @@ const PerformanceChart = ({ selected = "This Week" }) => {
           <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg mb-3">
             {backendRemark}
           </div>
+          {error && (
+            <div className="text-xs text-orange-500 mt-2">
+              Note: Unable to fetch data, showing zero values
+            </div>
+          )}
         </div>
       </div>
     );
@@ -206,17 +250,10 @@ const PerformanceChart = ({ selected = "This Week" }) => {
 
   // Render line chart for monthly/yearly data
   if (selected === 'This Month' || selected === 'This Year') {
-    if (!performanceData.data || performanceData.data.length === 0) {
-      return (
-        <div className="bg-white rounded-xl shadow-md p-5 w-full">
-          <div className="text-center text-gray-500 py-8">
-            No {selected.toLowerCase()} performance data available
-          </div>
-        </div>
-      );
-    }
+    // Always show chart, even with zero values
+    const chartData = performanceData?.data || getEmptyDataStructure(selected).data;
 
-    const labels = performanceData.data.map(item => {
+    const labels = chartData.map(item => {
       if (selected === 'This Month') {
         return `Week ${item.week}`;
       } else {
@@ -224,9 +261,9 @@ const PerformanceChart = ({ selected = "This Week" }) => {
       }
     });
 
-    const timesheetData = performanceData.data.map(item => item.avgTimesheetScore || 0);
-    const attendanceData = performanceData.data.map(item => item.avgAttendanceScore || 0);
-    const behaviourData = performanceData.data.map(item => item.avgBehaviourScore || 0);
+    const timesheetData = chartData.map(item => item.avgTimesheetScore || 0);
+    const attendanceData = chartData.map(item => item.avgAttendanceScore || 0);
+    const behaviourData = chartData.map(item => item.avgBehaviourScore || 0);
 
     const lineData = {
       labels,
@@ -302,7 +339,7 @@ const PerformanceChart = ({ selected = "This Week" }) => {
             text: 'Score'
           },
           beginAtZero: true,
-          max: 100
+          max: 10
         }
       },
       interaction: {
@@ -312,8 +349,7 @@ const PerformanceChart = ({ selected = "This Week" }) => {
       }
     };
 
-    // Use backend remark for monthly/yearly data
-    const backendRemark = performanceData.remark || 'No remark available';
+    const backendRemark = performanceData?.remark || 'No data available for this period';
 
     return (
       <>
@@ -323,12 +359,16 @@ const PerformanceChart = ({ selected = "This Week" }) => {
           </div>
           <div className="text-center">
             <div className="text-lg font-medium text-gray-700 mb-2">
-              Average Score: {performanceData.overallAvgScore || 0}
+              Average Score: {performanceData?.overallAvgScore || 0}
             </div>
             <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg mb-3">
               {backendRemark}
             </div>
-            {/* Button to show detailed remarks */}
+            {error && (
+              <div className="text-xs text-orange-500 mb-3">
+                Note: Unable to fetch data, showing zero values
+              </div>
+            )}
             <button
               onClick={() => setShowRemarks(true)}
               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
@@ -338,11 +378,10 @@ const PerformanceChart = ({ selected = "This Week" }) => {
           </div>
         </div>
 
-        {/* Remarks Modal */}
         <RemarksModal
           isOpen={showRemarks}
           onClose={() => setShowRemarks(false)}
-          remarks={performanceData.data}
+          remarks={chartData}
           title={`${selected} Detailed Remarks`}
         />
       </>
