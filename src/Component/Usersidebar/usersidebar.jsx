@@ -16,7 +16,7 @@ import { BiMoney } from 'react-icons/bi'
 import { IoMdListBox } from 'react-icons/io'
 import { HiOutlineDocumentText } from 'react-icons/hi'
 import { RiMoneyDollarCircleLine } from 'react-icons/ri'
-
+import { AiOutlineProject } from 'react-icons/ai'
 const menuItems = [
   { label: 'Dashboard', icon: <RxDashboard />, href: '/dashboard' },
   { label: 'Attendance', icon: <AiOutlineUserSwitch />, href: '/attendance' },
@@ -26,6 +26,8 @@ const menuItems = [
   { label: 'Salary', icon: <BiMoney />, href: '/salarypage' },
   // { label: 'Company Policies', icon: <HiOutlineDocumentText />, href: '/companyPolicy' },
   { label: 'Expense', icon: <RiMoneyDollarCircleLine />, href: '/expense' },
+  { label: 'Project Overview', icon: <AiOutlineProject />, href: '/projectoverview' },
+  
   // { label: 'Bank Info', icon: <FaUniversity />, href: '/bankinformation' },
   { label: 'Logout', icon: <FaSignOutAlt />, href: '/' }
 ]

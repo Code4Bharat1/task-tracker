@@ -250,41 +250,48 @@ export default function Expense() {
     };
 
     return (
-        <div className="min-h-screen p-6">
+        <div className="min-h-screen bg-white p-4 sm:p-6">
             {/* Toast Notifications */}
             {toast.show && (
                 <div
-                    className={`fixed top-6 left-1/2 transform -translate-x-1/2 p-4 rounded-md shadow-lg flex items-center gap-2 transition-all z-50 ${toast.type === 'success' ? 'bg-green-100 text-green-800 border-l-4 border-green-500' :
-                        'bg-red-100 text-red-800 border-l-4 border-red-500'
-                        }`}
+                    className={`fixed top-6 left-1/2 transform -translate-x-1/2 p-4 rounded-xl shadow-2xl flex items-center gap-3 transition-all z-50 backdrop-blur-sm border ${toast.type === 'success' 
+                        ? 'bg-emerald-50/90 text-emerald-800 border-emerald-200 shadow-emerald-100' 
+                        : 'bg-rose-50/90 text-rose-800 border-rose-200 shadow-rose-100'
+                    }`}
                 >
-                    {toast.type === 'success' ? (
-                        <CheckCircle className="text-green-500" size={20} />
-                    ) : (
-                        <AlertCircle className="text-red-500" size={20} />
-                    )}
-                    <p className="font-medium">{toast.message}</p>
+                    <div className={`p-1 rounded-full ${toast.type === 'success' ? 'bg-emerald-100' : 'bg-rose-100'}`}>
+                        {toast.type === 'success' ? (
+                            <CheckCircle className="text-emerald-600" size={18} />
+                        ) : (
+                            <AlertCircle className="text-rose-600" size={18} />
+                        )}
+                    </div>
+                    <p className="font-semibold text-sm">{toast.message}</p>
                 </div>
             )}
 
             {/* Header Section with Title and History Button */}
-            <div className="max-w-2xl mx-auto mb-6 flex justify-between items-center">
-                <div className="relative ml-4 mt-4 w-max">
-                    <h2 className="text-3xl font-bold text-gray-800">Expense Form</h2>
-                    <span
+            <div className="max-w-4xl mx-auto mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <div className="relative">
+                    <h1 className="text-3xl font-bold text-black">
+                        Expense Request
+                    </h1>
+                    {/* <span
                         ref={underlineRef}
-                        className="absolute left-0 bottom-0 h-[3px] bg-cyan-500 w-full scale-x-0"
-                    ></span>
-                </div>
+                        className="absolute left-0 bottom-0 h-1 bg-[#0179a4] w-full scale-x-0 rounded-full"
+                    ></span> */}
+                    </div>
 
                 {/* History Button */}
                 <Link href="/expense/expenseHistory">
                     <div
                         ref={historyBtnRef}
-                        className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-2 rounded-lg transition-colors shadow-sm border border-blue-200"
+                        className="group flex items-center gap-3 bg-white/80 backdrop-blur-sm hover:bg-white border border-blue-200/50 hover:border-blue-300 text-blue-700 px-6 py-3 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-100/50"
                     >
-                        <History size={18} />
-                        <span className="font-medium">Expense History</span>
+                        <div className="p-1 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+                            <History size={18} />
+                        </div>
+                        <span className="font-semibold">View History</span>
                     </div>
                 </Link>
             </div>
@@ -292,41 +299,49 @@ export default function Expense() {
             {/* Expense Form */}
             <div
                 ref={formRef}
-                className="bg-white shadow-xl rounded-2xl p-8 border border-gray-200 max-w-2xl mx-auto"
+                className="bg-white/80 backdrop-blur-sm shadow-2xl rounded-3xl p-6 sm:p-8 border border-white/20 max-w-4xl mx-auto"
             >
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-8">
                     {expenses.map((expense, index) => (
                         <div
                             key={expense.id}
                             id={`expense-${expense.id}`}
-                            className="expense-item bg-gray-50 p-6 rounded-xl border border-gray-200 relative"
+                            className="expense-item bg-white p-6 sm:p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 relative group"
                         >
-                            {expenses.length > 1 && (
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="font-medium text-gray-700">Expense #{index + 1}</h3>
+                            {/* Header with expense number and remove button */}
+                            <div className="flex justify-between items-center mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-[#0179a4] text-white rounded-full flex items-center justify-center text-sm font-bold">
+                                        {index + 1}
+                                    </div>
+                                    <h3 className="text-xl font-bold text-slate-800">
+                                        Expense Entry
+                                    </h3>
+                                </div>
+                                {expenses.length > 1 && (
                                     <button
                                         type="button"
                                         onClick={() => removeExpense(expense.id)}
-                                        className="text-red-500 hover:text-red-700 text-sm flex items-center gap-1"
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-2 text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-2 rounded-xl text-sm font-medium"
                                     >
                                         <FaTrashAlt size={12} />
                                         Remove
                                     </button>
-                                </div>
-                            )}
+                                )}
+                            </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {/* Left Column */}
-                                <div className="space-y-4">
+                                <div className="space-y-6">
                                     {/* Category Dropdown */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Category <span className="text-red-500">*</span>
+                                    <div className="group">
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                            Category <span className="text-rose-500">*</span>
                                         </label>
                                         <select
                                             value={expense.category}
                                             onChange={(e) => handleChange(expense.id, 'category', e.target.value)}
-                                            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                                            className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all text-sm bg-white/50 backdrop-blur-sm"
                                             required
                                         >
                                             <option value="">Select a category</option>
@@ -337,16 +352,16 @@ export default function Expense() {
                                     </div>
 
                                     {/* Date */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Date <span className="text-red-500">*</span>
+                                    <div className="group">
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                            Date <span className="text-rose-500">*</span>
                                         </label>
                                         <div className="relative">
                                             <input
                                                 type="text"
                                                 value={expense.date || ''}
                                                 placeholder="Select date"
-                                                className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                className="w-full px-4 py-3 text-sm border-2 border-slate-200 rounded-xl focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all bg-white/50 backdrop-blur-sm"
                                                 onFocus={() =>
                                                     document.getElementById(`real-date-${expense.id}`)?.showPicker?.()
                                                 }
@@ -359,46 +374,50 @@ export default function Expense() {
                                                 className="absolute inset-0 opacity-0 cursor-pointer"
                                                 onChange={(e) => handleChange(expense.id, 'date', e.target.value)}
                                             />
-                                            <FaRegCalendarAlt
-                                                onClick={() =>
-                                                    document.getElementById(`real-date-${expense.id}`)?.showPicker?.()
-                                                }
-                                                className="absolute right-3 top-2.5 text-gray-400 cursor-pointer"
-                                                size={16}
-                                            />
+                                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 p-2 bg-slate-100 rounded-lg">
+                                                <FaRegCalendarAlt
+                                                    onClick={() =>
+                                                        document.getElementById(`real-date-${expense.id}`)?.showPicker?.()
+                                                    }
+                                                    className="text-slate-500 cursor-pointer hover:text-blue-500 transition-colors"
+                                                    size={16}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Right Column */}
-                                <div className="space-y-4">
+                                <div className="space-y-6">
                                     {/* Amount */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Amount <span className="text-red-500">*</span>
+                                    <div className="group">
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                            Amount <span className="text-rose-500">*</span>
                                         </label>
                                         <div className="relative">
-                                            <span className="absolute left-3 top-2 text-gray-500">₹</span>
+                                            <div className="absolute text-white px-2 py-1 rounded-lg text-sm font-bold">
+                                                ₹
+                                            </div>
                                             <input
                                                 type="number"
                                                 value={expense.amount}
                                                 onChange={(e) => handleChange(expense.id, 'amount', e.target.value)}
-                                                className="w-full pl-8 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
-                                                placeholder="0.00"
+                                                className="w-full px-2 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all text-sm bg-white/50 backdrop-blur-sm"
+                                                placeholder="Eg. 400"
                                                 required
                                             />
                                         </div>
                                     </div>
 
                                     {/* Payment Method */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Payment Method <span className="text-red-500">*</span>
+                                    <div className="group">
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                            Payment Method <span className="text-rose-500">*</span>
                                         </label>
                                         <select
                                             value={expense.paymentMethod}
                                             onChange={(e) => handleChange(expense.id, 'paymentMethod', e.target.value)}
-                                            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                                            className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all text-sm bg-white/50 backdrop-blur-sm"
                                             required
                                         >
                                             <option value="">Select payment method</option>
@@ -410,56 +429,57 @@ export default function Expense() {
                                 </div>
 
                                 {/* Description (full width) */}
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <div className="lg:col-span-2 group">
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">
                                         Description
                                     </label>
                                     <textarea
                                         value={expense.description}
                                         onChange={(e) => handleChange(expense.id, 'description', e.target.value)}
-                                        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all text-sm bg-white/50 backdrop-blur-sm resize-none"
                                         placeholder="Enter expense details..."
-                                        rows={2}
+                                        rows={3}
                                     />
                                 </div>
 
                                 {/* File Upload (full width) */}
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <div className="lg:col-span-2 group">
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">
                                         Receipt/Attachment
                                     </label>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                                         <label
                                             htmlFor={`file-input-${expense.id}`}
-                                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                                            className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl cursor-pointer hover:from-blue-100 hover:to-indigo-100 transition-all duration-300 shadow-sm hover:shadow-md"
                                         >
-                                            <FaPaperclip className="text-gray-500" />
-                                            <span className="text-sm">Choose File</span>
+                                            <div className="p-1 bg-blue-100 rounded-lg">
+                                                <FaPaperclip className="text-blue-600" size={14} />
+                                            </div>
+                                            <span className="text-sm font-medium text-blue-700">Choose File</span>
                                             <input
                                                 type="file"
-                                                accept="image/*" // ← Only allow image files
+                                                accept="image/*"
                                                 id={`file-input-${expense.id}`}
                                                 className="hidden"
                                                 onChange={(e) => handleFileChange(expense.id, e)}
                                             />
-
                                         </label>
-                                        <div className="flex-1 flex items-center justify-between bg-gray-100 px-3 py-2 rounded-lg">
-                                            <span className="text-sm text-gray-700 truncate max-w-xs">
+                                        <div className="flex-1 min-w-0 flex items-center justify-between bg-slate-50 border-2 border-slate-200 px-4 py-3 rounded-xl">
+                                            <span className="text-sm text-slate-700 truncate">
                                                 {expense.fileName}
                                             </span>
                                             {expense.file && (
                                                 <button
                                                     type="button"
                                                     onClick={() => removeFile(expense.id)}
-                                                    className="text-red-500 hover:text-red-700"
+                                                    className="ml-2 p-2 text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors"
                                                 >
-                                                    <FaTrashAlt size={14} />
+                                                    <FaTrashAlt size={12} />
                                                 </button>
                                             )}
                                         </div>
                                     </div>
-                                    <p className="mt-1 text-xs text-gray-500">
+                                    <p className="mt-2 text-xs text-slate-500">
                                         Upload receipt or supporting document (optional)
                                     </p>
                                 </div>
@@ -467,23 +487,37 @@ export default function Expense() {
                         </div>
                     ))}
 
-                    {/* Buttons */}
+                    {/* Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-4">
                         <button
                             type="button"
                             onClick={addExpense}
-                            className="flex items-center justify-center px-6 py-2 border border-dashed border-gray-400 rounded-lg text-gray-600 hover:bg-gray-100 transition-all cursor-pointer"
+                            className="group flex items-center justify-center px-6 py-4 border-2 border-dashed border-slate-300 hover:border-blue-400 rounded-2xl text-slate-600 hover:text-blue-600 bg-slate-50/50 hover:bg-blue-50/50 transition-all duration-300 cursor-pointer"
                         >
-                            <Plus className="h-5 w-5 mr-2" />
-                            Add Another Expense
+                            <div className="p-1 bg-slate-200 group-hover:bg-blue-200 rounded-lg mr-3 transition-colors">
+                                <Plus className="h-5 w-5" />
+                            </div>
+                            <span className="font-semibold">Add Another Expense</span>
                         </button>
 
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="flex-1 bg-blue-600 cursor-pointer text-white px-6 py-3 rounded-lg font-medium hover:opacity-90 transition-all shadow-md disabled:opacity-50"
+                            className="flex-1 relative overflow-hidden bg-[#0179a4] text-white px-8 py-4 rounded-2xl font-bold transition-all duration-300 shadow-lg hover:shadow-xl disabled:shadow-none transform hover:scale-[1.02] disabled:scale-100 cursor-pointer disabled:cursor-not-allowed"
                         >
-                            {isSubmitting ? "Submitting..." : "Submit Expenses"}
+                            <span className="relative z-10">
+                                {isSubmitting ? (
+                                    <div className="flex items-center justify-center gap-2">
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        Submitting...
+                                    </div>
+                                ) : (
+                                    "Submit Expenses"
+                                )}
+                            </span>
+                            {!isSubmitting && (
+                                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
+                            )}
                         </button>
                     </div>
                 </form>
