@@ -34,32 +34,47 @@ export default function LeaveTable() {
   }, []);
 
   // Fetch leave data
-  useEffect(() => {
-    const fetchLeaves = async () => {
-      setIsLoading(true);
-      try {
-        const { data } = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_API}/leave/admin/company-leaves`,
-          {
-            withCredentials: true,
-          }
-        );
+ useEffect(() => {
+  const fetchLeaves = async () => {
+    setIsLoading(true);
+    try {
+      // Step 1: Get user role
+      const userRes = await axios.get(
+        `${process.env.NEXT_PUBLIC_BACKEND_API}/user/auth/me`,
+        { withCredentials: true }
+      );
+      const position = userRes?.data?.role;
+      console.log(position)
 
-        if (data.success) {
-          setLeaves(data.data);
-        } else {
-          toast.error("Failed to fetch leave data");
-        }
-      } catch (error) {
-        toast.error("Error fetching leave data");
-        console.error(error);
-      } finally {
-        setIsLoading(false);
+      let endpoint = "";
+      if (position === "TeamLeader") {
+        endpoint = `${process.env.NEXT_PUBLIC_BACKEND_API}/leave/user/team-leaves`;
+      } else if (position === "Manager" || position === "HR") {
+        endpoint = `${process.env.NEXT_PUBLIC_BACKEND_API}/leave/admin/company-leaves`;
+      } else {
+        toast.error("Unauthorized access");
+        return;
       }
-    };
 
-    fetchLeaves();
-  }, []);
+      // Step 2: Fetch leaves
+      const { data } = await axios.get(endpoint, { withCredentials: true });
+
+      if (data.success) {
+        setLeaves(data.data);
+      } else {
+        toast.error("Failed to fetch leave data");
+      }
+    } catch (error) {
+      toast.error("Error fetching leave data");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  fetchLeaves();
+}, []);
+
 
   // Count leaves by status
   const countsByStatus = leaves.reduce(
@@ -408,7 +423,7 @@ export default function LeaveTable() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <button
-                        onClick={() => router.push(`/leavetable/${entry._id}`)}
+                        onClick={() => router.push(`/viewleave/${entry._id}`)}
                         className="inline-flex items-center justify-center px-3 py-1 bg-[#018ABE] text-white text-xs font-medium rounded hover:bg-[#0179a4] transition-colors"
                       >
                         View Details

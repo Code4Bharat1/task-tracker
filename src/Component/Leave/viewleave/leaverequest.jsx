@@ -138,7 +138,7 @@ export default function LeaveRequest() {
         <h2 className="text-2xl font-bold text-gray-800 mb-2">Leave Request Not Found</h2>
         <p className="text-gray-600 mb-6">The leave request you're looking for doesn't exist or has been removed.</p>
         <button 
-          onClick={() => router.push('/leavetable')}
+          onClick={() => router.push('/viewleave')}
           className="flex items-center bg-[#018ABE] text-white px-6 py-2 rounded-lg hover:bg-[#016d94] transition-colors"
         >
           <ChevronLeft size={18} className="mr-2" />
@@ -153,7 +153,7 @@ export default function LeaveRequest() {
       {/* Header with back button */}
       <div className="flex items-center mb-6">
         <button 
-          onClick={() => router.push('/leavetable')}
+          onClick={() => router.push('/viewleave')}
           className="mr-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
           aria-label="Go back"
         >
