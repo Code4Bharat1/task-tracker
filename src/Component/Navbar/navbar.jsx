@@ -83,7 +83,7 @@ export default function NavBar() {
         </button>
 
       {/* Add Team Members */}
-      <button title="Add Team Members" onClick={() => router.push('/addteam')}>
+      <button title="Add Team Members" onClick={() => router.push('/dashboard/addteammembers')}>
         <FaUserPlus className="w-6 h-6 text-black cursor-pointer" />
       </button>
 
