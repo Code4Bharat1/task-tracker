@@ -93,7 +93,7 @@ export default function NavBar() {
       </button>
 
       {/* View Posts */}
-      <button title="View Posts" onClick={() => router.push('/viewpost')}>
+      <button title="View Posts" onClick={() => router.push('/dashboard/posts')}>
         <FaRegNewspaper className="w-6 h-6 text-black cursor-pointer" />
       </button>
 
