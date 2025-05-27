@@ -1,40 +1,72 @@
+SALARY;
+("use client");
+import React, { useState } from "react";
 
 import NavBar from "@/Component/Navbar/navbar";
-import SalarySlipPage from "@/Component/SalaryPage/Salary/salaryslip";
+import MobileNavbar from "@/Component/Navbar/mobilenavbar"; // Import your MobileNavbar
+import Sidebar from "@/Component/Usersidebar/usersidebar";
+import MobileSidebar from "@/Component/Usersidebar/mobilesidebar";
+import { Menu } from "lucide-react";
+
+import MobileSalaryPage from "@/Component/SalaryPage/mobilesalarypage";
 import SalaryPage from "@/Component/SalaryPage/SalaryPage";
 
+function Page() {
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-import Sidebar from "@/Component/Usersidebar/usersidebar";
-import React from "react";
-
-function page() {
   return (
-    <div className="min-h-screen md:flex bg-white">
+    <div className="min-h-screen bg-white">
+      {/* Desktop View */}
+      <div className="hidden md:flex w-full">
+        {/* Sidebar */}
+        <div className="md:w-1/6">
+          <Sidebar />
+        </div>
 
-      {/* Desktop Sidebar Section (visible on md+) */}
-      <div className="md:w-1/6 ">
-        <Sidebar />
+        {/* Main Content */}
+        <div className="w-full md:w-5/6">
+          <NavBar />
+          <SalaryPage />
+        </div>
       </div>
 
-      {/* Main Content */}
-      <div className="w-full md:w-5/6 md:flex-1 h-screen bg-white">
-        {/* Desktop Navbar (hidden on mobile) */}
-        <NavBar />
+      {/* Mobile View */}
+      <div className="block md:hidden relative">
+        {/* Use your MobileNavbar component instead of creating duplicate header */}
+        <div className="flex items-center">
+          {/* Menu button for sidebar */}
+          <button
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="absolute left-4 top-4 z-50 text-white"
+          >
+            <Menu size={28} />
+          </button>
 
-        {/* Page Content */}
-        <main className=" md:block">
-           <SalaryPage/>
-        </main>
+          {/* Your existing MobileNavbar component */}
+          <MobileNavbar />
+        </div>
 
+        {/* Overlay for sidebar */}
+        {isMobileSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity/30 z-35"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+        )}
 
+        {/* Mobile Sidebar */}
+        <MobileSidebar
+          isOpen={isMobileSidebarOpen}
+          setIsOpen={setIsMobileSidebarOpen}
+        />
 
-
-
-
+        {/* Mobile Attendance Page */}
+        <div className="p-4">
+          <MobileSalaryPage />
+        </div>
       </div>
-
     </div>
   );
 }
 
-export default page;
+export default Page;

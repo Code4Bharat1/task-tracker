@@ -1,27 +1,70 @@
+"use client";
+import React, { useState } from "react";
 
-import PunchHistory from '@/Component/attendance/punchhistory';
-import NavBar from '@/Component/Navbar/navbar';
-import Sidebar from '@/Component/Usersidebar/usersidebar';
+import NavBar from "@/Component/Navbar/navbar";
+import MobileNavbar from "@/Component/Navbar/mobilenavbar"; // Import your MobileNavbar
+import Sidebar from "@/Component/Usersidebar/usersidebar";
+import MobileSidebar from "@/Component/Usersidebar/mobilesidebar";
+import { Menu } from "lucide-react";
+import MobilePunchHistory from "@/Component/attendance/mobilepunchhistory";
+import PunchHistory from "@/Component/attendance/punchhistory";
 
-import React from 'react'
+function Page() {
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-export default function Home() {
   return (
-    <div className="h-screen overflow-hidden"> {/* Prevent page scroll */}
-      {/* Sidebar - Fixed */}
-      <div className="w-1/6 fixed top-0 bottom-0 left-0 bg-gray-100">
-      <Sidebar/>
+    <div className="min-h-screen bg-white">
+      {/* Desktop View */}
+      <div className="hidden md:flex w-full">
+        {/* Sidebar */}
+        <div className="md:w-1/6">
+          <Sidebar />
+        </div>
+
+        {/* Main Content */}
+        <div className="w-full md:w-5/6">
+          <NavBar />
+          <PunchHistory />
+        </div>
       </div>
 
-      {/* Navbar - Fixed */}
-      <div className="fixed top-0 right-0 w-5/6 ml-[16.6667%] z-10">
-       <NavBar/>
-      </div>
+      {/* Mobile View */}
+      <div className="block md:hidden relative">
+        {/* Use your MobileNavbar component instead of creating duplicate header */}
+        <div className="flex items-center">
+          {/* Menu button for sidebar */}
+          <button
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="absolute left-4 top-4 z-50 text-white"
+          >
+            <Menu size={28} />
+          </button>
 
-      {/* Scrollable Content below Navbar */}
-      <div className="mt-[60px] ml-[16.6667%] h-[calc(100vh-60px)] overflow-y-auto p-4 bg-white">
-      <PunchHistory/>
+          {/* Your existing MobileNavbar component */}
+          <MobileNavbar />
+        </div>
+
+        {/* Overlay for sidebar */}
+        {isMobileSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/30  z-35"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+        )}
+
+        {/* Mobile Sidebar */}
+        <MobileSidebar
+          isOpen={isMobileSidebarOpen}
+          setIsOpen={setIsMobileSidebarOpen}
+        />
+
+        {/* Mobile Attendance Page */}
+        <div className="p-4">
+          <MobilePunchHistory />
+        </div>
       </div>
     </div>
   );
 }
+
+export default Page;
