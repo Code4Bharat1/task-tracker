@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
     Users, Search, Filter, Mail, Phone, Briefcase, Building,
     User, Calendar, Edit, Trash2, Eye, ChevronDown, X,
@@ -8,13 +9,12 @@ import {
 
 export default function ViewTeamMember() {
     // Navigation function (replace with your routing solution)
+
+    const router = useRouter();
     const navigateToAddMember = () => {
-        // Replace this with your preferred routing method
-        // For Next.js: router.push('/dashboard/addteammembers')
-        // For React Router: navigate('/dashboard/addteammembers')
-        console.log('Navigate to: /dashboard/addteammembers');
-        alert('Navigation: /dashboard/addteammembers\n\nReplace navigateToAddMember function with your routing solution');
-    };
+        
+        router.push('/dashboard/addteammembers')
+        };
     // Sample team member data
     const [teamMembers] = useState([
         {
