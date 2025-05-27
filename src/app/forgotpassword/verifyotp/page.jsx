@@ -1,14 +1,20 @@
-'use client';
+import PasswordResetForm from "@/Component/forgetpasswordSecond/forgetpasswordSecond";
+import MobileRequestOTP from "@/Component/forgetpasswordSecond/mobileotp";
 
-import PasswordResetForm from '@/Component/forgetpasswordSecond/forgetpasswordSecond'
-import React from 'react'
+import React from "react";
 
-function page() {
+export default function Home() {
   return (
     <div>
-        < PasswordResetForm />
-    </div>
-  )
-}
+      {/* Desktop View */}
+      <div className="hidden md:block">
+        <PasswordResetForm />
+      </div>
 
-export default page
+      {/* Mobile View */}
+      <div className="block md:hidden">
+        <MobileRequestOTP />
+      </div>
+    </div>
+  );
+}
