@@ -11,6 +11,7 @@ import { axiosInstance } from '@/lib/axiosInstance';
 import PerformanceSummary from "@/Component/dashboard/performancesummary";
 import PerformanceChart from "@/Component/dashboard/performancechart";
 import PerformanceBoard from "@/Component/dashboard/Performanceboard";
+import FloatingButtons from "@/Component/FloatingButtons";
 
 function Page() {
   const [selected, setSelected] = useState("This Year");
@@ -196,12 +197,12 @@ function Page() {
             <PerformanceBoard />
           </div>
         </main>
-
         <main className="block md:hidden">
           <div className="p-6">
             <p className="text-center text-gray-500">Dashboard is optimized for desktop view</p>
           </div>
         </main>
+        <FloatingButtons />
       </div>
     </div>
   );
