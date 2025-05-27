@@ -1,31 +1,37 @@
+import MobilePolicy4 from "@/Component/Companypolicy/mobilepolicy4";
+import Policy4 from "@/Component/Companypolicy/policy4";
+import NavBar from "@/Component/Navbar/navbar";
+import Sidebar from "@/Component/Usersidebar/usersidebar";
 
 
+import React from "react";
 
-import Policy4 from '@/Component/Companypolicy/policy4';
-import NavBar from '@/Component/Navbar/navbar';
+function page() {
+    return (
+        <div className="min-h-screen md:flex bg-white">
+<div className="hidden md:block">
+            {/* Desktop Sidebar Section (visible on md+) */}
+            <div className="md:w-1/6 ">
+                <Sidebar />
+            </div>
 
-
-import Sidebar from '@/Component/Usersidebar/usersidebar';
-
-import React from 'react'
-
-export default function Home() {
-  return (
-    <div className="h-screen overflow-hidden"> {/* Prevent page scroll */}
-      {/* Sidebar - Fixed */}
-      <div className="w-1/6 fixed top-0 bottom-0 left-0 bg-gray-100">
-       <Sidebar/>
+            {/* Main Content */}
+            <div className="w-full md:w-5/6 md:flex-1 h-screen bg-white">
+                {/* Desktop Navbar (hidden on mobile) */}
+                <NavBar />
+                
+        <Policy4/>
+      </div>
+  </div>
+      {/* Mobile View */}
+      <div className="block md:hidden">
+        <MobilePolicy4/>
       </div>
 
-      {/* Navbar - Fixed */}
-      <div className="fixed top-0 right-0 w-5/6 ml-[16.6667%] z-10">
-     <NavBar/>
-      </div>
+          
 
-      {/* Scrollable Content below Navbar */}
-      <div className="mt-[60px] ml-[16.6667%] h-[calc(100vh-60px)] overflow-y-auto p-4 bg-white">
-<Policy4/>
-      </div>
-    </div>
-  );
+        </div>
+    );
 }
+
+export default page;
