@@ -1,6 +1,7 @@
 import NavBar from "@/Component/Navbar/navbar";
 import PersonalCalendar from "@/Component/personalcalendar/personalcalendar";
 
+
 import Sidebar from "@/Component/Usersidebar/usersidebar";
 
 import React from "react";
@@ -18,7 +19,7 @@ function page() {
         {/* Desktop Navbar (hidden on mobile) */}
         <NavBar />
         <div>
-          <PersonalCalendar />
+      <PersonalCalendar/>
         </div>
       </div>
     </div>

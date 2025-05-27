@@ -1,29 +1,35 @@
+// Assuming this is in /pages/attendance/page.jsx or similar (for Next.js App Router)
 
-import NavBar from '@/Component/Navbar/navbar';
-import EditTimeSheet from '@/Component/Timesheet/edittimesheet';
-
-import Sidebar from '@/Component/Usersidebar/usersidebar';
+import React from "react";
 
 
-import React from 'react'
+import NavBar from "@/Component/Navbar/navbar";
+import Sidebar from "@/Component/Usersidebar/usersidebar";
+import MobileEditTimeSheet from "@/Component/Timesheet/mobileedittimesheet";
+import EditTimeSheet from "@/Component/Timesheet/edittimesheet";
 
-export default function Home() {
+function Page() {
   return (
-    <div className="h-screen overflow-hidden"> {/* Prevent page scroll */}
-      {/* Sidebar - Fixed */}
-      <div className="w-1/6 fixed top-0 bottom-0 left-0 bg-gray-100">
-      <Sidebar/>
+    <div className="min-h-screen md:flex bg-white">
+      {/* Desktop View */}
+      <div className="hidden md:flex w-full">
+        {/* Sidebar */}
+        <div className="md:w-1/6">
+          <Sidebar />
+        </div>
+        {/* Main Content */}
+        <div className="w-full md:w-5/6">
+          <NavBar />
+          <EditTimeSheet />
+        </div>
       </div>
 
-      {/* Navbar - Fixed */}
-      <div className="fixed top-0 right-0 w-5/6 ml-[16.6667%] z-10">
-      <NavBar/>
-      </div>
-
-      {/* Scrollable Content below Navbar */}
-      <div className="mt-[60px] ml-[16.6667%] h-[calc(100vh-60px)] overflow-y-auto p-4 bg-white">
-        <EditTimeSheet/>
+      {/* Mobile View */}
+      <div className="block md:hidden">
+        <MobileEditTimeSheet />
       </div>
     </div>
   );
 }
+
+export default Page;
