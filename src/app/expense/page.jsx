@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import MobileAttendancePage from "@/Component/attendance/mobileattendance";
-import AttendancePage from "@/Component/attendance/myattendance";
+
 import NavBar from "@/Component/Navbar/navbar";
 import MobileNavbar from "@/Component/Navbar/mobilenavbar"; // Import your MobileNavbar
 import Sidebar from "@/Component/Usersidebar/usersidebar";
