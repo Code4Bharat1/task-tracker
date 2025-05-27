@@ -205,13 +205,7 @@ const PerformanceChart = ({ selected = "This Week" }) => {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          position: 'bottom',
-          labels: {
-            padding: 20,
-            font: {
-              size: 12
-            }
-          }
+          display: false, // We'll create custom legend
         },
         tooltip: {
           callbacks: {
@@ -231,6 +225,23 @@ const PerformanceChart = ({ selected = "This Week" }) => {
         <div className="h-64 mb-4">
           <Pie data={pieData} options={pieOptions} />
         </div>
+        
+        {/* Custom Legend in single row */}
+        <div className="flex justify-center items-center flex-wrap gap-4 mb-4">
+          <div className="flex items-center">
+            <div className="w-3 h-3 bg-[#FF6384] rounded-full mr-2"></div>
+            <span className="text-xs font-medium text-gray-700">Timesheet</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 bg-[#36A2EB] rounded-full mr-2"></div>
+            <span className="text-xs font-medium text-gray-700">Attendance</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 bg-[#FFCE56] rounded-full mr-2"></div>
+            <span className="text-xs font-medium text-gray-700">Behaviour</span>
+          </div>
+        </div>
+
         <div className="text-center">
           <div className="text-lg font-medium text-gray-700 mb-2">
             Total Score: {totalScore}
@@ -303,13 +314,7 @@ const PerformanceChart = ({ selected = "This Week" }) => {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          position: 'bottom',
-          labels: {
-            padding: 20,
-            font: {
-              size: 12
-            }
-          }
+          display: false, // We'll create custom legend
         },
         title: {
           display: true,
@@ -357,18 +362,28 @@ const PerformanceChart = ({ selected = "This Week" }) => {
           <div className="h-80 mb-4">
             <Line data={lineData} options={lineOptions} />
           </div>
-          <div className="text-center">
-            <div className="text-lg font-medium text-gray-700 mb-2">
+          
+          {/* Custom Legend in single row */}
+          <div className="flex justify-center items-center flex-wrap gap-4 mb-4">
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-[#FF6384] rounded-full mr-2"></div>
+              <span className="text-xs font-medium text-gray-700">Timesheet Score</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-[#36A2EB] rounded-full mr-2"></div>
+              <span className="text-xs font-medium text-gray-700">Attendance Score</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-[#FFCE56] rounded-full mr-2"></div>
+              <span className="text-xs font-medium text-gray-700">Behaviour Score</span>
+            </div>
+          </div>
+
+          {/* Average Score and Button in single row */}
+          <div className="flex justify-between items-center">
+            <div className="text-lg font-medium text-gray-700">
               Average Score: {performanceData?.overallAvgScore || 0}
             </div>
-            <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg mb-3">
-              {backendRemark}
-            </div>
-            {error && (
-              <div className="text-xs text-orange-500 mb-3">
-                Note: Unable to fetch data, showing zero values
-              </div>
-            )}
             <button
               onClick={() => setShowRemarks(true)}
               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
@@ -376,6 +391,12 @@ const PerformanceChart = ({ selected = "This Week" }) => {
               View Detailed Remarks
             </button>
           </div>
+          
+          {error && (
+            <div className="text-xs text-orange-500 mt-3 text-center">
+              Note: Unable to fetch data, showing zero values
+            </div>
+          )}
         </div>
 
         <RemarksModal

@@ -10,6 +10,7 @@ import TaskPriorityChart from "@/Component/dashboard/TaskPriorityChart";
 import { axiosInstance } from '@/lib/axiosInstance';
 import PerformanceSummary from "@/Component/dashboard/performancesummary";
 import PerformanceChart from "@/Component/dashboard/performancechart";
+import PerformanceBoard from "@/Component/dashboard/Performanceboard";
 
 function Page() {
   const [selected, setSelected] = useState("This Year");
@@ -147,6 +148,7 @@ function Page() {
         <main className="hidden md:block px-6 py-6">
           <OverviewHeader selected={selected} setSelected={setSelected} />
 
+          {/* First row - 2x2 grid for charts */}
           <div className="grid grid-cols-2 md:grid-cols-2 gap-6 mt-6">
             {!hasTasksData && (
               <TaskPriorityChart
@@ -187,6 +189,11 @@ function Page() {
             )}
 
             <PerformanceChart selected={selected} />
+          </div>
+
+          {/* Second row - Full width Performance Board */}
+          <div className="mt-6">
+            <PerformanceBoard />
           </div>
         </main>
 
