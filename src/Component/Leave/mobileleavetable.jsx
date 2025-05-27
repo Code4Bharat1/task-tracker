@@ -1,19 +1,66 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import { Toaster, toast } from "react-hot-toast";
-import axios from "axios";
-import { Trash2 } from "lucide-react";
+import {
+  Trash2,
+  Calendar,
+  User,
+  FileText,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+} from "lucide-react";
 
 export default function MobileLeaveTable() {
-  const [leaves, setLeaves] = useState([]);
+  const [leaves, setLeaves] = useState([
+    {
+      _id: "1",
+      managerId: "ayaan_id",
+      reason:
+        "Medical checkup and recovery time needed for proper healing and rest",
+      createdAt: "2024-01-15T10:30:00Z",
+      fromDate: "2024-01-20",
+      toDate: "2024-01-22",
+      days: 3,
+      status: "Pending",
+    },
+    {
+      _id: "2",
+      managerId: "prashant_id",
+      reason:
+        "Family wedding ceremony and related celebrations that require my presence",
+      createdAt: "2024-01-10T14:20:00Z",
+      fromDate: "2024-01-25",
+      toDate: "2024-01-27",
+      days: 3,
+      status: "Accepted",
+    },
+    {
+      _id: "3",
+      managerId: "shams_id",
+      reason:
+        "Personal emergency situation that requires immediate attention and cannot be postponed",
+      createdAt: "2024-01-05T09:15:00Z",
+      fromDate: "2024-01-12",
+      toDate: "2024-01-14",
+      days: 3,
+      status: "Rejected",
+    },
+  ]);
   const [approvalTo, setApprovalTo] = useState("");
-  const [approvers, setApprovers] = useState([]);
+  const [approvers, setApprovers] = useState([
+    { id: "ayaan_id", name: "Ayaan Raje" },
+    { id: "prashant_id", name: "Prashant Patil" },
+    { id: "shams_id", name: "Shams Ali Shaikh" },
+    { id: "awab_id", name: "Awab Fakih" },
+  ]);
   const [showModal, setShowModal] = useState(false);
   const [leaveType, setLeaveType] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [reason, setReason] = useState("");
   const [wordCount, setWordCount] = useState(0);
+  const [filterStatus, setFilterStatus] = useState("All");
   const fileInputRef = useRef(null);
   const today = new Date().toISOString().split("T")[0];
 
@@ -22,37 +69,6 @@ export default function MobileLeaveTable() {
       new Date(end1) < new Date(start2) || new Date(start1) > new Date(end2)
     );
   };
-
-  useEffect(() => {
-    const fetchApprovers = async () => {
-      try {
-        const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_API}/leave/approvers`,
-          { withCredentials: true }
-        );
-        setApprovers(res.data.data || []);
-      } catch (error) {
-        console.error("Failed to load approvers", error);
-      }
-    };
-    fetchApprovers();
-  }, []);
-
-  useEffect(() => {
-    const fetchLeaves = async () => {
-      try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_API}/leave/userLeave`,
-          { withCredentials: true }
-        );
-        setLeaves(response.data.leaves || []);
-      } catch (error) {
-        console.error("Error fetching leaves:", error);
-        toast.error("Failed to fetch leave data.");
-      }
-    };
-    fetchLeaves();
-  }, []);
 
   useEffect(() => {
     document.body.classList.toggle("overflow-hidden", showModal);
@@ -85,17 +101,17 @@ export default function MobileLeaveTable() {
       !toDate ||
       !reason.trim()
     ) {
-      toast.error("Please fill out all fields before submitting.");
+      alert("Please fill out all fields before submitting.");
       return;
     }
 
     if (reason.trim().split(/\s+/).filter(Boolean).length < 24) {
-      toast.error("Reason for Leave must be at least 24 words long.");
+      alert("Reason for Leave must be at least 24 words long.");
       return;
     }
 
     if (new Date(toDate) < new Date(fromDate)) {
-      toast.error("To Date cannot be before From Date.");
+      alert("To Date cannot be before From Date.");
       return;
     }
 
@@ -104,79 +120,34 @@ export default function MobileLeaveTable() {
     );
 
     if (hasOverlap) {
-      toast("You already have leave applied during these dates.", {
-        icon: "📅",
-        duration: 5000,
-        style: {
-          border: "1px solid #3182ce",
-          padding: "12px 16px",
-          color: "#2b6cb0",
-          background: "#ebf8ff",
-          fontWeight: "500",
-        },
-      });
+      alert("You already have leave applied during these dates.");
       return;
     }
 
-    let managerId = approvalTo;
-    if (!approvers.some((a) => a.id === approvalTo)) {
-      const selectedApprover = approvers.find((a) => a.name === approvalTo);
-      if (selectedApprover) {
-        managerId = selectedApprover.id;
-      } else {
-        const approverNameToId = {
-          "Ayaan Raje": "ayaan_id",
-          "Prashant Patil": "prashant_id",
-          "Shams Ali Shaikh": "shams_id",
-          "Awab Fakih": "awab_id",
-        };
-        managerId = approverNameToId[approvalTo] || approvalTo;
-      }
-    }
+    // Simulate successful submission
+    const newLeave = {
+      _id: Date.now().toString(),
+      managerId: approvers.find((a) => a.name === approvalTo)?.id || approvalTo,
+      reason,
+      createdAt: new Date().toISOString(),
+      fromDate,
+      toDate,
+      days:
+        Math.ceil(
+          (new Date(toDate) - new Date(fromDate)) / (1000 * 60 * 60 * 24)
+        ) + 1,
+      status: "Pending",
+    };
 
-    const formData = new FormData();
-    formData.append("fromDate", fromDate);
-    formData.append("toDate", toDate);
-    formData.append("leaveType", leaveType);
-    formData.append("reason", reason);
-    formData.append("managerId", managerId);
-
-    if (fileInputRef.current?.files[0]) {
-      formData.append("attachment", fileInputRef.current.files[0]);
-    }
-
-    try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/leave/apply`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-          withCredentials: true,
-        }
-      );
-
-      if (response.status === 201) {
-        toast.success("Leave Submitted Successfully!");
-        setShowModal(false);
-        setLeaveType("");
-        setApprovalTo("");
-        setFromDate("");
-        setToDate("");
-        setReason("");
-        setWordCount(0);
-
-        const updatedLeaves = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_API}/leave/userLeave`,
-          { withCredentials: true }
-        );
-        setLeaves(updatedLeaves.data.leaves || []);
-      } else {
-        toast.error("Failed to submit leave.");
-      }
-    } catch (error) {
-      console.error("Submit error:", error);
-      toast.error("Error submitting leave. Try again later.");
-    }
+    setLeaves([newLeave, ...leaves]);
+    setShowModal(false);
+    setLeaveType("");
+    setApprovalTo("");
+    setFromDate("");
+    setToDate("");
+    setReason("");
+    setWordCount(0);
+    alert("Leave Submitted Successfully!");
   };
 
   const handleReasonChange = (e) => {
@@ -185,60 +156,101 @@ export default function MobileLeaveTable() {
     setWordCount(val.trim().split(/\s+/).filter(Boolean).length);
   };
 
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "Accepted":
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case "Rejected":
+        return <XCircle className="w-4 h-4 text-red-500" />;
+      case "Pending":
+        return <AlertCircle className="w-4 h-4 text-yellow-500" />;
+      default:
+        return <Clock className="w-4 h-4 text-gray-500" />;
+    }
+  };
+
+  // Filter leaves based on selected status
+  const filteredLeaves = leaves.filter((leave) => {
+    if (filterStatus === "All") return true;
+    return leave.status === filterStatus;
+  });
+
   return (
     <div className="p-4 bg-gray-50 min-h-screen">
-      <Toaster />
       <h1 className="text-xl font-bold mb-2">My Leave</h1>
       <div className="w-16 h-1 bg-red-500 mb-4"></div>
 
       <button
         onClick={() => setShowModal(true)}
-        className="mb-4 px-4 py-2 bg-[#018ABE] text-white rounded-full cursor-pointer hover:bg-[#017ba9] text-sm"
+        className="mb-4 px-4 py-2 bg-[#018ABE] text-white rounded-full text-sm hover:bg-[#017ba9] w-full sm:w-auto"
       >
         Leave Application
       </button>
 
+      {/* Filter Buttons */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        {["All", "Pending", "Accepted", "Rejected"].map((status) => (
+          <button
+            key={status}
+            onClick={() => setFilterStatus(status)}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              filterStatus === status
+                ? "bg-[#018ABE] text-white"
+                : "bg-white text-[#018ABE] border border-[#018ABE] hover:bg-blue-50"
+            }`}
+          >
+            {status}{" "}
+            {status !== "All" &&
+              `(${leaves.filter((l) => l.status === status).length})`}
+          </button>
+        ))}
+      </div>
+
       {showModal && (
-        <div className="fixed inset-0 bg-gray-500/50 backdrop-blur-sm flex justify-center items-start pt-4 pb-8 z-50 overflow-y-auto">
-          <div className="bg-white shadow-xl rounded-lg p-4 w-[95%] max-h-[90vh] overflow-y-auto relative">
+        <div className="fixed inset-0 bg-gray-500/50 backdrop-blur-sm flex justify-center items-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white shadow-xl rounded-lg p-4 w-full max-w-lg my-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-center mb-6">
-              <h2 className="text-lg font-bold inline-block border-b-2 border-[#018ABE] pb-1">
+              <h2 className="text-lg font-bold border-b-2 border-[#018ABE] pb-1">
                 Leave Application
               </h2>
             </div>
 
             <div className="space-y-4">
               {/* From Date */}
-              <div className="flex flex-col">
-                <label className="font-bold mb-1">From Date</label>
+              <div>
+                <label className="block font-bold mb-1 text-sm">
+                  From Date
+                </label>
                 <input
                   type="date"
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
                   min={today}
-                  className="w-full rounded px-3 py-2 border border-gray-300 shadow-sm"
+                  className="w-full rounded px-3 py-2 border border-gray-300 shadow-sm text-sm"
                 />
               </div>
 
               {/* To Date */}
-              <div className="flex flex-col">
-                <label className="font-bold mb-1">To Date</label>
+              <div>
+                <label className="block font-bold mb-1 text-sm">To Date</label>
                 <input
                   type="date"
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
                   min={fromDate || today}
-                  className="w-full rounded px-3 py-2 border border-gray-300 shadow-sm"
+                  className="w-full rounded px-3 py-2 border border-gray-300 shadow-sm text-sm"
                 />
               </div>
 
               {/* Leave Type */}
-              <div className="flex flex-col">
-                <label className="font-bold mb-1">Leave Type</label>
+              <div>
+                <label className="block font-bold mb-1 text-sm">
+                  Leave Type
+                </label>
                 <select
                   value={leaveType}
                   onChange={(e) => setLeaveType(e.target.value)}
-                  className="w-full rounded px-3 py-2 border border-gray-300 shadow-sm"
+                  className="w-full rounded px-3 py-2 border border-gray-300 shadow-sm text-sm"
                 >
                   <option value="">Select</option>
                   <option>Sick Leave</option>
@@ -247,46 +259,41 @@ export default function MobileLeaveTable() {
               </div>
 
               {/* Select for Approval */}
-              <div className="flex flex-col">
-                <label className="font-bold mb-1">Select for Approval</label>
+              <div>
+                <label className="block font-bold mb-1 text-sm">
+                  Select for Approval
+                </label>
                 <select
                   value={approvalTo}
                   onChange={(e) => setApprovalTo(e.target.value)}
-                  className="w-full rounded px-3 py-2 border border-gray-300 shadow-sm"
+                  className="w-full rounded px-3 py-2 border border-gray-300 shadow-sm text-sm"
                 >
                   <option value="">Select</option>
-                  {approvers.length > 0 ? (
-                    approvers.map((approver) => (
-                      <option key={approver.id} value={approver.name}>
-                        {approver.name}
-                      </option>
-                    ))
-                  ) : (
-                    <>
-                      <option value="Ayaan Raje">Ayaan Raje</option>
-                      <option value="Prashant Patil">Prashant Patil</option>
-                      <option value="Shams Ali Shaikh">Shams Ali Shaikh</option>
-                      <option value="Awab Fakih">Awab Fakih</option>
-                    </>
-                  )}
+                  {approvers.map((approver) => (
+                    <option key={approver.id} value={approver.name}>
+                      {approver.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               {/* Attachment */}
-              <div className="flex flex-col">
-                <label className="font-bold mb-1">Attachment</label>
+              <div>
+                <label className="block font-bold mb-1 text-sm">
+                  Attachment
+                </label>
                 <div className="flex items-center space-x-2">
                   <input
                     type="file"
                     name="attachment"
                     ref={fileInputRef}
-                    className="block w-full text-sm border border-gray-300 shadow-sm rounded-md bg-gray-200 text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:border-0 file:rounded-md file:bg-blue-50 file:text-[#018ABE] hover:file:bg-blue-100 file:text-sm"
+                    className="flex-1 text-xs border border-gray-300 shadow-sm rounded-md bg-gray-200 text-gray-500 file:mr-2 file:py-1 file:px-2 file:border-0 file:rounded-md file:bg-blue-50 file:text-[#018ABE] file:text-xs hover:file:bg-blue-100"
                   />
                   <button
                     onClick={() => {
                       if (fileInputRef.current) fileInputRef.current.value = "";
                     }}
-                    className="text-black p-1.5 rounded hover:bg-red-50"
+                    className="text-black p-1 rounded hover:bg-red-50"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -294,89 +301,127 @@ export default function MobileLeaveTable() {
               </div>
 
               {/* Reason For Leave */}
-              <div className="flex flex-col">
-                <label className="font-bold mb-1">Reason For Leave</label>
+              <div>
+                <label className="block font-bold mb-1 text-sm">
+                  Reason For Leave
+                </label>
                 <textarea
                   value={reason}
                   onChange={handleReasonChange}
-                  className="w-full h-32 rounded px-3 py-2 bg-white border border-gray-300 shadow-sm resize-none"
+                  className="w-full h-20 rounded px-3 py-2 bg-white border border-gray-300 shadow-sm resize-none text-sm"
+                  placeholder="Enter your reason for leave..."
                 />
-                <div className="text-right text-sm text-gray-600 mt-1">
-                  {wordCount}/ Min. 24
+                <div className="text-right text-xs text-gray-600 mt-1">
+                  {wordCount} / Min. 24 words
                 </div>
               </div>
+            </div>
 
-              {/* Buttons */}
-              <div className="flex justify-center space-x-4 mt-6">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-1.5 border border-[#018ABE] text-[#018ABE] cursor-pointer rounded hover:bg-blue-50 text-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={submitLeave}
-                  className="px-4 py-1.5 bg-[#018ABE] text-white rounded cursor-pointer hover:bg-[#017ba9] text-sm"
-                >
-                  Submit
-                </button>
-              </div>
+            {/* Buttons */}
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => setShowModal(false)}
+                className="flex-1 py-2 border border-[#018ABE] text-[#018ABE] rounded text-sm hover:bg-blue-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitLeave}
+                className="flex-1 py-2 bg-[#018ABE] text-white rounded text-sm hover:bg-[#017ba9]"
+              >
+                Submit
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Mobile Leave List */}
-      <div className="space-y-3 mt-4">
-        {leaves.length === 0 ? (
-          <div className="text-center py-4 text-gray-500">
-            No leave applications found
-          </div>
-        ) : (
-          leaves.map((leave, index) => (
-            <div key={leave._id || index} className="bg-white rounded-lg shadow p-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="font-bold">{approverMap[leave.managerId] || "N/A"}</div>
-                  <div className="text-sm text-gray-600 mt-1">{leave.reason}</div>
-                </div>
-                <span
-                  className={`px-2 py-1 rounded-full text-white text-xs ${
-                    leave.status === "Accepted"
-                      ? "bg-green-500"
-                      : leave.status === "Rejected"
-                      ? "bg-red-500"
-                      : leave.status === "Pending"
-                      ? "bg-yellow-500"
-                      : "bg-gray-500"
-                  }`}
-                >
-                  {leave.status}
+      {/* Mobile Cards View */}
+      <div className="space-y-4">
+        {filteredLeaves.map((leave, index) => (
+          <div
+            key={leave._id || index}
+            className="bg-white rounded-lg shadow-md p-4 border"
+          >
+            {/* Header with status and serial number */}
+            <div className="flex justify-between items-start mb-3">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-semibold text-gray-600">
+                  #{leaves.findIndex((l) => l._id === leave._id) + 1}
                 </span>
+                {getStatusIcon(leave.status)}
               </div>
-              
-              <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
-                <div>
-                  <div className="text-gray-500">From</div>
-                  <div>{new Date(leave.fromDate).toLocaleDateString("en-GB")}</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">To</div>
-                  <div>{new Date(leave.toDate).toLocaleDateString("en-GB")}</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Days</div>
-                  <div>{leave.days || "1"}</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Applied</div>
-                  <div>{leave.createdAt?.split("T")[0]}</div>
-                </div>
+              <span
+                className={`px-2 py-1 rounded-full text-white text-xs font-medium ${
+                  leave.status === "Accepted"
+                    ? "bg-green-500"
+                    : leave.status === "Rejected"
+                    ? "bg-red-500"
+                    : leave.status === "Pending"
+                    ? "bg-yellow-500"
+                    : "bg-gray-500"
+                }`}
+              >
+                {leave.status}
+              </span>
+            </div>
+
+            {/* Request To */}
+            <div className="flex items-start space-x-2 mb-2">
+              <User className="w-4 h-4 text-[#018ABE] mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <span className="text-xs text-gray-500">Request To:</span>
+                <p className="text-sm font-medium">
+                  {approverMap[leave.managerId] || "N/A"}
+                </p>
               </div>
             </div>
-          ))
-        )}
+
+            {/* Dates */}
+            <div className="flex items-start space-x-2 mb-2">
+              <Calendar className="w-4 h-4 text-[#018ABE] mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <span className="text-xs text-gray-500">Duration:</span>
+                <p className="text-sm">
+                  {new Date(leave.fromDate).toLocaleDateString("en-GB")} -{" "}
+                  {new Date(leave.toDate).toLocaleDateString("en-GB")}
+                  <span className="text-gray-500 ml-1">
+                    ({leave.days || "1"} days)
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            {/* Apply Date */}
+            <div className="flex items-start space-x-2 mb-2">
+              <Clock className="w-4 h-4 text-[#018ABE] mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <span className="text-xs text-gray-500">Applied On:</span>
+                <p className="text-sm">{leave.createdAt?.split("T")[0]}</p>
+              </div>
+            </div>
+
+            {/* Reason */}
+            <div className="flex items-start space-x-2">
+              <FileText className="w-4 h-4 text-[#018ABE] mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <span className="text-xs text-gray-500">Reason:</span>
+                <p className="text-sm text-gray-700">{leave.reason}</p>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
+
+      {filteredLeaves.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-500">
+            {filterStatus === "All"
+              ? "No leave applications found."
+              : `No ${filterStatus.toLowerCase()} leave applications found.`}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

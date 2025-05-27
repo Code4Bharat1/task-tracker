@@ -1,27 +1,67 @@
+"use client";
+import React, { useState } from "react";
+import MobileNavbar from "@/Component/Navbar/mobilenavbar";
+import Sidebar from "@/Component/Usersidebar/usersidebar";
+import MobileSidebar from "@/Component/Usersidebar/mobilesidebar";
+import NavBar from "@/Component/Navbar/navbar";
 
+import { Menu } from "lucide-react";
+import TaskDetails from "@/Component/Task/task";
 
-import NavBar from '@/Component/Navbar/navbar';
-import AddTask from '@/Component/Task/task';
-import Sidebar from '@/Component/Usersidebar/usersidebar';
+export default function Page() {
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-import React from 'react'
-
-export default function Home() {
   return (
-    <div className="h-screen overflow-hidden"> {/* Prevent page scroll */}
-      {/* Sidebar - Fixed */}
-      <div className="w-1/6 fixed top-0 bottom-0 left-0 bg-gray-100">
-      <Sidebar/>
+    <div className="min-h-screen ">
+      {/* ✅ Desktop Sidebar (Fixed Left) */}
+      <div className="hidden md:flex fixed top-0 left-0 h-screen w-1/6  border-r border-gray-200 shadow-sm">
+        <Sidebar />
       </div>
 
-      {/* Navbar - Fixed */}
-      <div className="fixed top-0 right-0 w-5/6 ml-[16.6667%] z-10">
-        <NavBar/>
+      {/* ✅ Desktop Navbar (Fixed Top Right) */}
+      <div className="hidden md:flex fixed top-0 left-[16.6667%] w-5/6 h-16  z-40 border-b border-gray-200 shadow-sm">
+        <NavBar />
       </div>
 
-      {/* Scrollable Content below Navbar */}
-      <div className="mt-[60px] ml-[16.6667%] h-[calc(100vh-60px)] overflow-y-auto p-4 bg-white">
-        <AddTask/>
+      {/* ✅ Desktop Content */}
+      <div className="hidden md:block ml-[16.6667%] mt-16 p-6 h-[calc(100vh-64px)] overflow-y-auto">
+        <div className="max-w-5xl mx-auto">
+          <TaskDetails />
+        </div>
+      </div>
+
+      {/* ✅ Mobile Navbar */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50   shadow-sm">
+        <div className="flex items-center">
+          <button
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="absolute left-4 top-4 z-50 text-white"
+          >
+            <Menu size={28} />
+          </button>
+          <MobileNavbar />
+        </div>
+      </div>
+
+      {/* ✅ Mobile Sidebar Overlay */}
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/30 z-40"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
+      {/* ✅ Mobile Sidebar */}
+      <MobileSidebar
+        isOpen={isMobileSidebarOpen}
+        setIsOpen={setIsMobileSidebarOpen}
+      />
+
+      {/* ✅ Mobile Content */}
+      <div className="md:hidden mt-16 p-6 h-[calc(100vh-64px)] overflow-y-auto">
+        <div className="max-w-5xl mx-auto">
+          <TaskDetails />
+        </div>
       </div>
     </div>
   );

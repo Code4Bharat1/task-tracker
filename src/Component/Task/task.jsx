@@ -18,7 +18,7 @@ export default function TaskDetails() {
   const [uploading, setUploading] = useState(false);
   const [downloading, setDownloading] = useState(null); // Track which file is being downloaded
 
-  const selectedTask = tasks.find(task => task._id === selectedTaskId);
+  const selectedTask = tasks.find((task) => task._id === selectedTaskId);
 
   useEffect(() => {
     // Animation for the underline
@@ -36,17 +36,17 @@ export default function TaskDetails() {
   const fetchTaskData = async () => {
     setLoading(true);
     try {
-      const response = await axiosInstance.get('/tasks/getTasks')
+      const response = await axiosInstance.get("/tasks/getTasks");
 
       if (response.data.count > 0) {
-        const tasksData = response.data.data.map(task => ({
+        const tasksData = response.data.data.map((task) => ({
           ...task,
           assignedToName: `${task.assignedTo.firstName} ${task.assignedTo.lastName}`,
           assignedBy: task.assignedBy.fullName,
           taggedTeam: task.bucketName,
-          description: task.taskDescription
+          description: task.taskDescription,
         }));
-        console.log(response.data)
+        console.log(response.data);
         setTasks(tasksData);
         // Select the first task by default if available
         if (tasksData.length > 0) {
@@ -65,29 +65,32 @@ export default function TaskDetails() {
     try {
       setDownloading(docIndex);
 
-      const response = await axiosInstance.post('/admin/proxyDownload', {
-        fileUrl: fileUrl,
-        fileName: fileName
-      }, {
-        responseType: 'blob', // Important for file downloads
-      });
+      const response = await axiosInstance.post(
+        "/admin/proxyDownload",
+        {
+          fileUrl: fileUrl,
+          fileName: fileName,
+        },
+        {
+          responseType: "blob", // Important for file downloads
+        }
+      );
 
       // Create blob URL and trigger download
       const blob = new Blob([response.data]);
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      link.setAttribute('download', fileName || 'download');
+      link.setAttribute("download", fileName || "download");
       document.body.appendChild(link);
       link.click();
 
       // Cleanup
       link.remove();
       window.URL.revokeObjectURL(url);
-
     } catch (error) {
-      console.error('Error downloading file:', error);
-      alert('Failed to download file. Please try again.');
+      console.error("Error downloading file:", error);
+      alert("Failed to download file. Please try again.");
     } finally {
       setDownloading(null);
     }
@@ -107,22 +110,23 @@ export default function TaskDetails() {
   // Updated function to upload file first, then close task
   const uploadFile = async (fileToUpload) => {
     const formData = new FormData();
-    formData.append('file', fileToUpload);
+    formData.append("file", fileToUpload);
 
     try {
       // Match the working implementation from PostUpload
-      const response = await axiosInstance.post('/upload', formData, {
+      const response = await axiosInstance.post("/upload", formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
-        withCredentials: true // Match credentials: 'include'
+        withCredentials: true, // Match credentials: 'include'
       });
 
       // Ensure response structure matches what your backend actually returns
       return {
         fileUrl: response.data.secure_url || response.data.fileUrl, // Handle both cases
         filePublicId: response.data.public_id || response.data.publicId,
-        fileResourceType: response.data.resource_type || response.data.fileResourceType
+        fileResourceType:
+          response.data.resource_type || response.data.fileResourceType,
       };
     } catch (error) {
       console.error("Upload error:", error.response?.data);
@@ -152,11 +156,11 @@ export default function TaskDetails() {
 
       // Prepare the form data for closing the task
       const formData = new FormData();
-      formData.append('remarkDescription', remark);
+      formData.append("remarkDescription", remark);
 
       // If file was uploaded, add the attachment
       if (uploadedFileData && file) {
-        formData.append('attachment', file);
+        formData.append("attachment", file);
       }
 
       const response = await axiosInstance.post(
@@ -164,7 +168,7 @@ export default function TaskDetails() {
         formData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data',
+            "Content-Type": "multipart/form-data",
           },
         }
       );
@@ -184,22 +188,32 @@ export default function TaskDetails() {
       }
     } catch (error) {
       console.error("Error closing task:", error);
-      alert(error.response?.data?.message || error.message || "Failed to close task");
+      alert(
+        error.response?.data?.message || error.message || "Failed to close task"
+      );
     } finally {
       setUploading(false);
     }
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen">Loading task details...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        Loading task details...
+      </div>
+    );
   }
 
   if (tasks.length === 0) {
-    return <div className="flex justify-center items-center h-screen">No tasks found</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        No tasks found
+      </div>
+    );
   }
 
   return (
-    <div className="h-auto p-8 bg-gray-50">
+    <div className="h-auto p-8 ">
       {/* Heading */}
       <div className="flex justify-start items-center">
         <h1 className="text-2xl font-bold text-center mb-8 relative text-gray-800">
@@ -223,9 +237,10 @@ export default function TaskDetails() {
             onChange={(e) => setSelectedTaskId(e.target.value)}
             className="border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
           >
-            {tasks.map(task => (
+            {tasks.map((task) => (
               <option key={task._id} value={task._id}>
-                {task.bucketName} - {task.status} (Due: {new Date(task.deadline).toLocaleDateString()})
+                {task.bucketName} - {task.status} (Due:{" "}
+                {new Date(task.deadline).toLocaleDateString()})
               </option>
             ))}
           </select>
@@ -237,21 +252,37 @@ export default function TaskDetails() {
           {/* Status Indicator */}
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center">
-              <div className={`px-4 py-1 rounded-full text-white font-medium ${selectedTask.status === "Completed" || selectedTask.status === "Closed" ? "bg-green-500" :
-                selectedTask.status === "In Progress" ? "bg-blue-500" :
-                  selectedTask.status === "Open" ? "bg-yellow-500" :
-                    "bg-gray-500"
-                }`}>
+              <div
+                className={`px-3 py-1 rounded-full text-white font-medium ${
+                  selectedTask.status === "Completed" ||
+                  selectedTask.status === "Closed"
+                    ? "bg-green-500"
+                    : selectedTask.status === "In Progress"
+                    ? "bg-blue-500"
+                    : selectedTask.status === "Open"
+                    ? "bg-yellow-500"
+                    : "bg-gray-500"
+                }`}
+              >
                 {selectedTask.status}
               </div>
             </div>
             <div>
-              <h2 className="text-3xl font-bold text-gray-800 text-center">{selectedTask.bucketName}</h2>
+              <h2 className="text-3xl px-2 font-bold text-gray-800 text-center">
+                {selectedTask.bucketName}
+              </h2>
             </div>
-            <div className={`px-4 py-1 rounded-full text-white font-medium ${selectedTask.priority === "High" ? "bg-red-600" :
-              selectedTask.priority === "Medium" ? "bg-orange-500" :
-                selectedTask.priority === "Low" ? "bg-yellow-700" : "bg-green-500"
-              }`}>
+            <div
+              className={`px-3 py-2 rounded-full whitespace-nowrap text-white font-medium ${
+                selectedTask.priority === "High"
+                  ? "bg-red-600"
+                  : selectedTask.priority === "Medium"
+                  ? "bg-orange-500"
+                  : selectedTask.priority === "Low"
+                  ? "bg-yellow-700"
+                  : "bg-green-500"
+              }`}
+            >
               {selectedTask.priority} Priority
             </div>
           </div>
@@ -352,16 +383,23 @@ export default function TaskDetails() {
           {/* Close Task Section - Only show if task is not already closed */}
           {selectedTask.status !== "Closed" && (
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Close Task</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                Close Task
+              </h3>
 
               {/* Attachment Section */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div className="flex flex-col">
                   <label className="text-sm text-gray-700 mb-1">
-                    Attachment Required: <span className="font-medium">{selectedTask.attachmentRequired ? "Yes" : "No"}</span>
+                    Attachment Required:{" "}
+                    <span className="font-medium">
+                      {selectedTask.attachmentRequired ? "Yes" : "No"}
+                    </span>
                   </label>
                   {selectedTask.attachmentRequired && (
-                    <p className="text-xs text-red-500 mb-2">* You must upload an attachment to close this task</p>
+                    <p className="text-xs text-red-500 mb-2">
+                      * You must upload an attachment to close this task
+                    </p>
                   )}
                   {selectedTask.attachmentRequired && (
                     <div className="flex items-center gap-2 bg-white border border-gray-300 shadow px-2 py-1 rounded">
@@ -388,7 +426,9 @@ export default function TaskDetails() {
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-gray-700 mb-1">Closing Remark</label>
+                  <label className="text-sm text-gray-700 mb-1">
+                    Closing Remark
+                  </label>
                   <textarea
                     value={remark}
                     onChange={(e) => setRemark(e.target.value)}
@@ -405,12 +445,13 @@ export default function TaskDetails() {
                 <button
                   onClick={handleCloseTask}
                   disabled={uploading}
-                  className={`${uploading
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-[#018ABE] hover:bg-[#0173a1]'
-                    } text-white font-medium text-lg px-6 py-2 rounded shadow transition duration-200`}
+                  className={`${
+                    uploading
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-[#018ABE] hover:bg-[#0173a1]"
+                  } text-white font-medium text-lg px-6 py-2 rounded shadow transition duration-200`}
                 >
-                  {uploading ? 'Closing Task...' : 'Close Task'}
+                  {uploading ? "Closing Task..." : "Close Task"}
                 </button>
               </div>
             </div>
@@ -419,28 +460,41 @@ export default function TaskDetails() {
           {/* Show closure details if task is already closed */}
           {selectedTask.status === "Closed" && (
             <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Task Closure Details</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                Task Closure Details
+              </h3>
               {selectedTask.remarkDescription && (
                 <div className="mb-4">
-                  <label className="text-sm text-gray-700 font-medium">Closing Remark:</label>
-                  <p className="text-gray-800 mt-1">{selectedTask.remarkDescription}</p>
+                  <label className="text-sm text-gray-700 font-medium">
+                    Closing Remark:
+                  </label>
+                  <p className="text-gray-800 mt-1">
+                    {selectedTask.remarkDescription}
+                  </p>
                 </div>
               )}
               {selectedTask.documents && selectedTask.documents.length > 0 && (
                 <div>
-                  <label className="text-sm text-gray-700 font-medium">Attachments:</label>
+                  <label className="text-sm text-gray-700 font-medium">
+                    Attachments:
+                  </label>
                   <div className="mt-2">
                     {selectedTask.documents.map((doc, index) => (
                       <div key={index} className="flex items-center gap-2 mb-2">
                         <button
-                          onClick={() => handleFileDownload(doc.fileUrl, doc.fileName, index)}
+                          onClick={() =>
+                            handleFileDownload(doc.fileUrl, doc.fileName, index)
+                          }
                           disabled={downloading === index}
-                          className={`${downloading === index
-                            ? 'text-gray-400 cursor-not-allowed'
-                            : 'text-blue-600 hover:text-blue-800'
-                            } underline transition-colors duration-200`}
+                          className={`${
+                            downloading === index
+                              ? "text-gray-400 cursor-not-allowed"
+                              : "text-blue-600 hover:text-blue-800"
+                          } underline transition-colors duration-200`}
                         >
-                          {downloading === index ? 'Downloading...' : doc.fileName}
+                          {downloading === index
+                            ? "Downloading..."
+                            : doc.fileName}
                         </button>
                         {downloading === index && (
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>

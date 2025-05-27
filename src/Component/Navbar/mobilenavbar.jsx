@@ -3,15 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import {
-  Bell,
-  Video,
-  UserPlus,
-
-  User,
-  Settings,
-  LogOut,
-} from "lucide-react";
+import { Bell, Video, UserPlus, User, Settings, LogOut } from "lucide-react";
 import { axiosInstance } from "@/lib/axiosInstance";
 import toast from "react-hot-toast";
 
@@ -95,7 +87,7 @@ const MobileNavbar = () => {
 
             {/* Add Team Members */}
             <button
-              onClick={() => handleNavigation("/addteam")}
+              onClick={() => handleNavigation("/dashboard/addteammembers")}
               title="Add Team Members"
               className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors"
             >
