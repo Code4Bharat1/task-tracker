@@ -205,7 +205,7 @@ export default function MobileRequestOTP() {
         className="w-80 sm:w-30 md:w-38 h-auto"
       />
 
-      <div className="bg-white/70 p-5 rounded-xl shadow-md w-full max-w-xs mt-4">
+      <div className="bg-white/90 p-5 rounded-xl shadow-md w-full max-w-xs mt-4">
         <h2 className="text-xl font-bold text-center text-[#018ABE]">
           Forget Password
         </h2>

@@ -30,6 +30,7 @@ export default function MobileBankInformation() {
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [showDocumentDropdown, setShowDocumentDropdown] = useState(false);
 
   // Mock fetch function (replace with actual API call)
   const fetchUserInfo = async () => {
@@ -91,8 +92,9 @@ export default function MobileBankInformation() {
     }
   };
 
-  const handleDocumentTypeChange = (e) => {
-    setFormData({ ...formData, documentType: e.target.value });
+  const handleDocumentTypeChange = (value) => {
+    setFormData({ ...formData, documentType: value });
+    setShowDocumentDropdown(false);
   };
 
   const validateAccountNumbers = (field, value) => {
@@ -235,17 +237,20 @@ export default function MobileBankInformation() {
     setIsEditing(false);
     setFile(null);
     setErrors({});
+    setShowDocumentDropdown(false);
   };
+
+  const documentOptions = ["Pass Book", "Bank Statement", "Cancelled Cheque"];
 
   return (
     <div className="min-h-screen bg-white p-3 sm:p-4">
-      <div className="max-w-md mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="max-w-md mx-auto bg-white rounded-lg shadow-md overflow-hidden relative">
         {/* Header */}
         <div className="bg-gradient-to-r from-[#058CBF] to-[#69b0c9] px-4 py-6 text-white">
           <h1 className="text-xl font-bold">Bank Information</h1>
         </div>
 
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-4 overflow-hidden">
           {/* Instructions Panel */}
           <div className="bg-blue-50 border-l-4 border-cyan-400 p-3 rounded">
             <div className="flex items-start">
@@ -519,21 +524,60 @@ export default function MobileBankInformation() {
               )}
             </div>
 
-            {/* Document Upload Section */}
-            <div>
+            {/* Document Type - Custom Dropdown */}
+            <div className="relative">
               <label className="block text-sm font-medium mb-2 text-gray-700">
                 Document Type <span className="text-red-500">*</span>
               </label>
-              <select
-                className="w-full p-3 border border-gray-300 rounded-lg text-sm bg-white"
-                disabled={!isEditing}
-                value={formData.documentType}
-                onChange={handleDocumentTypeChange}
-              >
-                <option>Pass Book</option>
-                <option>Bank Statement</option>
-                <option>Cancelled Cheque</option>
-              </select>
+              <div className="relative">
+                <button
+                  onClick={() =>
+                    isEditing && setShowDocumentDropdown(!showDocumentDropdown)
+                  }
+                  className={`w-full p-3 pr-10 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#058CBF] text-left ${
+                    !isEditing
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "text-gray-900"
+                  }`}
+                  disabled={!isEditing}
+                >
+                  {formData.documentType}
+                </button>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <svg
+                    className={`w-4 h-4 text-gray-400 transition-transform ${
+                      showDocumentDropdown ? "rotate-180" : ""
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+                {showDocumentDropdown && isEditing && (
+                  <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg mt-1 shadow-lg z-50 max-h-40 overflow-y-auto">
+                    {documentOptions.map((option, index) => (
+                      <button
+                        key={option}
+                        onClick={() => handleDocumentTypeChange(option)}
+                        className={`w-full px-4 py-3 text-sm text-left hover:bg-blue-50 ${
+                          index < documentOptions.length - 1
+                            ? "border-b border-gray-100"
+                            : ""
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>

@@ -1,52 +1,27 @@
-"use client";
-
 import { useRef, useEffect, useState } from "react";
-import gsap from "gsap";
-import { CheckCircle, AlertCircle, Plus, History, X } from "lucide-react";
-import { FaTrashAlt, FaRegCalendarAlt, FaPaperclip } from "react-icons/fa";
-import { axiosInstance } from "@/lib/axiosInstance";
-import Link from "next/link";
-import { useGSAP } from "@gsap/react";
+import { useRouter } from "next/navigation";
+import {
+  CheckCircle,
+  AlertCircle,
+  Plus,
+  History,
+  X,
+  ChevronDown,
+  Calendar,
+  Trash2,
+  Paperclip,
+} from "lucide-react";
 
 export default function MobileExpense() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const underlineRef = useRef(null);
   const formRef = useRef(null);
   const historyBtnRef = useRef(null);
+  const router = useRouter();
 
-  useGSAP(() => {
-    if (underlineRef.current) {
-      gsap.fromTo(
-        underlineRef.current,
-        { scaleX: 0, transformOrigin: "left" },
-        { scaleX: 1, duration: 1, ease: "power3.out" }
-      );
-    }
-
-    if (formRef.current) {
-      gsap.from(formRef.current, {
-        opacity: 0,
-        y: 20,
-        duration: 0.8,
-        delay: 0.3,
-        ease: "power3.out",
-      });
-    }
-
-    if (historyBtnRef.current) {
-      // Set initial visibility to ensure button is always visible
-      gsap.set(historyBtnRef.current, { opacity: 1, visibility: "visible" });
-
-      // Then animate from a slightly different position
-      gsap.from(historyBtnRef.current, {
-        y: -10,
-        scale: 0.9,
-        duration: 0.5,
-        delay: 0.5,
-        ease: "power3.out",
-      });
-    }
-  }, []);
+  // Custom dropdown states
+  const [dropdownStates, setDropdownStates] = useState({});
+  const [datePickerStates, setDatePickerStates] = useState({});
 
   const categories = ["Travel", "Food Expense", "Hotel Expense", "Misc"];
   const paymentMethods = [
@@ -67,8 +42,6 @@ export default function MobileExpense() {
       paymentMethod: "",
       file: null,
       fileName: "No file chosen",
-      filePublicId: null,
-      fileResourceType: null,
     },
   ]);
 
@@ -79,6 +52,327 @@ export default function MobileExpense() {
     setTimeout(() => {
       setToast({ show: false, type: "", message: "" });
     }, 4000);
+  };
+
+  // Handle history button click
+  const handleHistoryClick = () => {
+    router.push("/expense/expenseHistory");
+  };
+
+  // Custom Dropdown Component
+  const CustomDropdown = ({
+    id,
+    value,
+    onChange,
+    options,
+    placeholder,
+    label,
+    required = false,
+  }) => {
+    const isOpen = dropdownStates[id] || false;
+
+    const toggleDropdown = () => {
+      setDropdownStates((prev) => ({
+        ...prev,
+        [id]: !prev[id],
+      }));
+    };
+
+    const selectOption = (option) => {
+      onChange(option);
+      setDropdownStates((prev) => ({
+        ...prev,
+        [id]: false,
+      }));
+    };
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+      const handleClickOutside = (event) => {
+        if (!event.target.closest(`#dropdown-${id}`)) {
+          setDropdownStates((prev) => ({
+            ...prev,
+            [id]: false,
+          }));
+        }
+      };
+
+      if (isOpen) {
+        document.addEventListener("click", handleClickOutside);
+        return () => document.removeEventListener("click", handleClickOutside);
+      }
+    }, [isOpen, id]);
+
+    return (
+      <div className="relative" id={`dropdown-${id}`}>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          {label} {required && <span className="text-rose-500">*</span>}
+        </label>
+        <div
+          onClick={toggleDropdown}
+          className={`w-full px-4 py-4 rounded-xl border-2 transition-all text-base bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-between ${
+            isOpen
+              ? "border-blue-400 ring-4 ring-blue-100"
+              : "border-gray-200 hover:border-gray-300"
+          }`}
+        >
+          <span className={value ? "text-gray-900" : "text-gray-500"}>
+            {value || placeholder}
+          </span>
+          <ChevronDown
+            size={20}
+            className={`text-gray-400 transition-transform ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
+        </div>
+
+        {isOpen && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-gray-200 rounded-xl shadow-lg z-50 max-h-48 overflow-y-auto">
+            {options.map((option, index) => (
+              <div
+                key={index}
+                onClick={() => selectOption(option)}
+                className={`px-4 py-3 cursor-pointer transition-colors text-base ${
+                  value === option
+                    ? "bg-blue-50 text-blue-700 font-semibold"
+                    : "text-gray-700 hover:bg-gray-50"
+                } ${index === 0 ? "rounded-t-xl" : ""} ${
+                  index === options.length - 1 ? "rounded-b-xl" : ""
+                }`}
+              >
+                {option}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Custom Date Picker Component with Calendar
+  const CustomDatePicker = ({
+    id,
+    value,
+    onChange,
+    label,
+    required = false,
+  }) => {
+    const isOpen = datePickerStates[id] || false;
+    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState(
+      value ? new Date(value) : null
+    );
+
+    const toggleDatePicker = () => {
+      setDatePickerStates((prev) => ({
+        ...prev,
+        [id]: !prev[id],
+      }));
+    };
+
+    const formatDisplayDate = (dateStr) => {
+      if (!dateStr) return "";
+      const date = new Date(dateStr);
+      return date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    };
+
+    // Generate calendar days
+    const generateCalendarDays = () => {
+      const year = currentMonth.getFullYear();
+      const month = currentMonth.getMonth();
+
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startDate = new Date(firstDay);
+      startDate.setDate(startDate.getDate() - firstDay.getDay());
+
+      const days = [];
+      const today = new Date();
+
+      for (let i = 0; i < 42; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+
+        const isCurrentMonth = date.getMonth() === month;
+        const isToday = date.toDateString() === today.toDateString();
+        const isSelected =
+          selectedDate && date.toDateString() === selectedDate.toDateString();
+
+        days.push({
+          date,
+          day: date.getDate(),
+          isCurrentMonth,
+          isToday,
+          isSelected,
+        });
+      }
+
+      return days;
+    };
+
+    const selectDate = (date) => {
+      const dateStr = date.toISOString().split("T")[0];
+      setSelectedDate(date);
+      onChange(dateStr);
+      setDatePickerStates((prev) => ({
+        ...prev,
+        [id]: false,
+      }));
+    };
+
+    const navigateMonth = (direction) => {
+      setCurrentMonth((prev) => {
+        const newDate = new Date(prev);
+        newDate.setMonth(prev.getMonth() + direction);
+        return newDate;
+      });
+    };
+
+    const goToToday = () => {
+      const today = new Date();
+      setCurrentMonth(today);
+      selectDate(today);
+    };
+
+    // Close date picker when clicking outside
+    useEffect(() => {
+      const handleClickOutside = (event) => {
+        if (!event.target.closest(`#datepicker-${id}`)) {
+          setDatePickerStates((prev) => ({
+            ...prev,
+            [id]: false,
+          }));
+        }
+      };
+
+      if (isOpen) {
+        document.addEventListener("click", handleClickOutside);
+        return () => document.removeEventListener("click", handleClickOutside);
+      }
+    }, [isOpen, id]);
+
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    return (
+      <div className="relative" id={`datepicker-${id}`}>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          {label} {required && <span className="text-rose-500">*</span>}
+        </label>
+        <div
+          onClick={toggleDatePicker}
+          className={`w-full px-4 py-4 rounded-xl border-2 transition-all text-base bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-between ${
+            isOpen
+              ? "border-blue-400 ring-4 ring-blue-100"
+              : "border-gray-200 hover:border-gray-300"
+          }`}
+        >
+          <span className={value ? "text-gray-900" : "text-gray-500"}>
+            {value ? formatDisplayDate(value) : "Select date"}
+          </span>
+          <Calendar size={20} className="text-gray-400" />
+        </div>
+
+        {isOpen && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-gray-200 rounded-xl shadow-lg z-50 p-4">
+            {/* Calendar Header */}
+            <div className="flex items-center justify-between mb-4">
+              <button
+                type="button"
+                onClick={() => navigateMonth(-1)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ChevronDown size={16} className="rotate-90 text-gray-600" />
+              </button>
+
+              <div className="text-center">
+                <div className="font-semibold text-gray-900">
+                  {monthNames[currentMonth.getMonth()]}{" "}
+                  {currentMonth.getFullYear()}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => navigateMonth(1)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ChevronDown size={16} className="-rotate-90 text-gray-600" />
+              </button>
+            </div>
+
+            {/* Today Button */}
+            <button
+              type="button"
+              onClick={goToToday}
+              className="w-full mb-3 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+            >
+              Today
+            </button>
+
+            {/* Day Headers */}
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {dayNames.map((day) => (
+                <div
+                  key={day}
+                  className="text-center text-xs font-medium text-gray-500 py-2"
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7 gap-1">
+              {generateCalendarDays().map((day, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => day.isCurrentMonth && selectDate(day.date)}
+                  disabled={!day.isCurrentMonth}
+                  className={`
+                    h-10 w-full text-sm rounded-lg transition-all
+                    ${
+                      day.isCurrentMonth
+                        ? "hover:bg-blue-50 cursor-pointer"
+                        : "text-gray-300 cursor-not-allowed"
+                    }
+                    ${
+                      day.isSelected
+                        ? "bg-[#0179a4] text-white font-semibold"
+                        : day.isToday
+                        ? "bg-blue-100 text-blue-600 font-semibold"
+                        : "text-gray-700"
+                    }
+                  `}
+                >
+                  {day.day}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   const addExpense = () => {
@@ -93,33 +387,13 @@ export default function MobileExpense() {
         paymentMethod: "",
         file: null,
         fileName: "No file chosen",
-        filePublicId: null,
-        fileResourceType: null,
       },
     ]);
-
-    // Animate the new form entry
-    gsap.from(`.expense-item:last-child`, {
-      opacity: 0,
-      y: 20,
-      duration: 0.5,
-      ease: "power2.out",
-    });
   };
 
   const removeExpense = (id) => {
     if (expenses.length > 1) {
-      const item = document.getElementById(`expense-${id}`);
-      if (item) {
-        gsap.to(item, {
-          opacity: 0,
-          x: -20,
-          duration: 0.3,
-          onComplete: () => {
-            setExpenses(expenses.filter((exp) => exp.id !== id));
-          },
-        });
-      }
+      setExpenses(expenses.filter((exp) => exp.id !== id));
     } else {
       showToast("error", "You need at least one expense entry");
     }
@@ -156,8 +430,6 @@ export default function MobileExpense() {
               ...exp,
               file: null,
               fileName: "No file chosen",
-              filePublicId: null,
-              fileResourceType: null,
             }
           : exp
       )
@@ -167,9 +439,7 @@ export default function MobileExpense() {
     if (fileInput) fileInput.value = "";
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const handleSubmit = async () => {
     // Validate all expenses
     const isValid = expenses.every(
       (exp) => exp.category && exp.date && exp.amount && exp.paymentMethod
@@ -181,96 +451,29 @@ export default function MobileExpense() {
     }
 
     try {
-      // Start loading state
       setIsSubmitting(true);
 
-      // First, upload any files to Cloudinary and get their URLs
-      const expensesWithDocs = await Promise.all(
-        expenses.map(async (exp) => {
-          let documents = [];
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
-          if (exp.file) {
-            // Create form data for Cloudinary upload
-            const formData = new FormData();
-            formData.append("file", exp.file);
+      showToast("success", "Expenses submitted successfully!");
 
-            // Upload the file to Cloudinary through our backend
-            const uploadResponse = await axiosInstance.post(
-              "/upload",
-              formData,
-              {
-                headers: {
-                  "Content-Type": "multipart/form-data",
-                },
-              }
-            );
-            // If successful, add the Cloudinary file info to documents
-            if (uploadResponse.data && uploadResponse.data.fileUrl) {
-              documents.push({
-                fileName: uploadResponse.data.fileName,
-                fileUrl: uploadResponse.data.fileUrl,
-                filePublicId: uploadResponse.data.publicId, // Store Cloudinary public ID
-                format: uploadResponse.data.format,
-                fileResourceType: uploadResponse.data.resourceType,
-              });
-            }
-          }
-
-          // Return expense data in the format expected by backend
-          return {
-            category: exp.category,
-            amount: parseFloat(exp.amount),
-            date: exp.date,
-            paymentMethod: exp.paymentMethod,
-            description: exp.description,
-            documents: documents,
-          };
-        })
-      );
-
-      // Now submit all expenses to the backend
-      const response = await axiosInstance.post("/expense/createExpense", {
-        expenses: expensesWithDocs,
-      });
-      if (response.status === 201) {
-        // Show success message
-        showToast("success", "Expenses submitted successfully!");
-
-        // Reset the form after successful submission
-        setExpenses([
-          {
-            id: Date.now(),
-            category: "",
-            date: new Date().toISOString().split("T")[0],
-            amount: "",
-            description: "",
-            paymentMethod: "",
-            file: null,
-            fileName: "No file chosen",
-            filePublicId: null,
-            fileResourceType: null,
-          },
-        ]);
-
-        // Animation on submit
-        gsap.to(formRef.current, {
-          y: -10,
-          duration: 0.2,
-          yoyo: true,
-          repeat: 1,
-          ease: "power1.inOut",
-        });
-      }
+      // Reset form
+      setExpenses([
+        {
+          id: Date.now(),
+          category: "",
+          date: new Date().toISOString().split("T")[0],
+          amount: "",
+          description: "",
+          paymentMethod: "",
+          file: null,
+          fileName: "No file chosen",
+        },
+      ]);
     } catch (error) {
-      console.error("Error submitting expenses:", error);
-
-      // Show appropriate error message
-      const errorMessage =
-        error.response?.data?.message ||
-        "Failed to submit expenses. Please try again.";
-      showToast("error", errorMessage);
+      showToast("error", "Failed to submit expenses. Please try again.");
     } finally {
-      // End loading state
       setIsSubmitting(false);
     }
   };
@@ -281,7 +484,7 @@ export default function MobileExpense() {
       <div className="absolute top-0 left-0 w-32 h-32 bg-blue-100/20 rounded-full blur-2xl"></div>
       <div className="absolute bottom-20 right-0 w-40 h-40 bg-indigo-100/20 rounded-full blur-2xl"></div>
 
-      {/* Toast Notifications - Mobile optimized */}
+      {/* Toast Notifications */}
       {toast.show && (
         <div
           className={`fixed top-4 left-4 right-4 p-4 rounded-2xl shadow-2xl flex items-center gap-3 transition-all z-50 backdrop-blur-sm border ${
@@ -317,17 +520,15 @@ export default function MobileExpense() {
                 Submit your expenses easily
               </p>
             </div>
-            {/* Enhanced Mobile History Button - Always Visible */}
-            <Link href="/expense/expenseHistory">
-              <div
-                ref={historyBtnRef}
-                className="flex items-center gap-2 px-4 py-3 bg-white border-2 border-[#0179a4] text-[#0179a4] rounded-2xl shadow-lg hover:bg-[#0179a4] hover:text-white active:scale-95 transition-all duration-200 font-semibold opacity-100"
-                style={{ opacity: 1, visibility: "visible" }}
-              >
-                <History size={20} />
-                <span className="text-sm font-bold">History</span>
-              </div>
-            </Link>
+            {/* Mobile History Button */}
+            <div
+              ref={historyBtnRef}
+              onClick={handleHistoryClick}
+              className="flex items-center gap-2 px-4 py-3 bg-white border-2 border-[#0179a4] text-[#0179a4] rounded-2xl shadow-lg hover:bg-[#0179a4] hover:text-white active:scale-95 transition-all duration-200 font-semibold cursor-pointer"
+            >
+              <History size={20} />
+              <span className="text-sm font-bold">History</span>
+            </div>
           </div>
         </div>
 
@@ -336,7 +537,7 @@ export default function MobileExpense() {
           ref={formRef}
           className="bg-white/90 backdrop-blur-sm shadow-xl rounded-3xl p-4 border border-white/20"
         >
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-6">
             {expenses.map((expense, index) => (
               <div
                 key={expense.id}
@@ -364,29 +565,20 @@ export default function MobileExpense() {
                   )}
                 </div>
 
-                {/* Mobile Form Fields - Single Column */}
+                {/* Mobile Form Fields */}
                 <div className="space-y-5">
-                  {/* Category */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Category <span className="text-rose-500">*</span>
-                    </label>
-                    <select
-                      value={expense.category}
-                      onChange={(e) =>
-                        handleChange(expense.id, "category", e.target.value)
-                      }
-                      className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all text-base bg-white/70 backdrop-blur-sm appearance-none"
-                      required
-                    >
-                      <option value="">Select category</option>
-                      {categories.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Custom Category Dropdown */}
+                  <CustomDropdown
+                    id={`category-${expense.id}`}
+                    value={expense.category}
+                    onChange={(value) =>
+                      handleChange(expense.id, "category", value)
+                    }
+                    options={categories}
+                    placeholder="Select category"
+                    label="Category"
+                    required
+                  />
 
                   {/* Amount */}
                   <div>
@@ -411,49 +603,29 @@ export default function MobileExpense() {
                     </div>
                   </div>
 
-                  {/* Date */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Date <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        value={expense.date}
-                        onChange={(e) =>
-                          handleChange(expense.id, "date", e.target.value)
-                        }
-                        className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all text-base bg-white/70 backdrop-blur-sm"
-                        required
-                      />
-                    </div>
-                  </div>
+                  {/* Custom Date Picker */}
+                  <CustomDatePicker
+                    id={`date-${expense.id}`}
+                    value={expense.date}
+                    onChange={(value) =>
+                      handleChange(expense.id, "date", value)
+                    }
+                    label="Date"
+                    required
+                  />
 
-                  {/* Payment Method */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Payment Method <span className="text-rose-500">*</span>
-                    </label>
-                    <select
-                      value={expense.paymentMethod}
-                      onChange={(e) =>
-                        handleChange(
-                          expense.id,
-                          "paymentMethod",
-                          e.target.value
-                        )
-                      }
-                      className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all text-base bg-white/70 backdrop-blur-sm appearance-none"
-                      required
-                    >
-                      <option value="">Select payment method</option>
-                      {paymentMethods.map((method) => (
-                        <option key={method} value={method}>
-                          {method}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Custom Payment Method Dropdown */}
+                  <CustomDropdown
+                    id={`payment-${expense.id}`}
+                    value={expense.paymentMethod}
+                    onChange={(value) =>
+                      handleChange(expense.id, "paymentMethod", value)
+                    }
+                    options={paymentMethods}
+                    placeholder="Select payment method"
+                    label="Payment Method"
+                    required
+                  />
 
                   {/* Description */}
                   <div>
@@ -471,7 +643,7 @@ export default function MobileExpense() {
                     />
                   </div>
 
-                  {/* File Upload - Mobile optimized */}
+                  {/* File Upload */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3">
                       Receipt/Attachment
@@ -482,7 +654,7 @@ export default function MobileExpense() {
                         className="flex items-center justify-center gap-3 w-full px-4 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-dashed border-blue-200 rounded-xl cursor-pointer active:scale-95 transition-all duration-200"
                       >
                         <div className="p-2 bg-blue-100 rounded-xl">
-                          <FaPaperclip className="text-blue-600" size={16} />
+                          <Paperclip className="text-blue-600" size={16} />
                         </div>
                         <span className="text-base font-medium text-blue-700">
                           {expense.file ? "Change File" : "Choose File"}
@@ -506,7 +678,7 @@ export default function MobileExpense() {
                             onClick={() => removeFile(expense.id)}
                             className="p-2 text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors active:scale-95 flex-shrink-0"
                           >
-                            <FaTrashAlt size={14} />
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       )}
@@ -537,7 +709,8 @@ export default function MobileExpense() {
 
               {/* Submit Button */}
               <button
-                type="submit"
+                type="button"
+                onClick={handleSubmit}
                 disabled={isSubmitting}
                 className="w-full relative overflow-hidden bg-[#0179a4] text-white px-6 py-5 rounded-2xl font-bold text-base transition-all duration-300 shadow-lg hover:shadow-xl disabled:shadow-none active:scale-95 disabled:scale-100 disabled:opacity-70"
               >
@@ -556,7 +729,7 @@ export default function MobileExpense() {
                 )}
               </button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>

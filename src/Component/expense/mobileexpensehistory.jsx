@@ -11,6 +11,7 @@ import {
   CreditCard,
   DollarSign,
   Tag,
+  ChevronDown,
 } from "lucide-react";
 import { axiosInstance } from "@/lib/axiosInstance";
 import gsap from "gsap";
@@ -21,6 +22,7 @@ export default function ExpenseHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [toast, setToast] = useState({ show: false, type: "", message: "" });
   const [deleteModal, setDeleteModal] = useState({
     show: false,
@@ -30,6 +32,14 @@ export default function ExpenseHistory() {
   const tableRef = useRef(null);
   const headerRef = useRef(null);
   const modalRef = useRef(null);
+  const filterDropdownRef = useRef(null);
+
+  const filterOptions = [
+    { value: "all", label: "All Time", icon: "📊" },
+    { value: "day", label: "Today", icon: "📅" },
+    { value: "week", label: "This Week", icon: "📈" },
+    { value: "month", label: "This Month", icon: "📆" },
+  ];
 
   useEffect(() => {
     fetchExpenses();
@@ -59,6 +69,23 @@ export default function ExpenseHistory() {
       );
     }
   }, [deleteModal.show]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        filterDropdownRef.current &&
+        !filterDropdownRef.current.contains(event.target)
+      ) {
+        setFilterDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const fetchExpenses = async () => {
     try {
@@ -169,14 +196,22 @@ export default function ExpenseHistory() {
     }
   };
 
+  const handleFilterSelect = (value) => {
+    setFilter(value);
+    setFilterDropdownOpen(false);
+  };
+
+  const selectedFilterOption = filterOptions.find(
+    (option) => option.value === filter
+  );
   const filteredExpenses = filterExpenses();
 
   return (
-    <div className="min-h-screen p-4 sm:p-6 bg-gray-50">
+    <div className="min-h-screen p-4 sm:p-6 bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Toast */}
       {toast.show && (
         <div
-          className={`fixed top-4 left-4 right-4 sm:top-6 sm:left-1/2 sm:right-auto sm:transform sm:-translate-x-1/2 sm:max-w-md p-4 rounded-md shadow-lg flex items-center gap-2 transition-all z-50 ${
+          className={`fixed top-4 left-4 right-4 sm:top-6 sm:left-1/2 sm:right-auto sm:transform sm:-translate-x-1/2 sm:max-w-md p-4 rounded-md shadow-lg flex items-center gap-2 transition-all z-[9999] ${
             toast.type === "success"
               ? "bg-green-100 text-green-800 border-l-4 border-green-500"
               : "bg-red-100 text-red-800 border-l-4 border-red-500"
@@ -193,7 +228,7 @@ export default function ExpenseHistory() {
 
       {/* Delete Confirmation Modal */}
       {deleteModal.show && (
-        <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-[9998] p-4">
           <div
             ref={modalRef}
             className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-auto"
@@ -238,19 +273,74 @@ export default function ExpenseHistory() {
               Expense History
             </h1>
           </div>
-          <div className="flex items-center gap-2 bg-white shadow-sm rounded-lg p-2 border border-gray-200 w-full sm:w-auto">
-            <Filter size={18} className="text-gray-500 flex-shrink-0" />
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="border-none text-sm focus:ring-0 focus:outline-none cursor-pointer w-full sm:w-auto"
+
+          {/* Custom Filter Dropdown */}
+          <div className="relative" ref={filterDropdownRef}>
+            <button
+              onClick={() => setFilterDropdownOpen(!filterDropdownOpen)}
+              className="flex items-center gap-3 bg-white shadow-lg rounded-xl px-4 py-3 border border-gray-200 hover:border-gray-300 hover:shadow-xl transition-all duration-200 w-full sm:w-auto min-w-[160px] group"
             >
-              <option value="all">All Time</option>
-              <option value="day">Today</option>
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-            </select>
+              <div className="flex items-center gap-2 text-gray-700">
+                <Filter size={18} className="text-blue-500" />
+                <span className="text-sm font-medium">
+                  {selectedFilterOption?.icon} {selectedFilterOption?.label}
+                </span>
+              </div>
+              <ChevronDown
+                size={16}
+                className={`text-gray-500 transition-transform duration-200 ${
+                  filterDropdownOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {/* Dropdown Menu */}
+            {filterDropdownOpen && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-[100] min-w-[200px]">
+                <div className="py-2">
+                  {filterOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => handleFilterSelect(option.value)}
+                      className={`w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors duration-150 flex items-center gap-3 ${
+                        filter === option.value
+                          ? "bg-blue-50 text-blue-700 border-r-2 border-blue-500"
+                          : "text-gray-700 hover:text-blue-600"
+                      }`}
+                    >
+                      <span className="text-lg">{option.icon}</span>
+                      <span className="text-sm font-medium">
+                        {option.label}
+                      </span>
+                      {filter === option.value && (
+                        <Check size={16} className="text-blue-500 ml-auto" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
+        </div>
+
+        {/* Results Summary */}
+        <div className="mb-4">
+          <p className="text-sm text-gray-600">
+            Showing{" "}
+            <span className="font-semibold text-gray-800">
+              {filteredExpenses.length}
+            </span>{" "}
+            expense{filteredExpenses.length !== 1 ? "s" : ""}
+            {filter !== "all" && (
+              <span>
+                {" "}
+                for{" "}
+                <span className="font-semibold text-blue-600">
+                  {selectedFilterOption?.label}
+                </span>
+              </span>
+            )}
+          </p>
         </div>
 
         {/* Content */}
@@ -267,8 +357,14 @@ export default function ExpenseHistory() {
             <div className="p-8 text-center text-red-500">{error}</div>
           ) : filteredExpenses.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-gray-500">
-                No expenses found for the selected filter.
+              <div className="text-6xl mb-4">📊</div>
+              <p className="text-gray-500 text-lg font-medium mb-2">
+                No expenses found
+              </p>
+              <p className="text-gray-400 text-sm">
+                {filter === "all"
+                  ? "You haven't added any expenses yet."
+                  : `No expenses found for ${selectedFilterOption?.label.toLowerCase()}.`}
               </p>
             </div>
           ) : (
@@ -300,7 +396,10 @@ export default function ExpenseHistory() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredExpenses.map((expense) => (
-                      <tr key={expense._id} className="hover:bg-gray-50">
+                      <tr
+                        key={expense._id}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
                         <td className="px-6 py-4 whitespace-nowrap">
                           {formatDate(expense.date)}
                         </td>

@@ -1,5 +1,5 @@
-SALARY;
-("use client");
+
+"use client";
 import React, { useState } from "react";
 
 import NavBar from "@/Component/Navbar/navbar";
