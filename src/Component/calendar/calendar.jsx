@@ -191,7 +191,7 @@ export default function CalendarPage() {
           {showDropdown && (
             <div className="absolute top-full mt-2 right-0 bg-white rounded-lg shadow z-10 w-40">
               {[
-                { label: "Day", href: "/daycalendar" },
+                { label: "Day", href: "/personalcalendar" },
                 { label: "Month", href: "/calendar" },
                 { label: "Year", href: "/yearcalendar" },
               ].map((item) => (

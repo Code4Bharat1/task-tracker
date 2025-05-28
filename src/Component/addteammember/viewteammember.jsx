@@ -4,101 +4,99 @@ import { useRouter } from 'next/navigation';
 import {
     Users, Search, Filter, Mail, Phone, Briefcase, Building,
     User, Calendar, Edit, Trash2, Eye, ChevronDown, X,
-    MapPin, Clock, Award, UserCheck, UserPlus, Plus
+    MapPin, Clock, Award, UserCheck, UserPlus, Plus, FolderOpen
 } from 'lucide-react';
 
 export default function ViewTeamMember() {
-    // Navigation function (replace with your routing solution)
-
     const router = useRouter();
     const navigateToAddMember = () => {
-        
         router.push('/dashboard/addteammembers')
-        };
-    // Sample team member data
+    };
+
+    // Updated team member data to match your add member form fields
     const [teamMembers] = useState([
         {
             id: 'EMP001',
-            firstName: 'John',
-            lastName: 'Smith',
-            email: 'john.smith@company.com',
-            phone: '1234567890',
+            fullName: 'Paras Varankar',
+            emailAddress: 'parasvarankar235@gmail.com',
+            phoneNumber: '9309940782',
+            position: 'Senior Software Engineer',
+            projectName: 'E-commerce Platform',
             department: 'Engineering',
-            role: 'Senior Software Engineer',
             reportingManager: 'Sarah Johnson',
             joiningDate: '2023-01-15',
             status: 'Active',
-            location: 'New York',
+            location: 'Mumbai',
             avatar: null
         },
         {
             id: 'EMP002',
-            firstName: 'Emily',
-            lastName: 'Davis',
-            email: 'emily.davis@company.com',
-            phone: '2345678901',
+            fullName: 'Rahul Sharma',
+            emailAddress: 'rahul.sharma@company.com',
+            phoneNumber: '9876543210',
+            position: 'Marketing Specialist',
+            projectName: 'Digital Marketing Campaign',
             department: 'Marketing',
-            role: 'Marketing Specialist',
             reportingManager: 'Michael Brown',
             joiningDate: '2023-03-20',
             status: 'Active',
-            location: 'Los Angeles',
+            location: 'Delhi',
             avatar: null
         },
         {
             id: 'EMP003',
-            firstName: 'Michael',
-            lastName: 'Johnson',
-            email: 'michael.johnson@company.com',
-            phone: '3456789012',
+            fullName: 'Priya Patel',
+            emailAddress: 'priya.patel@company.com',
+            phoneNumber: '8765432109',
+            position: 'Sales Representative',
+            projectName: 'Client Acquisition',
             department: 'Sales',
-            role: 'Sales Representative',
             reportingManager: 'Lisa Anderson',
             joiningDate: '2022-11-10',
             status: 'Active',
-            location: 'Chicago',
+            location: 'Pune',
             avatar: null
         },
         {
             id: 'EMP004',
-            firstName: 'Sarah',
-            lastName: 'Wilson',
-            email: 'sarah.wilson@company.com',
-            phone: '4567890123',
+            fullName: 'Amit Kumar',
+            emailAddress: 'amit.kumar@company.com',
+            phoneNumber: '7654321098',
+            position: 'HR Specialist',
+            projectName: 'Employee Onboarding',
             department: 'HR',
-            role: 'HR Specialist',
             reportingManager: 'David Wilson',
             joiningDate: '2023-05-08',
             status: 'On Leave',
-            location: 'Miami',
+            location: 'Bangalore',
             avatar: null
         },
         {
             id: 'EMP005',
-            firstName: 'David',
-            lastName: 'Brown',
-            email: 'david.brown@company.com',
-            phone: '5678901234',
+            fullName: 'Sneha Gupta',
+            emailAddress: 'sneha.gupta@company.com',
+            phoneNumber: '6543210987',
+            position: 'Finance Analyst',
+            projectName: 'Budget Planning',
             department: 'Finance',
-            role: 'Finance Analyst',
             reportingManager: 'Jennifer Martinez',
             joiningDate: '2022-08-22',
             status: 'Active',
-            location: 'Boston',
+            location: 'Chennai',
             avatar: null
         },
         {
             id: 'EMP006',
-            firstName: 'Lisa',
-            lastName: 'Anderson',
-            email: 'lisa.anderson@company.com',
-            phone: '6789012345',
+            fullName: 'Arjun Singh',
+            emailAddress: 'arjun.singh@company.com',
+            phoneNumber: '5432109876',
+            position: 'Operations Manager',
+            projectName: 'Process Optimization',
             department: 'Operations',
-            role: 'Operations Manager',
             reportingManager: 'Robert Taylor',
             joiningDate: '2021-12-05',
             status: 'Active',
-            location: 'Seattle',
+            location: 'Hyderabad',
             avatar: null
         }
     ]);
@@ -106,35 +104,35 @@ export default function ViewTeamMember() {
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState({
         department: '',
-        role: '',
+        position: '',
         status: '',
-        manager: ''
+        projectName: ''
     });
     const [showFilters, setShowFilters] = useState(false);
     const [selectedMember, setSelectedMember] = useState(null);
-    const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+    const [viewMode, setViewMode] = useState('grid');
 
     // Filter options
     const departments = [...new Set(teamMembers.map(member => member.department))];
-    const roles = [...new Set(teamMembers.map(member => member.role))];
+    const positions = [...new Set(teamMembers.map(member => member.position))];
     const statuses = [...new Set(teamMembers.map(member => member.status))];
-    const managers = [...new Set(teamMembers.map(member => member.reportingManager))];
+    const projects = [...new Set(teamMembers.map(member => member.projectName))];
 
     // Filtered team members
     const filteredMembers = useMemo(() => {
         return teamMembers.filter(member => {
             const matchesSearch =
-                member.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                member.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                member.id.toLowerCase().includes(searchTerm.toLowerCase());
+                member.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                member.emailAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                member.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                member.projectName.toLowerCase().includes(searchTerm.toLowerCase());
 
             const matchesDepartment = !filters.department || member.department === filters.department;
-            const matchesRole = !filters.role || member.role === filters.role;
+            const matchesPosition = !filters.position || member.position === filters.position;
             const matchesStatus = !filters.status || member.status === filters.status;
-            const matchesManager = !filters.manager || member.reportingManager === filters.manager;
+            const matchesProject = !filters.projectName || member.projectName === filters.projectName;
 
-            return matchesSearch && matchesDepartment && matchesRole && matchesStatus && matchesManager;
+            return matchesSearch && matchesDepartment && matchesPosition && matchesStatus && matchesProject;
         });
     }, [teamMembers, searchTerm, filters]);
 
@@ -145,9 +143,9 @@ export default function ViewTeamMember() {
     const clearFilters = () => {
         setFilters({
             department: '',
-            role: '',
+            position: '',
             status: '',
-            manager: ''
+            projectName: ''
         });
         setSearchTerm('');
     };
@@ -179,7 +177,7 @@ export default function ViewTeamMember() {
                         </div>
                         <div>
                             <h3 className="font-semibold text-lg text-gray-800">
-                                {member.firstName} {member.lastName}
+                                {member.fullName}
                             </h3>
                             <p className="text-sm text-gray-500">{member.id}</p>
                         </div>
@@ -192,26 +190,30 @@ export default function ViewTeamMember() {
                 <div className="space-y-2 mb-4">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Mail size={14} />
-                        <span>{member.email}</span>
+                        <span>{member.emailAddress}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Phone size={14} />
-                        <span>{member.phone}</span>
+                        <span>{member.phoneNumber}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Briefcase size={14} />
+                        <span>{member.position}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <FolderOpen size={14} />
+                        <span>{member.projectName}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Building size={14} />
                         <span>{member.department}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Briefcase size={14} />
-                        <span>{member.role}</span>
                     </div>
                 </div>
 
                 <div className="flex gap-2">
                     <button
                         onClick={() => setSelectedMember(member)}
-                        className="flex-1 bg-[#0179a4] text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-[#0179a4] transition-colors flex items-center justify-center gap-1"
+                        className="flex-1 bg-[#0179a4] text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-[#016a8a] transition-colors flex items-center justify-center gap-1"
                     >
                         <Eye size={14} />
                         View
@@ -235,14 +237,14 @@ export default function ViewTeamMember() {
                         <User className="text-white" size={14} />
                     </div>
                     <div>
-                        <p className="font-medium text-gray-800">{member.firstName} {member.lastName}</p>
+                        <p className="font-medium text-gray-800">{member.fullName}</p>
                         <p className="text-sm text-gray-500">{member.id}</p>
                     </div>
                 </div>
             </td>
-            <td className="px-6 py-4 text-sm text-gray-600">{member.email}</td>
-            <td className="px-6 py-4 text-sm text-gray-600">{member.department}</td>
-            <td className="px-6 py-4 text-sm text-gray-600">{member.role}</td>
+            <td className="px-6 py-4 text-sm text-gray-600">{member.emailAddress}</td>
+            <td className="px-6 py-4 text-sm text-gray-600">{member.position}</td>
+            <td className="px-6 py-4 text-sm text-gray-600">{member.projectName}</td>
             <td className="px-6 py-4">
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(member.status)}`}>
                     {member.status}
@@ -277,7 +279,7 @@ export default function ViewTeamMember() {
                             <h2 className="text-xl font-bold text-white">Employee Details</h2>
                             <button
                                 onClick={() => setSelectedMember(null)}
-                                className="text-white hover:bg-[#0179a4] p-1 rounded"
+                                className="text-white hover:bg-[#016a8a] p-1 rounded"
                             >
                                 <X size={20} />
                             </button>
@@ -291,9 +293,9 @@ export default function ViewTeamMember() {
                             </div>
                             <div>
                                 <h3 className="text-2xl font-bold text-gray-800">
-                                    {selectedMember.firstName} {selectedMember.lastName}
+                                    {selectedMember.fullName}
                                 </h3>
-                                <p className="text-gray-600">{selectedMember.role}</p>
+                                <p className="text-gray-600">{selectedMember.position}</p>
                                 <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium mt-2 ${getStatusColor(selectedMember.status)}`}>
                                     {selectedMember.status}
                                 </span>
@@ -312,12 +314,16 @@ export default function ViewTeamMember() {
                                         <p className="font-medium">{selectedMember.id}</p>
                                     </div>
                                     <div>
-                                        <label className="text-sm text-gray-500">Email</label>
-                                        <p className="font-medium">{selectedMember.email}</p>
+                                        <label className="text-sm text-gray-500">Full Name</label>
+                                        <p className="font-medium">{selectedMember.fullName}</p>
                                     </div>
                                     <div>
-                                        <label className="text-sm text-gray-500">Phone</label>
-                                        <p className="font-medium">{selectedMember.phone}</p>
+                                        <label className="text-sm text-gray-500">Email Address</label>
+                                        <p className="font-medium">{selectedMember.emailAddress}</p>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm text-gray-500">Phone Number</label>
+                                        <p className="font-medium">{selectedMember.phoneNumber}</p>
                                     </div>
                                     <div>
                                         <label className="text-sm text-gray-500">Location</label>
@@ -333,12 +339,16 @@ export default function ViewTeamMember() {
                                 </h4>
                                 <div className="space-y-3 pl-6">
                                     <div>
-                                        <label className="text-sm text-gray-500">Department</label>
-                                        <p className="font-medium">{selectedMember.department}</p>
+                                        <label className="text-sm text-gray-500">Position</label>
+                                        <p className="font-medium">{selectedMember.position}</p>
                                     </div>
                                     <div>
-                                        <label className="text-sm text-gray-500">Role</label>
-                                        <p className="font-medium">{selectedMember.role}</p>
+                                        <label className="text-sm text-gray-500">Project Name</label>
+                                        <p className="font-medium">{selectedMember.projectName}</p>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm text-gray-500">Department</label>
+                                        <p className="font-medium">{selectedMember.department}</p>
                                     </div>
                                     <div>
                                         <label className="text-sm text-gray-500">Reporting Manager</label>
@@ -353,7 +363,7 @@ export default function ViewTeamMember() {
                         </div>
 
                         <div className="mt-8 flex gap-3">
-                            <button className="flex-1 bg-[#0179a4] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#0179a4] transition-colors flex items-center justify-center gap-2">
+                            <button className="flex-1 bg-[#0179a4] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#016a8a] transition-colors flex items-center justify-center gap-2">
                                 <Edit size={16} />
                                 Edit Profile
                             </button>
@@ -392,10 +402,10 @@ export default function ViewTeamMember() {
                                     <div
                                         key={member.id}
                                         className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center border-2 border-white shadow-md hover:scale-110 transition-transform cursor-pointer"
-                                        title={`${member.firstName} ${member.lastName}`}
+                                        title={member.fullName}
                                     >
                                         <span className="text-white text-sm font-semibold">
-                                            {member.firstName.charAt(0)}{member.lastName.charAt(0)}
+                                            {member.fullName.split(' ').map(n => n[0]).join('')}
                                         </span>
                                     </div>
                                 ))}
@@ -415,7 +425,7 @@ export default function ViewTeamMember() {
                         {/* Add Team Member Button */}
                         <button
                             onClick={navigateToAddMember}
-                            className="bg-[#0179a4] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#0179a4] transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+                            className="bg-[#0179a4] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#016a8a] transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
                         >
                             <UserPlus size={20} />
                             Add Member
@@ -431,7 +441,7 @@ export default function ViewTeamMember() {
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                             <input
                                 type="text"
-                                placeholder="Search by name, email, or employee ID..."
+                                placeholder="Search by name, email, project, or employee ID..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
@@ -441,7 +451,7 @@ export default function ViewTeamMember() {
                         {/* Filter Toggle */}
                         <button
                             onClick={() => setShowFilters(!showFilters)}
-                            className="px-4 py-3 bg-[#0179a4] text-white rounded-lg font-medium hover:bg-[#0179a4] transition-colors flex items-center gap-2"
+                            className="px-4 py-3 bg-[#0179a4] text-white rounded-lg font-medium hover:bg-[#016a8a] transition-colors flex items-center gap-2"
                         >
                             <Filter size={16} />
                             Filters
@@ -483,13 +493,13 @@ export default function ViewTeamMember() {
                                 </select>
 
                                 <select
-                                    value={filters.role}
-                                    onChange={(e) => handleFilterChange('role', e.target.value)}
+                                    value={filters.position}
+                                    onChange={(e) => handleFilterChange('position', e.target.value)}
                                     className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
                                 >
-                                    <option value="">All Roles</option>
-                                    {roles.map(role => (
-                                        <option key={role} value={role}>{role}</option>
+                                    <option value="">All Positions</option>
+                                    {positions.map(position => (
+                                        <option key={position} value={position}>{position}</option>
                                     ))}
                                 </select>
 
@@ -505,13 +515,13 @@ export default function ViewTeamMember() {
                                 </select>
 
                                 <select
-                                    value={filters.manager}
-                                    onChange={(e) => handleFilterChange('manager', e.target.value)}
+                                    value={filters.projectName}
+                                    onChange={(e) => handleFilterChange('projectName', e.target.value)}
                                     className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
                                 >
-                                    <option value="">All Managers</option>
-                                    {managers.map(manager => (
-                                        <option key={manager} value={manager}>{manager}</option>
+                                    <option value="">All Projects</option>
+                                    {projects.map(project => (
+                                        <option key={project} value={project}>{project}</option>
                                     ))}
                                 </select>
                             </div>
@@ -521,7 +531,7 @@ export default function ViewTeamMember() {
                                     <span className="text-sm text-gray-600">Active filters:</span>
                                     <button
                                         onClick={clearFilters}
-                                        className="text-sm text-[#0179a4] hover:text-[#0179a4] font-medium"
+                                        className="text-sm text-[#0179a4] hover:text-[#016a8a] font-medium"
                                     >
                                         Clear all
                                     </button>
@@ -552,9 +562,9 @@ export default function ViewTeamMember() {
                             <thead className="bg-gray-50 border-b border-gray-200">
                                 <tr>
                                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Employee</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Email</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Department</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Role</th>
+                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Email Address</th>
+                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Position</th>
+                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Project Name</th>
                                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
                                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
                                 </tr>

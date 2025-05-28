@@ -36,8 +36,8 @@ export default function Categories() {
       onChange={handleRangeChange}
       className="block w-full appearance-none px-3 py-2 border border-gray-300 bg-white rounded-md shadow-lg text-sm cursor-pointer pr-8"
     >
-      <option value="/daycalendar">Personal calendar</option>
-      <option value="/calendar">Month</option>
+      <option value="/personalcalendar">Personal calendar</option>
+      <option value="/monthcalendar">Month</option>
       <option value="/yearcalendar">Year</option>
     </select>
 

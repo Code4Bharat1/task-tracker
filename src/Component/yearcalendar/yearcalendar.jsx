@@ -215,7 +215,7 @@ const Yearcalendar = () => {
 
             {showDropdown && (
               <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow z-10 w-40">
-                {[{ label: "Personal calendar", href: "/personalcalendar" }, { label: "Month Calendar", href: "/monthcalendar" }, { label: "Year Calendar ", href: "/yearcalendar" }].map((item) => (
+                {[{ label: "Personal calendar", href: "/personalcalendar" }, { label: "Month Calendar", href: "/calendar" }, { label: "Year Calendar ", href: "/yearcalendar" }].map((item) => (
                   <Link key={item.label} href={item.href}>
                     <div className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700">
                       {item.label}
