@@ -47,7 +47,7 @@ export default function OverviewHeader({ selected, setSelected }) {
     <div className="w-full flex flex-col sm:flex-row justify-between items-center py-4 px-4 sm:py-6 sm:px-9 gap-4 sm:gap-0">
       {/* Title Section */}
       <div className="relative w-full sm:w-auto">
-        <h2 className="text-center sm:text-left font-semibold text-gray-800 text-xl sm:text-2xl mb-4 sm:mb-6">
+        <h2 className="text-start sm:text-left font-semibold text-gray-800 text-xl sm:text-2xl mb-4 sm:mb-6">
           <span className="relative inline-block">
             OVERVIEW
             <span
@@ -59,7 +59,7 @@ export default function OverviewHeader({ selected, setSelected }) {
       </div>
 
       {/* Controls Section */}
-      <div className="flex items-center gap-3 sm:gap-2 w-full sm:w-auto justify-center sm:justify-end">
+      <div className="flex items-end gap-3 sm:gap-2 w-full sm:w-auto justify-end sm:justify-end">
         {/* Time Selector Dropdown */}
         <div className="relative">
           <button
