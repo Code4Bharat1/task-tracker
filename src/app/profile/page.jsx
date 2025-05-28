@@ -277,15 +277,16 @@ function Page() {
             const data = await res.json();
 
             setProfile(data);
+            console.log("Profile data fetched:", data);
             const newFormData = {
                 firstName: data.firstName || "",
                 lastName: data.lastName || "",
                 phoneNumber: data.phoneNumber || "",
                 email: data.email || "",
                 position: data.position || "Employee",
-                gender: data.Gender || "",
-                address: data.Address || "",
-                dateOfJoining: data.DateOfJoining || "",
+                gender: data.gender || "",
+                address: data.address || "",
+                dateOfJoining: data.dateOfJoining || "",
                 photoUrl: data.photoUrl || "",
             };
             setFormData(newFormData);
