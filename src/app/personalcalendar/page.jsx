@@ -18,7 +18,7 @@ function page() {
       <div className="w-full md:w-5/6 md:flex-1 h-screen bg-white">
         {/* Desktop Navbar (hidden on mobile) */}
         <NavBar />
-        <div>
+        <div className="overflow-y-hidden h-full">
       <PersonalCalendar/>
         </div>
       </div>

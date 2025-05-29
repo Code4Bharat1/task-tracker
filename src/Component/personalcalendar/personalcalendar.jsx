@@ -27,7 +27,7 @@ import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import EventForm from "./EventForm";
 import TaskForm from "./TaskForm";
 import MeetingForm from "./MettingForm";
-import ToDoList from "./TodoList";
+// import ToDoList from "./TodoList";
 
 const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -41,6 +41,7 @@ export default function PersonalCalendar() {
   const [events, setEvents] = useState([]);
   const [clickedDay, setClickedDay] = useState(null);
   const [todayKey, setTodayKey] = useState("");
+  
   const [isLoading, setIsLoading] = useState(false); // Add calendar type state
   const [formData, setFormData] = useState({
     title: "",
@@ -468,7 +469,7 @@ const categoryDotColors = {
   const { firstDay, daysInMonth, endOffset } = generateCalendarDays();
 
   return (
-    <div className="min-h-screen bg-white p-4">
+    <div className="min-h-screen  bg-white p-4">
       {isLoading && (
         <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-4 shadow-lg">
@@ -478,7 +479,7 @@ const categoryDotColors = {
         </div>
       )}
       
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto overflow-y-hidden">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold relative inline-block text-gray-800">
             <span className="relative inline-block">
@@ -745,8 +746,8 @@ const categoryDotColors = {
             </div>
           </div>
         )}
-
-        <ToDoList selectedDate={selectedDate} />
+{/* 
+        <ToDoList selectedDate={selectedDate} /> */}
 
         {/* Modal */}
         {modalOpen && (
