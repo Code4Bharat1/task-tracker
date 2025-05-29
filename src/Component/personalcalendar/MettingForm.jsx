@@ -130,7 +130,7 @@ export default function MeetingForm({ initialDate, closeModal }) {
           </button>
 
           {isStartOpen && (
-            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 ">
               {times.map((time) => (
                 <button
                   key={`start-${time}`}

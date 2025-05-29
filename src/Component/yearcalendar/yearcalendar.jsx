@@ -22,7 +22,7 @@ function getFirstDay(year, month) {
 
 const Yearcalendar = () => {
   const [showDropdown, setShowDropdown] = useState(false);
-  const [baseYear, setBaseYear] = useState(2025);
+  const [baseYear, setBaseYear] = useState(new Date().getFullYear());
   const [taskAssignments, setTaskAssignments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDateInfo, setSelectedDateInfo] = useState(null);
@@ -87,21 +87,19 @@ const Yearcalendar = () => {
   const handleDateClick = (year, month, day) => {
     const { assignTasks, deadlineTasks } = getTasksForDate(year, month, day);
     
-    // If it's a start date (blue), show only start tasks
     if (assignTasks.length > 0) {
       setSelectedDateInfo({
         date: new Date(year, month, day).toLocaleDateString(),
         assignTasks,
-        deadlineTasks: [], // Don't show deadline tasks on start date
+        deadlineTasks: [],
         type: 'start'
       });
       setShowModal(true);
     }
-    // If it's a deadline date (red), show only deadline tasks  
     else if (deadlineTasks.length > 0) {
       setSelectedDateInfo({
         date: new Date(year, month, day).toLocaleDateString(),
-        assignTasks: [], // Don't show start tasks on deadline date
+        assignTasks: [],
         deadlineTasks,
         type: 'deadline'
       });
@@ -117,7 +115,7 @@ const Yearcalendar = () => {
     const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
     const isSunday = new Date(year, month, day).getDay() === 0;
     
-    let classes = 'rounded h-8 text-[10px] flex items-center justify-center font-bold transition-all duration-200 ';
+    let classes = 'rounded h-6 md:h-8 text-[8px] md:text-[10px] flex items-center justify-center font-bold transition-all duration-200 ';
     
     if (day === null) {
       return classes;
@@ -176,13 +174,12 @@ const Yearcalendar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Fetch data when component mounts or year changes
   useEffect(() => {
     fetchCalendarData();
   }, [baseYear]);
 
   return (
-    <div className="p-4 text-black max-w-screen-xl mx-auto overflow-x-hidden">
+    <div className="p-2 md:p-4 text-black max-w-screen-xl mx-auto overflow-x-hidden">
       {/* Loading indicator */}
       {isLoading && (
         <div className="text-center py-4">
@@ -192,10 +189,10 @@ const Yearcalendar = () => {
       )}
 
       {/* Header with Year & Arrows */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 relative">
-        <h2 className="text-right font-bold text-gray-800 text-3xl mb-4 md:mb-0 ml-15">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-6 relative">
+        <h2 className="text-center md:text-right font-bold text-gray-800 text-xl md:text-3xl mb-3 md:mb-0">
           <span className="relative inline-block">
-          Project Calendar {baseYear}
+            Project Calendar {baseYear}
             <span
               ref={underlineRef}
               className="absolute left-0 bottom-[-2px] h-[3px] bg-blue-500 w-[30%]"
@@ -203,19 +200,23 @@ const Yearcalendar = () => {
           </span>
         </h2>
 
-        <div className="flex items-center justify-between w-full md:w-auto gap-4">
+        <div className="flex items-center justify-between w-full md:w-auto gap-2 md:gap-4">
           {/* Left: Year Dropdown */}
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setShowDropdown((prev) => !prev)}
-              className="px-5 py-2 rounded-lg border border-[#877575] bg-white text-black font-medium transition duration-200 ease-in-out hover:bg-gray-100 hover:shadow flex items-center gap-2"
+              className="px-3 md:px-5 py-1 md:py-2 rounded-lg border border-[#877575] bg-white text-black font-medium transition duration-200 ease-in-out hover:bg-gray-100 hover:shadow flex items-center gap-1 md:gap-2 text-sm md:text-base"
             >
               Year <FiChevronDown className={`transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`} />
             </button>
 
             {showDropdown && (
-              <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow z-10 w-40">
-                {[{ label: "Personal calendar", href: "/personalcalendar" }, { label: "Month Calendar", href: "/calendar" }, { label: "Year Calendar ", href: "/yearcalendar" }].map((item) => (
+              <div className="absolute top-full mt-1 md:mt-2 left-0 bg-white rounded-lg shadow-lg z-10 w-40">
+                {[
+                  { label: "Personal calendar", href: "/personalcalendar" }, 
+                  { label: "Month Calendar", href: "/calendar" }, 
+                  { label: "Year Calendar", href: "/yearcalendar" }
+                ].map((item) => (
                   <Link key={item.label} href={item.href}>
                     <div className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700">
                       {item.label}
@@ -227,41 +228,41 @@ const Yearcalendar = () => {
           </div>
 
           {/* Right: Arrows */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
             <button
               onClick={() => setBaseYear((prev) => prev - 1)}
-              className="p-2 rounded hover:bg-gray-200 transition"
+              className="p-1 md:p-2 rounded hover:bg-gray-200 transition"
             >
-              <FiChevronLeft size={22} />
+              <FiChevronLeft size={18} className="md:w-5 md:h-5" />
             </button>
             <button
               onClick={() => setBaseYear((prev) => prev + 1)}
-              className="p-2 rounded hover:bg-gray-200 transition"
+              className="p-1 md:p-2 rounded hover:bg-gray-200 transition"
             >
-              <FiChevronRight size={22} />
+              <FiChevronRight size={18} className="md:w-5 md:h-5" />
             </button>
           </div>
         </div>
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap justify-center gap-4 mb-6 text-xs">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-blue-500 rounded"></div>
-          <span>Project Start Date</span>
+      <div className="flex flex-wrap justify-center gap-2 md:gap-4 mb-4 md:mb-6 text-xs">
+        <div className="flex items-center gap-1 md:gap-2">
+          <div className="w-3 h-3 md:w-4 md:h-4 bg-blue-500 rounded"></div>
+          <span>Project Start</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-red-500 rounded"></div>
+        <div className="flex items-center gap-1 md:gap-2">
+          <div className="w-3 h-3 md:w-4 md:h-4 bg-red-500 rounded"></div>
           <span>Project Deadline</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-black rounded"></div>
+        <div className="flex items-center gap-1 md:gap-2">
+          <div className="w-3 h-3 md:w-4 md:h-4 bg-black rounded"></div>
           <span>Today</span>
         </div>
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 text-xs mx-auto w-full max-w-[1100px]">
+      <div className="grid grid-cols-1 px-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-4 text-xs mx-auto w-full">
         {months.map((month, monthIndex) => {
           const daysInMonth = getDaysInMonth(baseYear, monthIndex);
           const firstDay = getFirstDay(baseYear, monthIndex);
@@ -272,16 +273,16 @@ const Yearcalendar = () => {
           return (
             <div
               key={month}
-              className="rounded shadow-xl p-2 bg-white w-full max-w-[250px] mx-auto text-[11px] transition-transform duration-300 hover:scale-105"
+              className="rounded shadow-md md:shadow-xl p-1 md:p-2 bg-white w-full mx-auto transition-transform duration-300 hover:scale-[1.02]"
             >
-              <h2 className="text-center font-semibold mb-1 text-sm">{month.toUpperCase()}</h2>
-              <div className="grid grid-cols-7 gap-1 text-center font-medium text-gray-700 mb-1">
+              <h2 className="text-center font-semibold mb-4 md:mb-1 text-xs md:text-sm">{month.toUpperCase()}</h2>
+              <div className="grid grid-cols-7 gap-0.5 md:gap-1 text-center font-medium text-gray-700 mb-1">
                 {daysShort.map((day) => (
-                  <div key={day} className="shadow-sm rounded py-1 font-bold">{day}</div>
+                  <div key={day} className="shadow-sm rounded py-0.5 md:py-1 text-[8px] md:text-[10px] font-bold">{day}</div>
                 ))}
               </div>
 
-              <div className="grid grid-cols-7 gap-1 text-center">
+              <div className="grid grid-cols-7 gap-1 mb-2 md:mb-0 md:gap-1 text-center">
                 {daysArray.map((day, i) => (
                   <div
                     key={i}
@@ -299,10 +300,10 @@ const Yearcalendar = () => {
 
       {/* Modal for displaying task information */}
       {showModal && selectedDateInfo && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-96 overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-2 md:p-4">
+          <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-3 md:mb-4">
+              <h3 className="text-base md:text-lg font-semibold">
                 {selectedDateInfo.type === 'start' ? 'Projects Starting' : 'Projects Ending'} on {selectedDateInfo.date}
               </h3>
               <button
@@ -314,16 +315,16 @@ const Yearcalendar = () => {
             </div>
             
             {selectedDateInfo.assignTasks.length > 0 && (
-              <div>
-                <h4 className="font-medium text-blue-600 mb-3 flex items-center">
-                  <div className="w-3 h-3 bg-blue-500 rounded mr-2"></div>
+              <div className="mb-4">
+                <h4 className="font-medium text-blue-600 mb-2 md:mb-3 flex items-center text-sm md:text-base">
+                  <div className="w-2 h-2 md:w-3 md:h-3 bg-blue-500 rounded mr-1 md:mr-2"></div>
                   Project Start Date
                 </h4>
-                <div className="space-y-3">
-                  {selectedDateInfo.assignTasks.map((task, index) => (
-                    <div key={task._id} className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
-                      <div className="font-semibold text-blue-800 text-lg">{task.bucketName}</div>
-                      <div className="text-sm text-gray-600 mt-2">
+                <div className="space-y-2 md:space-y-3">
+                  {selectedDateInfo.assignTasks.map((task) => (
+                    <div key={task._id} className="bg-blue-50 p-2 md:p-4 rounded-lg border-l-2 md:border-l-4 border-blue-500">
+                      <div className="font-semibold text-blue-800 text-sm md:text-lg">{task.bucketName}</div>
+                      <div className="text-xs md:text-sm text-gray-600 mt-1 md:mt-2">
                         <div><span className="font-medium">Started:</span> {new Date(task.assignDate).toLocaleDateString()}</div>
                         <div><span className="font-medium">Deadline:</span> {new Date(task.deadline).toLocaleDateString()}</div>
                       </div>
@@ -335,15 +336,15 @@ const Yearcalendar = () => {
             
             {selectedDateInfo.deadlineTasks.length > 0 && (
               <div>
-                <h4 className="font-medium text-red-600 mb-3 flex items-center">
-                  <div className="w-3 h-3 bg-red-500 rounded mr-2"></div>
+                <h4 className="font-medium text-red-600 mb-2 md:mb-3 flex items-center text-sm md:text-base">
+                  <div className="w-2 h-2 md:w-3 md:h-3 bg-red-500 rounded mr-1 md:mr-2"></div>
                   Project Deadline
                 </h4>
-                <div className="space-y-3">
-                  {selectedDateInfo.deadlineTasks.map((task, index) => (
-                    <div key={task._id} className="bg-red-50 p-4 rounded-lg border-l-4 border-red-500">
-                      <div className="font-semibold text-red-800 text-lg">{task.bucketName}</div>
-                      <div className="text-sm text-gray-600 mt-2">
+                <div className="space-y-2 md:space-y-3">
+                  {selectedDateInfo.deadlineTasks.map((task) => (
+                    <div key={task._id} className="bg-red-50 p-2 md:p-4 rounded-lg border-l-2 md:border-l-4 border-red-500">
+                      <div className="font-semibold text-red-800 text-sm md:text-lg">{task.bucketName}</div>
+                      <div className="text-xs md:text-sm text-gray-600 mt-1 md:mt-2">
                         <div><span className="font-medium">Started:</span> {new Date(task.assignDate).toLocaleDateString()}</div>
                         <div><span className="font-medium">Deadline:</span> {new Date(task.deadline).toLocaleDateString()}</div>
                       </div>

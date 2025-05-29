@@ -751,9 +751,9 @@ const categoryDotColors = {
 
         {/* Modal */}
         {modalOpen && (
-          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="fixed inset-0 p-8 bg-black/30 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-              <div className="flex border-b pb-2 mb-4">
+              <div className="flex border-b  pb-2 mb-4">
                 {["Event", "Daily Task", "Schedule Meeting"].map((tab) => (
                   <button
                     key={tab}

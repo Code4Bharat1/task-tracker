@@ -2,7 +2,7 @@
 import { useState, forwardRef } from "react";
 import { LuCalendarClock } from "react-icons/lu";
 import { IoMdArrowDropdown } from "react-icons/io";
-import { FaBell, FaPlane, FaHourglass, FaRegClock } from "react-icons/fa";
+import { FaBell, FaPlane, FaRegClock } from "react-icons/fa";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { toast, ToastContainer } from 'react-toastify';
@@ -88,7 +88,7 @@ const categoryData = {
     color: "text-purple-600",
     bgColor: "bg-purple-600",
     hoverBgColor: "hover:bg-purple-700",
-    icon: <FaRegClock className="text-purple-600" />,  // changed icon here
+    icon: <FaRegClock className="text-purple-600" />,
   },
 };
 
@@ -168,7 +168,7 @@ export default function EventForm({ onSave, onClose, selectedDate }) {
 
   return (
     <div className="flex justify-center">
-      <div className="w-full max-w-md">
+      <div className="w-full p-2 max-w-sm"> {/* Added px-4 for mobile padding */}
         {/* Title */}
         <input
           type="text"
