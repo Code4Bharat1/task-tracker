@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
 import Image from "next/image";
+import axios from "axios";
 
 export default function MobileRequestOTP() {
   const router = useRouter();
@@ -14,8 +15,17 @@ export default function MobileRequestOTP() {
     confirmPassword: "",
   });
 
+  const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastToastId, setLastToastId] = useState(null);
+
+  // Get email from localStorage on component mount
+  useEffect(() => {
+    const storedEmail = localStorage.getItem("email");
+    if (storedEmail) {
+      setEmail(storedEmail);
+    }
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -34,11 +44,15 @@ export default function MobileRequestOTP() {
   const validateOTP = () =>
     formData.otp.length === 6 && /^\d{6}$/.test(formData.otp);
 
-  const validatePassword = () => formData.password.length >= 8;
+  const validatePassword = () => {
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return passwordRegex.test(formData.password);
+  };
 
   const validateConfirmPassword = () =>
     formData.confirmPassword === formData.password &&
-    formData.password.length >= 8;
+    validatePassword();
 
   const validateForm = () =>
     validateOTP() && validatePassword() && validateConfirmPassword();
@@ -90,20 +104,20 @@ export default function MobileRequestOTP() {
 
     // Validate OTP
     if (!validateOTP()) {
-      showToast("❗ Please enter a valid 6-digit OTP");
+      showToast("❗ OTP must be exactly 6 digits");
       return;
     }
 
     // Validate Password
     if (!validatePassword()) {
-      showToast("❗ Password must be at least 8 characters long");
+      showToast("❗ Password must be at least 8 characters and include uppercase, lowercase, number, and special character");
       return;
     }
 
     // Validate Confirm Password
     if (!validateConfirmPassword()) {
       if (formData.password !== formData.confirmPassword) {
-        showToast("❗ Password and Confirm Password do not match", "error", {
+        showToast("❗ Passwords do not match", "error", {
           duration: 4000,
           style: {
             background: "#fee2e2",
@@ -121,17 +135,38 @@ export default function MobileRequestOTP() {
     setIsSubmitting(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500)); // simulate API
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_API}/forgotpassword/verify-otp`,
+        {
+          email: email,
+          otp: formData.otp,
+          newPassword: formData.password,
+        }
+      );
 
-      showToast("✅ Password reset successful!", "success");
+      if (response.status === 200) {
+        showToast("✅ Password updated successfully!", "success");
 
-      setTimeout(() => {
-        router.push("/");
-      }, 2000);
+        // Clear form data
+        setFormData({
+          otp: "",
+          password: "",
+          confirmPassword: "",
+        });
+
+        setTimeout(() => {
+          router.push("/");
+        }, 2000);
+      } else {
+        showToast("❌ Failed to update password. Please try again.", "error", {
+          duration: 4000,
+        });
+      }
     } catch (error) {
-      showToast("❌ Failed to reset password. Please try again.", "error", {
+      showToast("❌ Error updating password. Please try again later.", "error", {
         duration: 4000,
       });
+      console.error("Error updating password:", error);
     } finally {
       setIsSubmitting(false);
     }
