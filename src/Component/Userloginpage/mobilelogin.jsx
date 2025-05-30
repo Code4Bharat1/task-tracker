@@ -54,10 +54,35 @@ export default function MobileLogin() {
     }
   };
 
-  const handleSubmit = (e) => {
+  // Add password validation function (same as desktop)
+  const validatePassword = (pwd) => {
+    const lengthValid = pwd.length >= 8;
+    const hasLetter = /[a-zA-Z]/.test(pwd);
+    const hasNumber = /\d/.test(pwd);
+    const hasSymbol = /[^a-zA-Z0-9]/.test(pwd);
+    return lengthValid && hasLetter && hasNumber && hasSymbol;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const { identifier, password } = formData;
+
+    // Validation checks (same as desktop)
+    if (!identifier.trim() && !password.trim()) {
+      toast.error('Please enter your email/phone and password.');
+      return;
+    }
+
+    if (!identifier.trim()) {
+      toast.error('Please enter your email or phone.');
+      return;
+    }
+
+    if (!password.trim()) {
+      toast.error('Please enter your password.');
+      return;
+    }
 
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
     const isPhone = /^\d{10}$/.test(identifier);
@@ -67,13 +92,39 @@ export default function MobileLogin() {
       return;
     }
 
-    if (password.length < 4) {
-      toast.error("Password must be at least 4 characters.");
+    // Use same password validation as desktop
+    if (!validatePassword(password)) {
+      toast.error('Password must be between 8 and include at least one letter, number, and special character.');
       return;
     }
 
-    toast.success("Logged in successfully!");
-    console.log(formData);
+    // Add the actual API call (same as desktop)
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/user/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          identifier: identifier,
+          password: password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.message || 'Login failed');
+        return;
+      }
+
+      toast.success('Login successful!');
+      router.push('/dashboard'); // Add navigation to dashboard
+    } catch (err) {
+      console.error(err);
+      toast.error('Something went wrong. Please try again.');
+    }
   };
 
   return (
@@ -128,11 +179,12 @@ export default function MobileLogin() {
                 type="password"
                 name="password"
                 id="password"
-                placeholder="Enter your password"
+                placeholder="Enter above 8 character secure password"
                 value={formData.password}
                 onChange={handleChange}
                 className="w-full p-2 rounded-lg bg-white border border-gray-400 focus:outline-none text-lg"
                 required
+                minLength={8}
               />
             </div>
             <p

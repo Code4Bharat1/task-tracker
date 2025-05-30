@@ -86,8 +86,8 @@ export default function AttendancePage() {
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: "user" } 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" }
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -132,16 +132,27 @@ export default function AttendancePage() {
     });
 
   const fetchLocation = async (lat, lon) => {
+    if (!navigator.onLine) {
+      toast.error('No internet connection. Unable to fetch location.');
+      return 'Offline - Unable to fetch location';
+    }
+
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
       );
       const data = await res.json();
-      return data.display_name || 'Unknown Location';
-    } catch {
+
+      if (data.status === 'OK' && data.results.length > 0) {
+        return data.results[0].formatted_address;
+      }
+      return 'Unknown Location';
+    } catch (error) {
+      console.error('Location fetch failed:', error);
       return 'Failed to fetch location';
     }
   };
+
 
   const handlePunchIn = () => {
     if (hasPunchedIn || isPunchingIn) return;
@@ -164,6 +175,10 @@ export default function AttendancePage() {
           punchInTime: now.toISOString(),
           punchInLocation: location,
           selfieImage,
+          userLocation: {
+            latitude,
+            longitude
+          }
         });
         toast.success('Punched in successfully!');
       } catch (error) {
@@ -195,6 +210,10 @@ export default function AttendancePage() {
           punchOutTime: now.toISOString(),
           punchOutLocation: location,
           selfieImage,
+          userLocation: {
+            latitude,
+            longitude
+          }
         });
         setShowModal(true);
         setIsPunchingOut(false);
@@ -202,11 +221,10 @@ export default function AttendancePage() {
       }
       try {
         await axiosInstance.post("/attendance/punch-out", {
-          punchOutTime: now.toISOString(),
-          punchOutLocation: location,
-          emergencyReason: "",
-          selfieImage,
+          ...pendingPunchOutData,
+          emergencyReason: trimmedReason,
         });
+
         setOutTime(formatTime(now));
         setOutLocation(location);
         setHasPunchedOut(true);
@@ -330,10 +348,10 @@ export default function AttendancePage() {
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
             <h2 className="text-2xl font-bold mb-4">Take Attendance Selfie</h2>
             <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
-              <video 
-                ref={videoRef} 
-                autoPlay 
-                playsInline 
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
                 className="w-full h-full object-cover"
               />
               <canvas ref={canvasRef} className="hidden" />
