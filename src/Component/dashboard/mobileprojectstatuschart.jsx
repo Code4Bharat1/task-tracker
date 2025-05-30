@@ -90,7 +90,7 @@ const MobileProjectStatusChart = ({ selected = "This Year", tasks = [] }) => {
   const total = filteredTasks.length;
 
   return (
-    <div className="w-full min-h-[320px] sm:h-full bg-white rounded-2xl shadow-[1px_4px_10px_lightgray] p-3 sm:p-4 font-sans relative">
+    <div className="w-full max-h-[340px] sm:h-full bg-white rounded-2xl shadow-[1px_4px_10px_lightgray] p-3 sm:p-4 font-sans relative">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center w-full mb-4 sm:mb-0">
         <h2 className="font-medium text-lg sm:text-xl mb-3 sm:mb-0">
@@ -115,7 +115,7 @@ const MobileProjectStatusChart = ({ selected = "This Year", tasks = [] }) => {
       </div>
 
       {/* Chart Section */}
-      <div className="w-full h-48 sm:h-56 flex items-center justify-center relative mt-2 sm:mt-0">
+      <div className="w-full h-60 mb-4 sm:h-56 flex items-center justify-center relative mt-2 sm:mt-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -136,7 +136,7 @@ const MobileProjectStatusChart = ({ selected = "This Year", tasks = [] }) => {
         </ResponsiveContainer>
 
         {/* Total Display - Centered in pie chart */}
-        <div className="absolute text-center bg-white bg-opacity-90 rounded px-2 py-1 sm:bg-transparent sm:px-0 sm:py-0">
+        <div className="absolute text-center bg-white bg-opacity-90 rounded-full px-2 py-1 sm:bg-transparent sm:px-0 sm:py-0">
           <p className="text-xs sm:text-sm font-semibold">Total</p>
           <p className="text-lg sm:text-2xl font-bold">{total}</p>
         </div>

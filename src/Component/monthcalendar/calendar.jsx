@@ -41,9 +41,10 @@ export default function CalendarPage() {
   useEffect(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const key = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(
-      today.getDate()
-    ).padStart(2, "0")}`;
+    const key = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}-${String(today.getDate()).padStart(2, "0")}`;
     setTodayKey(key);
   }, []);
 
@@ -51,18 +52,22 @@ export default function CalendarPage() {
     const fetchCalendarData = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/calendar/user/`, {
-          method: "GET",
-          credentials: "include",
-        }
+          `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/calendar/user/`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
         );
         const data = await res.json();
 
         const groupedEvents = data.reduce((acc, item) => {
           const eventDate = new Date(item.date);
-          const dateKey = `${eventDate.getUTCFullYear()}-${String(eventDate.getUTCMonth() + 1).padStart(2, "0")}-${String(
-            eventDate.getUTCDate()
-          ).padStart(2, "0")}`;
+          const dateKey = `${eventDate.getUTCFullYear()}-${String(
+            eventDate.getUTCMonth() + 1
+          ).padStart(2, "0")}-${String(eventDate.getUTCDate()).padStart(
+            2,
+            "0"
+          )}`;
 
           const eventData = {
             title: item.title,
@@ -71,12 +76,12 @@ export default function CalendarPage() {
             time: item.time ? formatTime(item.time) : null,
             startTime: item.startTime ? formatTime(item.startTime) : null,
             endTime: item.endTime ? formatTime(item.endTime) : null,
-            category: item.category || item.type // Support both category and type fields
+            category: item.category || item.type, // Support both category and type fields
           };
 
           return {
             ...acc,
-            [dateKey]: [...(acc[dateKey] || []), eventData]
+            [dateKey]: [...(acc[dateKey] || []), eventData],
           };
         }, {});
 
@@ -113,7 +118,9 @@ export default function CalendarPage() {
   }, []);
 
   const handleMonthChange = (direction) => {
-    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + direction));
+    setCurrentDate(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() + direction)
+    );
   };
 
   const handleDateClick = (dateKey, events) => {
@@ -124,11 +131,11 @@ export default function CalendarPage() {
 
   const formatDateForDisplay = (dateKey) => {
     const date = new Date(dateKey);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -136,7 +143,7 @@ export default function CalendarPage() {
   const year = currentDate.getFullYear();
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const endOffset = (7 - (firstDay + daysInMonth) % 7) % 7;
+  const endOffset = (7 - ((firstDay + daysInMonth) % 7)) % 7;
 
   return (
     <div className="max-w-6xl mx-auto p-3 sm:p-4">
@@ -158,7 +165,7 @@ export default function CalendarPage() {
             <div className="absolute top-full mt-2 right-0 bg-white rounded-lg shadow z-10 w-40">
               {[
                 { label: "Day", href: "/personalcalendar" },
-                { label: "Month", href: "/monthcalendar" },
+                { label: "Month", href: "/calendar" },
                 { label: "Year", href: "/yearcalendar" },
               ].map((item) => (
                 <Link key={item.label} href={item.href}>
@@ -176,7 +183,10 @@ export default function CalendarPage() {
       <div className="bg-white rounded-xl shadow p-3 sm:p-4">
         <div className="flex items-center justify-between mb-4">
           <div className="text-lg sm:text-xl font-bold text-gray-800">
-            {currentDate.toLocaleString("default", { month: "long", year: "numeric" })}
+            {currentDate.toLocaleString("default", {
+              month: "long",
+              year: "numeric",
+            })}
           </div>
           <div className="flex gap-2">
             <button
@@ -205,14 +215,20 @@ export default function CalendarPage() {
 
         <div className="grid grid-cols-7 gap-1 sm:gap-3 mt-1 sm:mt-3">
           {Array.from({ length: firstDay }).map((_, i) => (
-            <div key={`start-${i}`} className="h-12 sm:h-20 rounded-lg sm:rounded-xl bg-[#f2f4ff] shadow-sm text-xs sm:text-sm text-gray-400 flex items-center justify-center">
+            <div
+              key={`start-${i}`}
+              className="h-12 sm:h-20 rounded-lg sm:rounded-xl bg-[#f2f4ff] shadow-sm text-xs sm:text-sm text-gray-400 flex items-center justify-center"
+            >
               <span className="invisible">0</span>
             </div>
           ))}
 
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1;
-            const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+            const dateKey = `${year}-${String(month + 1).padStart(
+              2,
+              "0"
+            )}-${String(day).padStart(2, "0")}`;
             const events = eventDates[dateKey] || [];
             const weekday = (firstDay + day - 1) % 7;
             const isSunday = weekday === 0;
@@ -235,8 +251,14 @@ export default function CalendarPage() {
                 return aPriority - bPriority;
               });
 
-            const displayedEvents = sortedEvents.slice(0, window.innerWidth < 640 ? 2 : 5);
-            const remainingTypes = Math.max(sortedEvents.length - (window.innerWidth < 640 ? 2 : 5), 0);
+            const displayedEvents = sortedEvents.slice(
+              0,
+              window.innerWidth < 640 ? 2 : 5
+            );
+            const remainingTypes = Math.max(
+              sortedEvents.length - (window.innerWidth < 640 ? 2 : 5),
+              0
+            );
 
             let bgClass = "bg-[#f2f4ff] text-black";
             if (isSunday) bgClass = "bg-sky-400 text-white";
@@ -251,9 +273,14 @@ export default function CalendarPage() {
                 <span className="text-sm sm:text-lg font-bold">{day}</span>
                 <div className="flex gap-0.5 sm:gap-1 mt-0.5 sm:mt-1">
                   {displayedEvents.map(({ category, count }) => (
-                    <div key={category} className="flex items-center gap-0 sm:gap-0.5">
+                    <div
+                      key={category}
+                      className="flex items-center gap-0 sm:gap-0.5"
+                    >
                       <span
-                        className={`w-2 h-2 sm:w-3 sm:h-3 rounded-sm ${categoryColors[category] || ""}`}
+                        className={`w-2 h-2 sm:w-3 sm:h-3 rounded-sm ${
+                          categoryColors[category] || ""
+                        }`}
                         title={`${category}: ${count} event(s)`}
                       />
                       {count > 1 && window.innerWidth >= 640 && (
@@ -278,10 +305,19 @@ export default function CalendarPage() {
                     </div>
                     <ul className="space-y-1 sm:space-y-2 max-h-48 overflow-y-auto">
                       {events.slice(0, 3).map((event, index) => (
-                        <li key={index} className="border-b pb-1 sm:pb-2 last:border-b-0">
+                        <li
+                          key={index}
+                          className="border-b pb-1 sm:pb-2 last:border-b-0"
+                        >
                           <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-1">
-                            <span className={`inline-block w-2 h-2 sm:w-3 sm:h-3 rounded-sm ${categoryColors[event.category] || ""}`}></span>
-                            <span className="font-semibold truncate text-xs sm:text-sm">{event.title}</span>
+                            <span
+                              className={`inline-block w-2 h-2 sm:w-3 sm:h-3 rounded-sm ${
+                                categoryColors[event.category] || ""
+                              }`}
+                            ></span>
+                            <span className="font-semibold truncate text-xs sm:text-sm">
+                              {event.title}
+                            </span>
                           </div>
                           {event.time && (
                             <div className="text-[8px] sm:text-xs text-blue-600">
@@ -303,7 +339,10 @@ export default function CalendarPage() {
           })}
 
           {Array.from({ length: endOffset }).map((_, i) => (
-            <div key={`end-${i}`} className="h-12 sm:h-20 rounded-lg sm:rounded-xl bg-[#f2f4ff] shadow-sm text-xs sm:text-sm text-gray-400 flex items-center justify-center">
+            <div
+              key={`end-${i}`}
+              className="h-12 sm:h-20 rounded-lg sm:rounded-xl bg-[#f2f4ff] shadow-sm text-xs sm:text-sm text-gray-400 flex items-center justify-center"
+            >
               <span className="invisible">0</span>
             </div>
           ))}
@@ -327,8 +366,11 @@ export default function CalendarPage() {
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`py-1 sm:py-2 px-2 sm:px-4 text-sm sm:text-base font-medium ${activeTab === tab.key ? "border-b-4 border-[#018ABE] " : "text-black-500"
-                    }`}
+                  className={`py-1 sm:py-2 px-2 sm:px-4 text-sm sm:text-base font-medium ${
+                    activeTab === tab.key
+                      ? "border-b-4 border-[#018ABE] "
+                      : "text-black-500"
+                  }`}
                 >
                   {tab.label}
                 </button>
@@ -359,21 +401,33 @@ export default function CalendarPage() {
                 {formatDateForDisplay(selectedDate)}
               </h2>
               <p className="text-sm sm:text-base text-gray-600">
-                {selectedDateEvents.length} {selectedDateEvents.length === 1 ? 'event' : 'events'} scheduled
+                {selectedDateEvents.length}{" "}
+                {selectedDateEvents.length === 1 ? "event" : "events"} scheduled
               </p>
             </div>
 
             {selectedDateEvents.length === 0 ? (
               <div className="text-center py-6 sm:py-8">
-                <div className="text-gray-400 text-sm sm:text-lg mb-1 sm:mb-2">No events scheduled</div>
-                <p className="text-xs sm:text-sm text-gray-500">This day is free from any scheduled events.</p>
+                <div className="text-gray-400 text-sm sm:text-lg mb-1 sm:mb-2">
+                  No events scheduled
+                </div>
+                <p className="text-xs sm:text-sm text-gray-500">
+                  This day is free from any scheduled events.
+                </p>
               </div>
             ) : (
               <div className="space-y-2 sm:space-y-4">
                 {selectedDateEvents.map((event, index) => (
-                  <div key={index} className="border rounded-lg p-2 sm:p-4 hover:bg-gray-50 transition">
+                  <div
+                    key={index}
+                    className="border rounded-lg p-2 sm:p-4 hover:bg-gray-50 transition"
+                  >
                     <div className="flex items-start gap-2 sm:gap-3">
-                      <span className={`inline-block w-3 h-3 sm:w-4 sm:h-4 rounded-sm mt-1 ${categoryColors[event.category] || ""}`}></span>
+                      <span
+                        className={`inline-block w-3 h-3 sm:w-4 sm:h-4 rounded-sm mt-1 ${
+                          categoryColors[event.category] || ""
+                        }`}
+                      ></span>
                       <div className="flex-1">
                         <h3 className="font-semibold text-sm sm:text-lg text-gray-800 mb-0.5 sm:mb-1">
                           {event.title}
@@ -388,7 +442,11 @@ export default function CalendarPage() {
                         <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500">
                           <div className="flex items-center gap-1">
                             <span className="font-medium">Category:</span>
-                            <span className={`px-1 sm:px-2 py-0.5 sm:py-1 rounded-full text-white text-[8px] sm:text-xs ${categoryColors[event.category] || "bg-gray-400"}`}>
+                            <span
+                              className={`px-1 sm:px-2 py-0.5 sm:py-1 rounded-full text-white text-[8px] sm:text-xs ${
+                                categoryColors[event.category] || "bg-gray-400"
+                              }`}
+                            >
                               {event.category}
                             </span>
                           </div>
@@ -398,21 +456,27 @@ export default function CalendarPage() {
                               {event.startTime && event.endTime && (
                                 <div className="flex items-center gap-1">
                                   <span className="font-medium">Time:</span>
-                                  <span>{event.startTime} - {event.endTime}</span>
+                                  <span>
+                                    {event.startTime} - {event.endTime}
+                                  </span>
                                 </div>
                               )}
                               {event.participants?.length > 0 && (
                                 <div className="w-full mt-1 sm:mt-2">
-                                  <span className="font-medium text-gray-700">Participants:</span>
+                                  <span className="font-medium text-gray-700">
+                                    Participants:
+                                  </span>
                                   <div className="flex flex-wrap gap-1 sm:gap-2 mt-0.5 sm:mt-1">
-                                    {event.participants.map((participant, pIdx) => (
-                                      <span
-                                        key={pIdx}
-                                        className="px-2 sm:px-3 py-0.5 sm:py-1 bg-blue-100 text-blue-700 rounded-full text-[8px] sm:text-xs"
-                                      >
-                                        {participant}
-                                      </span>
-                                    ))}
+                                    {event.participants.map(
+                                      (participant, pIdx) => (
+                                        <span
+                                          key={pIdx}
+                                          className="px-2 sm:px-3 py-0.5 sm:py-1 bg-blue-100 text-blue-700 rounded-full text-[8px] sm:text-xs"
+                                        >
+                                          {participant}
+                                        </span>
+                                      )
+                                    )}
                                   </div>
                                 </div>
                               )}

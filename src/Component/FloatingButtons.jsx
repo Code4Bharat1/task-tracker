@@ -315,7 +315,7 @@ const FloatingButtons = () => {
 
     return (
         <>
-            <div className="fixed bottom-10 right-6 flex-col items-end space-y-3 z-50 lg:block hidden">
+            <div className="fixed bottom-10 right-6 flex-col items-end space-y-3 z-50 ">
                 <button
                     className="flex items-center justify-center bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-medium px-4 py-2 h-10 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 cursor-pointer"
                     onClick={() => setIsModalOpen(true)}

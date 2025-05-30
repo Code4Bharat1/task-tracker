@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useRef } from "react";
+import { useRouter } from "next/navigation";
+import { IoChevronBackOutline } from "react-icons/io5";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -10,16 +12,15 @@ gsap.registerPlugin(ScrollTrigger);
 export default function MobilePolicy1() {
   const underlineRef = useRef(null);
   const sectionRef = useRef(null);
+  const router = useRouter();
 
   useGSAP(() => {
-    // Underline animation
     gsap.fromTo(
       underlineRef.current,
       { width: "0%" },
       { width: "100%", duration: 1, ease: "power2.out" }
     );
 
-    // Section fade-in animation
     const sections = sectionRef.current.querySelectorAll("h2, p, ul, ol");
     gsap.from(sections, {
       y: 30,
@@ -38,9 +39,18 @@ export default function MobilePolicy1() {
   return (
     <div
       ref={sectionRef}
-      className="p-8 max-w-5xl mx-auto bg-white rounded-lg "
+      className="p-3 max-w-5xl mx-auto bg-white rounded-lg relative"
     >
-      <h2 className="text-2xl font-bold mb-8 relative inline-block text-gray-700">
+      {/* ✨ Stylish Back Button */}
+      <button
+        onClick={() => router.back()}
+        className="group flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-[#4e97c8] via-[#56aade] to-[#4e8eb7] text-white shadow-xl transition-all hover:scale-105 hover:shadow-2xl hover:from-[#302b63] hover:to-[#0f0c29]"
+      >
+        <IoChevronBackOutline className="text-xl group-hover:-translate-x-1 transition-transform duration-300" />
+        <span className="text-sm tracking-wide font-semibold"> Back</span>
+      </button>
+
+      <h2 className="text-2xl font-bold mb-8 mt-6 relative inline-block text-gray-700">
         <span
           ref={underlineRef}
           className="absolute left-0 bottom-0 h-[2px] bg-[#018ABE] w-full"
@@ -62,8 +72,8 @@ export default function MobilePolicy1() {
           advance.
         </li>
         <li>
-          <strong>Sick Leave:</strong> 8 days annually. No prior approval
-          needed but inform ASAP.
+          <strong>Sick Leave:</strong> 8 days annually. No prior approval needed
+          but inform ASAP.
         </li>
         <li>
           <strong>Casual Leave:</strong> 5 days annually. For emergencies or
@@ -104,8 +114,8 @@ export default function MobilePolicy1() {
         Leave Balance & Tracking
       </h2>
       <p className="text-gray-700">
-        Leave balances are updated monthly. Employees can view their balances
-        in the HR system or by contacting HR directly.
+        Leave balances are updated monthly. Employees can view their balances in
+        the HR system or by contacting HR directly.
       </p>
 
       <h2 className="text-xl font-semibold text-[#018ABE] mt-6 mb-2">

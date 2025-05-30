@@ -275,7 +275,7 @@ const PostHistory = () => {
     if (!selectedPost) return null;
 
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-xs bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setSelectedPost(null)}>
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-xs bg-opacity-50  flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setSelectedPost(null)}>
         <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
           <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-xl">
             <div className="flex justify-between items-start">

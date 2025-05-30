@@ -22,7 +22,7 @@ const menuItems = [
     icon: <AiOutlineProject />,
     href: "/projectoverview",
   },
-  { label: "Calendar", icon: <FaRegCalendarAlt />, href: "/monthcalendar" },
+  { label: "Calendar", icon: <FaRegCalendarAlt />, href: "/calendar" },
   { label: "View Posts", icon: <FaRegNewspaper />, href: "/dashboard/posts" },
   { label: "Logout", icon: <FaSignOutAlt />, href: "/" },
 ];
