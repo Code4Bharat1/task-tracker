@@ -11,6 +11,23 @@ const ProjectOverview = () => {
   const [timeFilter, setTimeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check if mobile on mount and resize
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768); // Tailwind's md breakpoint is 768px
+    };
+    
+    // Initial check
+    checkIfMobile();
+    
+    // Add event listener for window resize
+    window.addEventListener('resize', checkIfMobile);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkIfMobile);
+  }, []);
 
   // Extract unique projects from tasks
   const uniqueProjects = [...new Set(tasks.map(task => task.bucketName))];
@@ -232,7 +249,7 @@ const ProjectOverview = () => {
               </button>
             </div>
 
-            {/* View Mode Toggle */}
+            {/* View Mode Toggle - Hide list option on mobile */}
             <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('grid')}
@@ -244,16 +261,18 @@ const ProjectOverview = () => {
                 <Grid3X3 className="w-4 h-4" />
                 <span>Grid</span>
               </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm transition-colors ${viewMode === 'list'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-800'
-                  }`}
-              >
-                <List className="w-4 h-4" />
-                <span>List</span>
-              </button>
+              {!isMobile && (
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm transition-colors ${viewMode === 'list'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800'
+                    }`}
+                >
+                  <List className="w-4 h-4" />
+                  <span>List</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -265,8 +284,8 @@ const ProjectOverview = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks found</h3>
             <p className="text-gray-600">Try adjusting your filters or create a new task.</p>
           </div>
-        ) : viewMode === 'grid' ? (
-          /* Grid View */
+        ) : viewMode === 'grid' || isMobile ? (
+          /* Grid View - Always show grid on mobile */
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredTasks.map((task) => (
               <div
@@ -365,7 +384,7 @@ const ProjectOverview = () => {
             ))}
           </div>
         ) : (
-          /* List View */
+          /* List View - Only show on desktop */
           <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
             {/* Table Header */}
             <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">

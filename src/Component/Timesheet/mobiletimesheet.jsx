@@ -639,7 +639,7 @@ export default function MobileTimeline() {
       </div>
 
       {/* Submit Button */}
-      <div className="sticky bottom-4">
+      <div className=" bottom-4">
         <button
           onClick={handleSubmit}
           className="w-full py-4 rounded-lg font-semibold text-lg bg-[#018ABE] text-white shadow-lg"
