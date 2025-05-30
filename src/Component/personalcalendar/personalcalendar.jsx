@@ -89,11 +89,11 @@ export default function PersonalCalendar() {
       border: "#A78BFA",
       icon: AlertTriangle,
     },
-    Leaves: { 
+    Leaves: {
       color: "#D97706",
       bg: "#FEF3C7",
       border: "#FCD34D",
-      icon: Plane 
+      icon: Plane,
     },
     Meeting: {
       color: "#DC2626",
@@ -145,7 +145,7 @@ export default function PersonalCalendar() {
     } catch (err) {
       console.error("Error fetching calendar data:", err);
       showToast("Failed to fetch calendar data");
-      
+
       const storedEvents = localStorage.getItem("calendarEvents");
       if (storedEvents) {
         setEvents(JSON.parse(storedEvents));
@@ -159,7 +159,7 @@ export default function PersonalCalendar() {
 
   const processCalendarData = (data) => {
     if (data && Array.isArray(data)) {
-      const formattedEvents = data.map(event => ({
+      const formattedEvents = data.map((event) => ({
         id: event.id || Date.now(),
         title: event.title || "",
         date: formatDate(new Date(event.date)) || formatDate(new Date()),
@@ -171,7 +171,7 @@ export default function PersonalCalendar() {
         reminderTime: event.reminderTime || "15",
         type: event.type || "Event",
       }));
-      
+
       setEvents(formattedEvents);
       localStorage.setItem("calendarEvents", JSON.stringify(formattedEvents));
     } else {
@@ -182,15 +182,15 @@ export default function PersonalCalendar() {
   const createEventAPI = async (eventData) => {
     try {
       setIsLoading(true);
-      
+
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_API}/user/calendar/user`,
         eventData,
         {
           withCredentials: true,
           headers: {
-            'Content-Type': 'application/json'
-          }
+            "Content-Type": "application/json",
+          },
         }
       );
 
@@ -210,7 +210,7 @@ export default function PersonalCalendar() {
   useGSAP(() => {
     gsap.fromTo(
       underlineRef.current,
-      { width: "0%"},
+      { width: "0%" },
       { width: "100%", duration: 1, ease: "power2.out" }
     );
   }, []);
@@ -286,11 +286,9 @@ export default function PersonalCalendar() {
       eventCategory = formData.category;
     } else if (activeTab === "Schedule Meeting") {
       eventCategory = "Meeting";
-    } 
-    else if( activeTab === "Task") {
+    } else if (activeTab === "Task") {
       eventCategory = "Task";
-    }
-      else {
+    } else {
       eventCategory = activeTab;
     }
 
@@ -303,7 +301,7 @@ export default function PersonalCalendar() {
     };
 
     const result = await createEventAPI(newEvent);
-    
+
     if (result.success) {
       showToast(`${activeTab} created successfully!`);
     } else {
@@ -459,28 +457,34 @@ export default function PersonalCalendar() {
           </div>
         </div>
       )}
-      
-      <div className="max-w-6xl mx-auto overflow-y-hidden">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold relative inline-block text-gray-800">
-            <span className="relative inline-block">
-              Personal Calendar
-              <span
-                ref={underlineRef}
-                className="absolute left-0 bottom-0 h-[2px] bg-[#058CBF] w-full"
-              ></span>
-            </span>
-          </h2>
 
-          <select
-            className="border border-gray-300 shadow-md bg-white rounded-lg px-2 py-2"
-            value={selectedOption}
-            onChange={handleChange}
-          >
-            <option value="personal">Personal Calendar</option>
-            <option value="month">Month</option>
-            <option value="year">Year</option>
-          </select>
+      <div className="max-w-6xl mx-auto overflow-y-hidden">
+        <div className="space-y-4 mb-6">
+          {/* First Row - Title */}
+          <div className="flex justify-start">
+            <h2 className="text-2xl font-bold relative inline-block text-gray-800">
+              <span className="relative inline-block">
+                Personal Calendar
+                <span
+                  ref={underlineRef}
+                  className="absolute left-0 bottom-0 h-[2px] bg-[#058CBF] w-full"
+                ></span>
+              </span>
+            </h2>
+          </div>
+
+          {/* Second Row - Select Dropdown */}
+          <div className="flex justify-end">
+            <select
+              className="border border-gray-300 shadow-md bg-white rounded-lg px-2 py-2"
+              value={selectedOption}
+              onChange={handleChange}
+            >
+              <option value="personal">Personal Calendar</option>
+              <option value="month">Month</option>
+              <option value="year">Year</option>
+            </select>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -721,14 +725,14 @@ export default function PersonalCalendar() {
 
         {/* Modal */}
         {modalOpen && (
-          <div 
+          <div
             className="fixed inset-0 p-8 bg-black/30 flex items-center justify-center z-50"
             onClick={() => {
               setModalOpen(false);
               resetFormData();
             }}
           >
-            <div 
+            <div
               className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md"
               onClick={(e) => e.stopPropagation()}
             >
@@ -748,7 +752,7 @@ export default function PersonalCalendar() {
                     </button>
                   ))}
                 </div>
-                <button 
+                <button
                   onClick={() => {
                     setModalOpen(false);
                     resetFormData();
