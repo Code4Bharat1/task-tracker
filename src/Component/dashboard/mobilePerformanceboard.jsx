@@ -47,8 +47,10 @@ const MobilePerformanceBoard = () => {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            // Add authorization header if needed
+            // 'Authorization': `Bearer ${token}`
           },
-          credentials: "include",
+          credentials: "include", // Include cookies if using session-based auth
         }
       );
 
@@ -73,17 +75,25 @@ const MobilePerformanceBoard = () => {
   // Filter and sort data
   const processedData = useMemo(() => {
     let filtered = performanceData.filter((item) => {
+      // Filter out entries without userId or with null userId
       if (!item.userId) return false;
 
+      // Search filter
       if (filters.searchTerm) {
         const searchLower = filters.searchTerm.toLowerCase();
         const email = item.userId.email?.toLowerCase() || "";
         const name = item.userId.name?.toLowerCase() || "";
-        return email.includes(searchLower) || name.includes(searchLower);
+        const firstName = item.userId.firstName?.toLowerCase() || "";
+        const lastName = item.userId.lastName?.toLowerCase() || "";
+        return email.includes(searchLower) || 
+               name.includes(searchLower) || 
+               firstName.includes(searchLower) || 
+               lastName.includes(searchLower);
       }
       return true;
     });
 
+    // Sort data
     filtered.sort((a, b) => {
       let aValue, bValue;
 
@@ -185,6 +195,11 @@ const MobilePerformanceBoard = () => {
     return labels[sortBy] || "Total Score";
   };
 
+  // Manual refresh function
+  const handleRefresh = async () => {
+    await fetchPerformanceData();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -206,7 +221,7 @@ const MobilePerformanceBoard = () => {
           </h2>
           <p className="text-gray-600 mb-4 text-sm">{error}</p>
           <button
-            onClick={fetchPerformanceData}
+            onClick={handleRefresh}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors w-full"
           >
             Try Again
@@ -226,16 +241,25 @@ const MobilePerformanceBoard = () => {
               <h1 className="text-xl font-bold text-gray-900">Performance</h1>
               <p className="text-sm text-gray-600">Employee scores</p>
             </div>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
-            >
-              {showFilters ? (
-                <X className="w-5 h-5" />
-              ) : (
-                <Menu className="w-5 h-5" />
-              )}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleRefresh}
+                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+                disabled={loading}
+              >
+                <BarChart3 className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                {showFilters ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Menu className="w-5 h-5" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -397,7 +421,7 @@ const MobilePerformanceBoard = () => {
                 No data found
               </p>
               <p className="text-sm text-gray-400">
-                Try adjusting your filters
+                Try adjusting your filters or date range
               </p>
             </div>
           ) : (
