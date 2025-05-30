@@ -1,15 +1,92 @@
 'use client';
-import React, { useState, useEffect } from 'react';
-import { User, Mail, Briefcase, FolderOpen, UserPlus, CheckCircle, AlertCircle, Phone } from 'lucide-react';
+import { AlertCircle, CheckCircle, FolderOpen, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+// Simple multi-select component (since react-select isn't available)
+const MultiSelect = ({ options, value, onChange, placeholder, disabled, error }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const selectedOptions = options.filter(option => value.includes(option.value));
+
+  const handleToggle = (optionValue) => {
+    if (value.includes(optionValue)) {
+      onChange(value.filter(v => v !== optionValue));
+    } else {
+      onChange([...value, optionValue]);
+    }
+  };
+
+  const handleRemove = (optionValue) => {
+    onChange(value.filter(v => v !== optionValue));
+  };
+
+  return (
+    <div className="relative">
+      <div
+        className={`w-full min-h-[48px] px-4 py-3 border-2 rounded-lg transition-all duration-200 focus:outline-none cursor-pointer ${error ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-gray-300'
+          } ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'bg-white'}`}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+      >
+        {selectedOptions.length === 0 ? (
+          <span className="text-gray-500">{placeholder}</span>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {selectedOptions.map(option => (
+              <span
+                key={option.value}
+                className="inline-flex items-center gap-1 px-2 py-1 bg-[#0179a4] text-white text-sm rounded-md"
+              >
+                {option.label}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemove(option.value);
+                  }}
+                  className="ml-1 hover:bg-blue-700 rounded-full w-4 h-4 flex items-center justify-center text-xs"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+          <svg className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
+
+      {isOpen && !disabled && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+          {options.length === 0 ? (
+            <div className="px-4 py-3 text-gray-500 text-sm">No options available</div>
+          ) : (
+            options.map(option => (
+              <div
+                key={option.value}
+                className={`px-4 py-3 cursor-pointer hover:bg-gray-100 flex items-center justify-between ${value.includes(option.value) ? 'bg-blue-50 text-[#0179a4]' : ''
+                  }`}
+                onClick={() => handleToggle(option.value)}
+              >
+                <span>{option.label}</span>
+                {value.includes(option.value) && (
+                  <CheckCircle size={16} className="text-[#0179a4]" />
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function AddTeamMember() {
   const [formData, setFormData] = useState({
     projectName: '',
-    selectedEmployee: '',
-    fullName: '',
-    email: '',
-    phoneNumber: '',
-    position: 'Employee', // Constant position
+    selectedEmployees: [],
   });
 
   const [errors, setErrors] = useState({});
@@ -17,27 +94,55 @@ export default function AddTeamMember() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [employees, setEmployees] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [selectedTask, setSelectedTask] = useState(null);
 
-  // Predefined project/bucket names
-  const projects = [
-    'Website Redesign Project',
-    'Mobile App Development',
-    'Data Analytics Platform',
-    'Customer Portal',
-    'E-commerce Platform',
-    'Marketing Campaign Tool',
-    'Internal HR System',
-    'Inventory Management'
-  ];
-
-  // Fetch employees from backend
+  // Fetch projects from backend
   useEffect(() => {
-    const fetchEmployees = async () => {
+    const fetchProjects = async () => {
       try {
         setLoading(true);
-        
+
+        const response = await fetch('http://localhost:4110/api/tasks/getTasks', {
+          credentials: 'include',
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.data) {
+          setProjects(result.data);
+        }
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, []);
+
+  // Fetch unassigned employees when project is selected
+  useEffect(() => {
+    const fetchUnassignedEmployees = async () => {
+      if (!formData.projectName) {
+        setEmployees([]);
+        return;
+      }
+
+      try {
+        setLoading(true);
+
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_API}/tasks/team`,
+          `http://localhost:4110/api/tasks/getUnassignedUsers?bucketName=${encodeURIComponent(formData.projectName)}`,
           {
             credentials: 'include',
             method: 'GET',
@@ -52,68 +157,54 @@ export default function AddTeamMember() {
         }
 
         const result = await response.json();
-        
-        if (result.message === "Employee details retrieved successfully" && result.data) {
+
+        if (result.data) {
           // Transform the data to match our component structure
-          const transformedEmployees = result.data.map((emp, index) => ({
-            id: `emp${String(index + 1).padStart(3, '0')}`, // Generate ID like emp001, emp002, etc.
-            name: emp.fullName,
-            fullName: emp.fullName,
+          const transformedEmployees = result.data.map((emp) => ({
+            value: emp._id,
+            label: `${emp.firstName} ${emp.lastName}`,
             email: emp.email,
-            phoneNumber: emp.phoneNumber,
-            position: 'Employee' // Constant position as requested
+            phoneNumber: emp.phoneNumber || 'Not provided',
           }));
-          
+
           setEmployees(transformedEmployees);
         }
       } catch (error) {
-        console.error('Error fetching employees:', error);
-        // You can add error state handling here if needed
+        console.error('Error fetching unassigned employees:', error);
+        setEmployees([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchEmployees();
-  }, []);
+    fetchUnassignedEmployees();
+  }, [formData.projectName]);
 
   const handleProjectChange = (e) => {
+    const projectName = e.target.value;
+    const project = projects.find(p => p.bucketName === projectName);
+
     setFormData({
       ...formData,
-      projectName: e.target.value
+      projectName,
+      selectedEmployees: [],
     });
-    
+
+    setSelectedTask(project);
+
     if (errors.projectName) {
       setErrors({ ...errors, projectName: '' });
     }
   };
 
-  const handleEmployeeChange = (e) => {
-    const selectedEmployeeId = e.target.value;
-    const selectedEmp = employees.find(emp => emp.id === selectedEmployeeId);
-    
-    if (selectedEmp) {
-      setFormData({
-        ...formData,
-        selectedEmployee: selectedEmployeeId,
-        fullName: selectedEmp.fullName,
-        email: selectedEmp.email,
-        phoneNumber: selectedEmp.phoneNumber,
-        position: selectedEmp.position
-      });
-    } else {
-      setFormData({
-        ...formData,
-        selectedEmployee: '',
-        fullName: '',
-        email: '',
-        phoneNumber: '',
-        position: 'Employee'
-      });
-    }
+  const handleEmployeesChange = (selectedEmployeeIds) => {
+    setFormData({
+      ...formData,
+      selectedEmployees: selectedEmployeeIds
+    });
 
-    if (errors.selectedEmployee) {
-      setErrors({ ...errors, selectedEmployee: '' });
+    if (errors.selectedEmployees) {
+      setErrors({ ...errors, selectedEmployees: '' });
     }
   };
 
@@ -121,7 +212,7 @@ export default function AddTeamMember() {
     const newErrors = {};
 
     if (!formData.projectName) newErrors.projectName = 'Project name is required';
-    if (!formData.selectedEmployee) newErrors.selectedEmployee = 'Employee selection is required';
+    if (formData.selectedEmployees.length === 0) newErrors.selectedEmployees = 'At least one employee must be selected';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -129,56 +220,54 @@ export default function AddTeamMember() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) return;
-    
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setSubmitSuccess(true);
-      
-      // Reset form after 2 seconds
-      setTimeout(() => {
-        setSubmitSuccess(false);
-        setFormData({
-          projectName: '',
-          selectedEmployee: '',
-          fullName: '',
-          email: '',
-          phoneNumber: '',
-          position: 'Employee',
-        });
-      }, 2000);
-    }, 1500);
-  };
 
-  const InputField = ({ icon: Icon, label, name, type = 'text', required = false, ...props }) => (
-    <div className="space-y-2">
-      <label className="flex items-center text-sm font-medium text-gray-700 gap-2">
-        <Icon size={16} className="text-[#0179a4]" />
-        {label}
-        {required && <span className="text-red-500">*</span>}
-      </label>
-      <input
-        type={type}
-        name={name}
-        value={formData[name]}
-        onChange={handleProjectChange}
-        className={`w-full px-4 py-3 border-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent ${
-          errors[name] ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-gray-300'
-        }`}
-        {...props}
-      />
-      {errors[name] && (
-        <p className="text-red-500 text-sm flex items-center gap-1">
-          <AlertCircle size={14} />
-          {errors[name]}
-        </p>
-      )}
-    </div>
-  );
+    if (!validateForm() || !selectedTask) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(
+        `http://localhost:4110/api/tasks/updateTagMembers/${selectedTask._id}`,
+        {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            tagMembers: formData.selectedEmployees
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.message === "Tag members updated successfully") {
+        setSubmitSuccess(true);
+
+        // Reset form after 2 seconds
+        setTimeout(() => {
+          setSubmitSuccess(false);
+          setFormData({
+            projectName: '',
+            selectedEmployees: [],
+          });
+          setSelectedTask(null);
+        }, 2000);
+      } else {
+        throw new Error('Failed to add team members');
+      }
+    } catch (error) {
+      console.error('Error adding team members:', error);
+      setErrors({ submit: 'Failed to add team members. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const SelectField = ({ icon: Icon, label, name, options, placeholder, required = false, onChange }) => (
     <div className="space-y-2">
@@ -190,13 +279,12 @@ export default function AddTeamMember() {
       <select
         name={name}
         value={formData[name]}
-        onChange={onChange || ((e) => setFormData({...formData, [name]: e.target.value}))}
+        onChange={onChange}
         disabled={loading}
-        className={`w-full px-4 py-3 border-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent ${
-          errors[name] ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-gray-300'
-        } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+        className={`w-full px-4 py-3 border-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent ${errors[name] ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-gray-300'
+          } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
-        <option value="">{loading ? 'Loading employees...' : placeholder}</option>
+        <option value="">{loading ? 'Loading...' : placeholder}</option>
         {options.map((option, index) => (
           <option key={index} value={option.value || option}>
             {option.label || option}
@@ -212,18 +300,6 @@ export default function AddTeamMember() {
     </div>
   );
 
-  const DisplayField = ({ icon: Icon, label, value }) => (
-    <div className="space-y-2">
-      <label className="flex items-center text-sm font-medium text-gray-700 gap-2">
-        <Icon size={16} className="text-[#0179a4]" />
-        {label}
-      </label>
-      <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-gray-50 text-gray-700">
-        {value || 'Auto-populated when employee is selected'}
-      </div>
-    </div>
-  );
-
   if (submitSuccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center p-4">
@@ -233,10 +309,13 @@ export default function AddTeamMember() {
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Success!</h2>
           <p className="text-gray-600 mb-4">
-            Team member has been added to the project successfully!
+            {formData.selectedEmployees.length > 1
+              ? `${formData.selectedEmployees.length} team members have been added to the project successfully!`
+              : 'Team member has been added to the project successfully!'
+            }
           </p>
           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-green-500 h-2 rounded-full animate-pulse" style={{width: '100%'}}></div>
+            <div className="bg-green-500 h-2 rounded-full animate-pulse" style={{ width: '100%' }}></div>
           </div>
         </div>
       </div>
@@ -249,12 +328,12 @@ export default function AddTeamMember() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2 flex items-center gap-3">
-            <UserPlus className="text-[#0179a4]" size={36} />
-            Add Team Member to Project
+            <Users className="text-[#0179a4]" size={36} />
+            Add Team Members to Project
           </h1>
           <div className="w-32 h-1 bg-[#0179a4] rounded-full"></div>
           <p className="text-gray-600 mt-3">
-            Select a project and assign an employee to join the team
+            Select a project and assign multiple employees to join the team
           </p>
         </div>
 
@@ -266,62 +345,60 @@ export default function AddTeamMember() {
               Project Assignment
             </h2>
           </div>
-          
+
           <div className="p-8">
             <div className="space-y-6">
-              {/* Project Name Input */}
-              <InputField
-                icon={FolderOpen}
-                label="Project Name"
-                name="projectName"
-                placeholder="Enter project/bucket name"
-                required
-              />
-
-              {/* Employee Selection */}
+              {/* Project Name Selection */}
               <SelectField
-                icon={User}
-                label="Select Employee"
-                name="selectedEmployee"
-                options={employees.map(emp => ({ value: emp.id, label: emp.name }))}
-                placeholder="Choose employee to add"
+                icon={FolderOpen}
+                label="Select Project"
+                name="projectName"
+                options={projects.map(project => ({
+                  value: project.bucketName,
+                  label: project.bucketName
+                }))}
+                placeholder="Choose a project"
                 required
-                onChange={handleEmployeeChange}
+                onChange={handleProjectChange}
               />
 
-              {/* Auto-populated Employee Details */}
-              {formData.selectedEmployee && (
-                <div className="bg-gray-50 p-6 rounded-lg border-2 border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    <User size={18} className="text-[#0179a4]" />
-                    Employee Details
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <DisplayField
-                      icon={User}
-                      label="Full Name"
-                      value={formData.fullName}
-                    />
+              {/* Multiple Employee Selection */}
+              {formData.projectName && (
+                <div className="space-y-2">
+                  <label className="flex items-center text-sm font-medium text-gray-700 gap-2">
+                    <Users size={16} className="text-[#0179a4]" />
+                    Select Employees
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <MultiSelect
+                    options={employees}
+                    value={formData.selectedEmployees}
+                    onChange={handleEmployeesChange}
+                    placeholder={employees.length === 0 ? "No unassigned employees available" : "Choose employees to add to the project"}
+                    disabled={loading || employees.length === 0}
+                    error={errors.selectedEmployees}
+                  />
+                  {errors.selectedEmployees && (
+                    <p className="text-red-500 text-sm flex items-center gap-1">
+                      <AlertCircle size={14} />
+                      {errors.selectedEmployees}
+                    </p>
+                  )}
+                  {formData.selectedEmployees.length > 0 && (
+                    <p className="text-sm text-gray-600">
+                      {formData.selectedEmployees.length} employee{formData.selectedEmployees.length > 1 ? 's' : ''} selected
+                    </p>
+                  )}
+                </div>
+              )}
 
-                    <DisplayField
-                      icon={Mail}
-                      label="Email Address"
-                      value={formData.email}
-                    />
-
-                    <DisplayField
-                      icon={Phone}
-                      label="Phone Number"
-                      value={formData.phoneNumber}
-                    />
-
-                    <DisplayField
-                      icon={Briefcase}
-                      label="Position"
-                      value={formData.position}
-                    />
-                  </div>
+              {/* Error Display */}
+              {errors.submit && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-red-600 text-sm flex items-center gap-2">
+                    <AlertCircle size={16} />
+                    {errors.submit}
+                  </p>
                 </div>
               )}
             </div>
@@ -330,10 +407,9 @@ export default function AddTeamMember() {
             <div className="mt-10 flex justify-center">
               <button
                 onClick={handleSubmit}
-                disabled={isSubmitting || !formData.selectedEmployee || loading}
-                className={`px-12 py-4 bg-[#0179a4] text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 ${
-                  isSubmitting || !formData.selectedEmployee || loading ? 'opacity-75 cursor-not-allowed' : 'hover:bg-blue-700'
-                }`}
+                disabled={isSubmitting || formData.selectedEmployees.length === 0 || loading || employees.length === 0}
+                className={`px-12 py-4 bg-[#0179a4] text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 ${isSubmitting || formData.selectedEmployees.length === 0 || loading || employees.length === 0 ? 'opacity-75 cursor-not-allowed' : 'hover:bg-blue-700'
+                  }`}
               >
                 {isSubmitting ? (
                   <div className="flex items-center gap-3">
@@ -342,8 +418,8 @@ export default function AddTeamMember() {
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <UserPlus size={20} />
-                    Add to Project
+                    <Users size={20} />
+                    Add {formData.selectedEmployees.length > 0 ? `${formData.selectedEmployees.length} ` : ''}to Project
                   </div>
                 )}
               </button>
@@ -357,11 +433,11 @@ export default function AddTeamMember() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
             <div className="flex items-start gap-2">
               <CheckCircle size={16} className="mt-0.5 text-[#0179a4]" />
-              <span>Employee will be assigned to the selected project</span>
+              <span>Selected employees will be assigned to the project</span>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle size={16} className="mt-0.5 text-[#0179a4]" />
-              <span>Team notification will be sent automatically</span>
+              <span>Team notifications will be sent automatically</span>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle size={16} className="mt-0.5 text-[#0179a4]" />
@@ -369,7 +445,7 @@ export default function AddTeamMember() {
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle size={16} className="mt-0.5 text-[#0179a4]" />
-              <span>Employee will receive project details via email</span>
+              <span>All employees will receive project details via email</span>
             </div>
           </div>
         </div>
