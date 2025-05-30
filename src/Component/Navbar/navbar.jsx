@@ -9,6 +9,7 @@ import { MdVideoCall, MdContentCopy } from "react-icons/md";
 import { axiosInstance } from '@/lib/axiosInstance';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import VideoCallPage from '../videocall';
 
 export default function NavBar() {
   const [userData, setUserData] = useState({
@@ -19,6 +20,7 @@ export default function NavBar() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMeetingPopup, setShowMeetingPopup] = useState(false);
+  const [showVideoCall, setShowVideoCall] = useState(false); // New state for video call
   const [imageError, setImageError] = useState(false);
   const [isCreatingMeeting, setIsCreatingMeeting] = useState(false);
   const [createdMeeting, setCreatedMeeting] = useState(null);
@@ -78,6 +80,11 @@ export default function NavBar() {
       // Fetch users when opening the popup
       fetchUserEmails();
     }
+  };
+
+  // New function to handle video call popup
+  const toggleVideoCall = () => {
+    setShowVideoCall(!showVideoCall);
   };
 
   const handleProfileAction = () => {
@@ -212,10 +219,41 @@ export default function NavBar() {
       </h1>
 
       <div className="ml-auto flex items-center gap-10 mr-10">
-        {/* Video Icon */}
-        <button title="Video Call" onClick={toggleMeetingPopup}>
-          <FaVideo className="w-6 h-7 text-black cursor-pointer hover:text-white transition-colors duration-200" />
-        </button>
+        {/* Video Icon with Dropdown */}
+        <div className="relative">
+          <button title="Video Call" onClick={toggleVideoCall}>
+            <FaVideo className="w-6 h-7 text-black cursor-pointer hover:text-white transition-colors duration-200" />
+          </button>
+          
+          {/* Video Call Dropdown Menu */}
+          {showVideoCall && (
+            <div className="absolute right-0 top-10 w-48 bg-white rounded-lg shadow-lg z-20">
+              <div className="py-2">
+                <button
+                  onClick={() => {
+                    setShowVideoCall(false);
+                    toggleMeetingPopup();
+                  }}
+                  className="w-full px-4 py-2 text-left flex items-center space-x-3 hover:bg-gray-100 cursor-pointer"
+                >
+                  <MdVideoCall className="text-gray-600" />
+                  <span>Schedule Meeting</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowVideoCall(false);
+                    // Open VideoCallPage in a new window/modal
+                    window.open('/videocall', '_blank', 'width=1200,height=800');
+                  }}
+                  className="w-full px-4 py-2 text-left flex items-center space-x-3 hover:bg-gray-100 cursor-pointer"
+                >
+                  <FaVideo className="text-gray-600" />
+                  <span>Start Instant Call</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Add Team Members */}
         <button title="Add Team Members" onClick={() => router.push('/dashboard/viewteammembers')}>
@@ -265,6 +303,7 @@ export default function NavBar() {
             onClick={() => {
               setShowProfileMenu(!showProfileMenu);
               setShowNotifications(false);
+              setShowVideoCall(false); // Close video call dropdown when opening profile
             }}
             className="focus:outline-none"
           >
