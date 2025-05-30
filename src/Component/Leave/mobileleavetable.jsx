@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
+import { Toaster, toast } from "react-hot-toast";
+import axios from "axios";
 import {
   Trash2,
   Calendar,
@@ -12,48 +14,9 @@ import {
 } from "lucide-react";
 
 export default function MobileLeaveTable() {
-  const [leaves, setLeaves] = useState([
-    {
-      _id: "1",
-      managerId: "ayaan_id",
-      reason:
-        "Medical checkup and recovery time needed for proper healing and rest",
-      createdAt: "2024-01-15T10:30:00Z",
-      fromDate: "2024-01-20",
-      toDate: "2024-01-22",
-      days: 3,
-      status: "Pending",
-    },
-    {
-      _id: "2",
-      managerId: "prashant_id",
-      reason:
-        "Family wedding ceremony and related celebrations that require my presence",
-      createdAt: "2024-01-10T14:20:00Z",
-      fromDate: "2024-01-25",
-      toDate: "2024-01-27",
-      days: 3,
-      status: "Accepted",
-    },
-    {
-      _id: "3",
-      managerId: "shams_id",
-      reason:
-        "Personal emergency situation that requires immediate attention and cannot be postponed",
-      createdAt: "2024-01-05T09:15:00Z",
-      fromDate: "2024-01-12",
-      toDate: "2024-01-14",
-      days: 3,
-      status: "Rejected",
-    },
-  ]);
+  const [leaves, setLeaves] = useState([]);
   const [approvalTo, setApprovalTo] = useState("");
-  const [approvers, setApprovers] = useState([
-    { id: "ayaan_id", name: "Ayaan Raje" },
-    { id: "prashant_id", name: "Prashant Patil" },
-    { id: "shams_id", name: "Shams Ali Shaikh" },
-    { id: "awab_id", name: "Awab Fakih" },
-  ]);
+  const [approvers, setApprovers] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [leaveType, setLeaveType] = useState("");
   const [fromDate, setFromDate] = useState("");
@@ -69,6 +32,48 @@ export default function MobileLeaveTable() {
       new Date(end1) < new Date(start2) || new Date(start1) > new Date(end2)
     );
   };
+
+  // Fetch approvers from backend
+  useEffect(() => {
+    const fetchApprovers = async () => {
+      try {
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_BACKEND_API}/leave/approvers`,
+          { withCredentials: true }
+        );
+        setApprovers(res.data.data || []);
+      } catch (error) {
+        console.error("Failed to load approvers", error);
+        // Fallback approvers if API fails
+        setApprovers([
+          { id: "ayaan_id", name: "Ayaan Raje" },
+          { id: "prashant_id", name: "Prashant Patil" },
+          { id: "shams_id", name: "Shams Ali Shaikh" },
+          { id: "awab_id", name: "Awab Fakih" },
+        ]);
+      }
+    };
+    fetchApprovers();
+  }, []);
+
+  // Fetch leaves from backend
+  useEffect(() => {
+    const fetchLeaves = async () => {
+      try {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_BACKEND_API}/leave/userLeave`,
+          {
+            withCredentials: true,
+          }
+        );
+        setLeaves(response.data.leaves || []);
+      } catch (error) {
+        console.error("Error fetching leaves:", error);
+        toast.error("Failed to fetch leave data.");
+      }
+    };
+    fetchLeaves();
+  }, []);
 
   useEffect(() => {
     document.body.classList.toggle("overflow-hidden", showModal);
@@ -101,53 +106,106 @@ export default function MobileLeaveTable() {
       !toDate ||
       !reason.trim()
     ) {
-      alert("Please fill out all fields before submitting.");
+      toast.error("Please fill out all fields before submitting.");
       return;
     }
 
     if (reason.trim().split(/\s+/).filter(Boolean).length < 24) {
-      alert("Reason for Leave must be at least 24 words long.");
+      toast.error("Reason for Leave must be at least 24 words long.");
       return;
     }
 
     if (new Date(toDate) < new Date(fromDate)) {
-      alert("To Date cannot be before From Date.");
+      toast.error("To Date cannot be before From Date.");
       return;
     }
 
+    // Check for overlapping leave dates
     const hasOverlap = leaves.some((leave) =>
       isDateOverlap(fromDate, toDate, leave.fromDate, leave.toDate)
     );
 
     if (hasOverlap) {
-      alert("You already have leave applied during these dates.");
+      toast("You already have leave applied during these dates.", {
+        icon: "📅",
+        duration: 5000,
+        style: {
+          border: "1px solid #3182ce",
+          padding: "12px 16px",
+          color: "#2b6cb0",
+          background: "#ebf8ff",
+          fontWeight: "500",
+        },
+      });
       return;
     }
 
-    // Simulate successful submission
-    const newLeave = {
-      _id: Date.now().toString(),
-      managerId: approvers.find((a) => a.name === approvalTo)?.id || approvalTo,
-      reason,
-      createdAt: new Date().toISOString(),
-      fromDate,
-      toDate,
-      days:
-        Math.ceil(
-          (new Date(toDate) - new Date(fromDate)) / (1000 * 60 * 60 * 24)
-        ) + 1,
-      status: "Pending",
-    };
+    // Get the selected approver ID
+    let managerId = approvalTo;
 
-    setLeaves([newLeave, ...leaves]);
-    setShowModal(false);
-    setLeaveType("");
-    setApprovalTo("");
-    setFromDate("");
-    setToDate("");
-    setReason("");
-    setWordCount(0);
-    alert("Leave Submitted Successfully!");
+    // If the approvalTo is a name, find the corresponding ID from approvers
+    if (!approvers.some((a) => a.id === approvalTo)) {
+      const selectedApprover = approvers.find((a) => a.name === approvalTo);
+      if (selectedApprover) {
+        managerId = selectedApprover.id;
+      } else {
+        // Fallback approach
+        const approverNameToId = {
+          "Ayaan Raje": "ayaan_id",
+          "Prashant Patil": "prashant_id",
+          "Shams Ali Shaikh": "shams_id",
+          "Awab Fakih": "awab_id",
+        };
+        managerId = approverNameToId[approvalTo] || approvalTo;
+      }
+    }
+
+    const formData = new FormData();
+    formData.append("fromDate", fromDate);
+    formData.append("toDate", toDate);
+    formData.append("leaveType", leaveType);
+    formData.append("reason", reason);
+    formData.append("managerId", managerId);
+
+    if (fileInputRef.current?.files[0]) {
+      formData.append("attachment", fileInputRef.current.files[0]);
+    }
+
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_API}/leave/apply`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true,
+        }
+      );
+
+      if (response.status === 201) {
+        toast.success("Leave Submitted Successfully!");
+        setShowModal(false);
+        setLeaveType("");
+        setApprovalTo("");
+        setFromDate("");
+        setToDate("");
+        setReason("");
+        setWordCount(0);
+
+        // Refresh leaves list
+        const updatedLeaves = await axios.get(
+          `${process.env.NEXT_PUBLIC_BACKEND_API}/leave/userLeave`,
+          {
+            withCredentials: true,
+          }
+        );
+        setLeaves(updatedLeaves.data.leaves || []);
+      } else {
+        toast.error("Failed to submit leave.");
+      }
+    } catch (error) {
+      console.error("Submit error:", error);
+      toast.error("Error submitting leave. Try again later.");
+    }
   };
 
   const handleReasonChange = (e) => {
@@ -177,6 +235,7 @@ export default function MobileLeaveTable() {
 
   return (
     <div className="p-4 bg-gray-50 min-h-screen">
+      <Toaster />
       <h1 className="text-xl font-bold mb-2">My Leave</h1>
       <div className="w-16 h-1 bg-red-500 mb-4"></div>
 
@@ -269,11 +328,20 @@ export default function MobileLeaveTable() {
                   className="w-full rounded px-3 py-2 border border-gray-300 shadow-sm text-sm"
                 >
                   <option value="">Select</option>
-                  {approvers.map((approver) => (
-                    <option key={approver.id} value={approver.name}>
-                      {approver.name}
-                    </option>
-                  ))}
+                  {approvers.length > 0 ? (
+                    approvers.map((approver) => (
+                      <option key={approver.id} value={approver.name}>
+                        {approver.name}
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="Ayaan Raje">Ayaan Raje</option>
+                      <option value="Prashant Patil">Prashant Patil</option>
+                      <option value="Shams Ali Shaikh">Shams Ali Shaikh</option>
+                      <option value="Awab Fakih">Awab Fakih</option>
+                    </>
+                  )}
                 </select>
               </div>
 

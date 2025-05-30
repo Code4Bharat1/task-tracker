@@ -9,6 +9,7 @@ import {
   FiCheck,
   FiX,
 } from "react-icons/fi";
+import { axiosInstance } from "@/lib/axiosInstance";
 
 // Toast Component
 const Toast = ({ message, type, onClose, isVisible }) => {
@@ -62,6 +63,7 @@ export default function MobileTimeline() {
     message: "",
     type: "success",
   });
+  const [isFilledTimesheet, setIsFilledTimesheet] = useState(false);
 
   const bucketOptions = ["Project", "Meeting", "Miscellaneous"];
   const managers = ["Awab Fakih", "Ayaan Raje", "Prashant Patil"];
@@ -70,6 +72,72 @@ export default function MobileTimeline() {
     projectName: null,
     items: [],
   });
+
+  const checkFilledOrNotTimesheet = async (date) => {
+    try {
+      const response = await axiosInstance.get(`/timesheet/${date}`);
+      if (response.status === 200 && response.data.message === 'Timesheet found') {
+        setIsFilledTimesheet(true);
+        
+        const timesheetData = response.data.timesheet;
+        setProjectName(timesheetData.projectName || "");
+        setSelectedManagers(timesheetData.notifiedManagers || []);
+        setItems(timesheetData.items || []);
+
+        const durations = timesheetData.items.map(item => {
+          const [hours, minutes] = item.duration.split(":").map(Number);
+          return `${String(hours).padStart(2, "0")}${String(minutes).padStart(2, "0")}`;
+        });
+        setTodayHours(durations);
+        setTotalTime(timesheetData.totalWorkHours || calculateTotalTime(durations));
+
+        showToast("Already filled timesheet loaded");
+      } else {
+        resetForm();
+        setIsFilledTimesheet(false);
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        resetForm();
+        setIsFilledTimesheet(false);
+      } else {
+        console.error("Error checking timesheet:", error);
+        showToast("Error loading timesheet data", "error");
+        resetForm();
+        setIsFilledTimesheet(false);
+      }
+    }
+  };
+
+  const resetForm = () => {
+    const defaultTimes = Array.from({ length: 8 }, (_, i) => {
+      const start = new Date(0, 0, 0, 9 + i, 0);
+      const end = new Date(0, 0, 0, 10 + i, 0);
+      return {
+        timeRange: `${formatTime(start)} - ${formatTime(end)}`,
+        task: "",
+        type: "Work",
+        duration: "01:00",
+        bucket: "Project",
+      };
+    });
+
+    const defaultDurations = defaultTimes.map(() => "0100");
+    setProjectName("");
+    setSelectedManagers([]);
+    setItems(defaultTimes);
+    setTodayHours(defaultDurations);
+    setValidationErrors({});
+    setTimeout(() => {
+      setTotalTime(calculateTotalTime(defaultDurations));
+    }, 0);
+  };
+
+  useEffect(() => {
+    if (date) {
+      checkFilledOrNotTimesheet(date);
+    }
+  }, [date]);
 
   const showToast = (message, type = "success") => {
     setToast({ show: true, message, type });
@@ -97,10 +165,6 @@ export default function MobileTimeline() {
     setTodayHours(defaultDurations);
     setTotalTime(calculateTotalTime(defaultDurations));
   };
-
-  useEffect(() => {
-    initializeDefaultItems();
-  }, []);
 
   useEffect(() => {
     inputRefs.current.items = Array(items.length)
@@ -155,6 +219,11 @@ export default function MobileTimeline() {
   };
 
   const addTimelineItem = () => {
+    if (isFilledTimesheet) {
+      showToast("Cannot modify an already submitted timesheet", "error");
+      return;
+    }
+
     const newItem = {
       timeRange: getNextTimeRange(),
       duration: "01:00",
@@ -175,6 +244,11 @@ export default function MobileTimeline() {
   };
 
   const updateItem = (index, field, value) => {
+    if (isFilledTimesheet) {
+      showToast("Cannot modify an already submitted timesheet", "error");
+      return;
+    }
+
     const updated = [...items];
     updated[index][field] = value;
     setItems(updated);
@@ -189,6 +263,11 @@ export default function MobileTimeline() {
   };
 
   const handleDurationChange = (index, value) => {
+    if (isFilledTimesheet) {
+      showToast("Cannot modify an already submitted timesheet", "error");
+      return;
+    }
+
     let formattedDuration = formatDuration(value);
     updateItem(index, "duration", formattedDuration);
 
@@ -202,6 +281,11 @@ export default function MobileTimeline() {
   };
 
   const deleteItem = (index) => {
+    if (isFilledTimesheet) {
+      showToast("Cannot modify an already submitted timesheet", "error");
+      return;
+    }
+
     setItems((prev) => prev.filter((_, i) => i !== index));
     setTodayHours((prev) => {
       const updated = prev.filter((_, i) => i !== index);
@@ -212,6 +296,18 @@ export default function MobileTimeline() {
     setValidationErrors((prev) => {
       const newErrors = { ...prev };
       delete newErrors[`task-${index}`];
+      
+      // Adjust error keys for items after the deleted one
+      Object.keys(newErrors).forEach(key => {
+        if (key.startsWith('task-')) {
+          const itemIndex = parseInt(key.split('-')[1]);
+          if (itemIndex > index) {
+            newErrors[`task-${itemIndex-1}`] = newErrors[key];
+            delete newErrors[key];
+          }
+        }
+      });
+      
       return newErrors;
     });
 
@@ -234,6 +330,11 @@ export default function MobileTimeline() {
   };
 
   const handleSubmit = async () => {
+    if (isFilledTimesheet) {
+      showToast("This timesheet has already been submitted", "error");
+      return;
+    }
+
     if (!validateForm()) {
       showToast("Please fill all required fields", "error");
       return;
@@ -242,17 +343,31 @@ export default function MobileTimeline() {
     const payload = {
       date,
       projectName,
-      items,
+      items: items.map(item => ({
+        timeRange: item.timeRange,
+        task: item.task,
+        type: item.type,
+        duration: item.duration,
+        bucket: item.bucket,
+      })),
       notifiedManagers: selectedManagers,
     };
 
     try {
-      console.log("Submitting timesheet:", payload);
+      const response = await axiosInstance.post("/timesheet/store", payload);
       showToast("Timesheet submitted successfully!");
-      // Stay on the same page after successful submission
+
+      // Switch to current date after submission
+      const today = new Date();
+      const todayDate = today.toISOString().split("T")[0];
+      setDate(todayDate);
+
+      // Check if there's a timesheet for the current date
+      await checkFilledOrNotTimesheet(todayDate);
+
     } catch (error) {
       console.error("Error submitting timesheet:", error);
-      showToast("Failed to submit timesheet", "error");
+      showToast(error.response?.data?.message || "Failed to submit timesheet.", "error");
     }
   };
 
@@ -442,10 +557,13 @@ export default function MobileTimeline() {
             Select Manager
           </label>
           <button
-            onClick={() => setShowDropdown(!showDropdown)}
+            onClick={() => !isFilledTimesheet && setShowDropdown(!showDropdown)}
             className={`w-full border ${
               validationErrors.managers ? "border-red-500" : "border-gray-300"
-            } rounded-md px-4 py-3 flex items-center justify-between text-sm`}
+            } rounded-md px-4 py-3 flex items-center justify-between text-sm ${
+              isFilledTimesheet ? "bg-gray-100" : ""
+            }`}
+            disabled={isFilledTimesheet}
           >
             <span className="text-gray-800">
               {selectedManagers.length === 0
@@ -460,7 +578,7 @@ export default function MobileTimeline() {
             </p>
           )}
 
-          {showDropdown && (
+          {showDropdown && !isFilledTimesheet && (
             <div className="absolute top-full mt-1 bg-white border border-gray-200 rounded-md w-full z-10 shadow-lg">
               {managers.map((managerName) => (
                 <label
@@ -486,6 +604,7 @@ export default function MobileTimeline() {
                         return updated;
                       })
                     }
+                    disabled={isFilledTimesheet}
                   />
                   {managerName}
                 </label>
@@ -504,13 +623,15 @@ export default function MobileTimeline() {
             placeholder="Enter project name"
             value={projectName}
             onChange={(e) => {
-              setProjectName(e.target.value);
-              if (e.target.value.trim() !== "") {
-                setValidationErrors((prev) => {
-                  const newErrors = { ...prev };
-                  delete newErrors.projectName;
-                  return newErrors;
-                });
+              if (!isFilledTimesheet) {
+                setProjectName(e.target.value);
+                if (e.target.value.trim() !== "") {
+                  setValidationErrors((prev) => {
+                    const newErrors = { ...prev };
+                    delete newErrors.projectName;
+                    return newErrors;
+                  });
+                }
               }
             }}
             ref={(el) => (inputRefs.current.projectName = el)}
@@ -518,7 +639,10 @@ export default function MobileTimeline() {
               validationErrors.projectName
                 ? "border-red-500"
                 : "border-gray-300"
-            } rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#018ABE] text-sm`}
+            } rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#018ABE] text-sm ${
+              isFilledTimesheet ? "bg-gray-100" : ""
+            }`}
+            readOnly={isFilledTimesheet}
           />
           {validationErrors.projectName && (
             <p className="text-red-500 text-xs mt-1">
@@ -530,7 +654,10 @@ export default function MobileTimeline() {
         {/* Add Row Button */}
         <button
           onClick={addTimelineItem}
-          className="w-full py-3 rounded-lg text-sm font-medium bg-[#018ABE] text-white"
+          className={`w-full py-3 rounded-lg text-sm font-medium ${
+            isFilledTimesheet ? "bg-gray-400" : "bg-[#018ABE] text-white"
+          }`}
+          disabled={isFilledTimesheet}
         >
           Add Row
         </button>
@@ -549,7 +676,10 @@ export default function MobileTimeline() {
               </span>
               <button
                 onClick={() => deleteItem(index)}
-                className="p-2 rounded-full hover:bg-red-50"
+                className={`p-2 rounded-full hover:bg-red-50 ${
+                  isFilledTimesheet ? "opacity-50" : ""
+                }`}
+                disabled={isFilledTimesheet}
               >
                 <AiFillDelete className="text-lg text-red-600" />
               </button>
@@ -560,9 +690,12 @@ export default function MobileTimeline() {
                 Bucket
               </label>
               <select
-                className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                className={`w-full border border-gray-300 rounded-md p-2 text-sm ${
+                  isFilledTimesheet ? "bg-gray-100" : ""
+                }`}
                 value={item.bucket}
                 onChange={(e) => updateItem(index, "bucket", e.target.value)}
+                disabled={isFilledTimesheet}
               >
                 {bucketOptions.map((option) => (
                   <option key={option} value={option}>
@@ -581,11 +714,14 @@ export default function MobileTimeline() {
                   validationErrors[`task-${index}`]
                     ? "border-red-500"
                     : "border-gray-300"
-                } rounded-md p-2 text-sm resize-none`}
+                } rounded-md p-2 text-sm resize-none ${
+                  isFilledTimesheet ? "bg-gray-100" : ""
+                }`}
                 rows="3"
                 value={item.task}
                 onChange={(e) => updateItem(index, "task", e.target.value)}
                 placeholder="Enter task description"
+                readOnly={isFilledTimesheet}
               />
               {validationErrors[`task-${index}`] && (
                 <p className="text-red-500 text-xs mt-1">
@@ -614,7 +750,10 @@ export default function MobileTimeline() {
                   type="text"
                   value={item.duration}
                   onChange={(e) => handleDurationChange(index, e.target.value)}
-                  className="w-full border border-gray-300 rounded-md p-2 text-sm text-center"
+                  className={`w-full border border-gray-300 rounded-md p-2 text-sm text-center ${
+                    isFilledTimesheet ? "bg-gray-100" : ""
+                  }`}
+                  readOnly={isFilledTimesheet}
                 />
               </div>
             </div>
@@ -639,10 +778,13 @@ export default function MobileTimeline() {
       </div>
 
       {/* Submit Button */}
-      <div className=" bottom-4">
+      <div className="bottom-4">
         <button
           onClick={handleSubmit}
-          className="w-full py-4 rounded-lg font-semibold text-lg bg-[#018ABE] text-white shadow-lg"
+          className={`w-full py-4 rounded-lg font-semibold text-lg ${
+            isFilledTimesheet ? "bg-gray-400" : "bg-[#018ABE] text-white"
+          } shadow-lg`}
+          disabled={isFilledTimesheet}
         >
           Submit Timesheet
         </button>
