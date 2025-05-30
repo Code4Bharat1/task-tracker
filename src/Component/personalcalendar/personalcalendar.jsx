@@ -27,7 +27,6 @@ import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import EventForm from "./EventForm";
 import TaskForm from "./TaskForm";
 import MeetingForm from "./MettingForm";
-// import ToDoList from "./TodoList";
 
 const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -41,8 +40,7 @@ export default function PersonalCalendar() {
   const [events, setEvents] = useState([]);
   const [clickedDay, setClickedDay] = useState(null);
   const [todayKey, setTodayKey] = useState("");
-  
-  const [isLoading, setIsLoading] = useState(false); // Add calendar type state
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     date: formatDate(new Date()),
@@ -52,7 +50,6 @@ export default function PersonalCalendar() {
     description: "",
     email: "",
     reminderTime: "15",
-   
   });
   const [selectedOption, setSelectedOption] = useState("");
   const router = useRouter();
@@ -75,50 +72,50 @@ export default function PersonalCalendar() {
         break;
     }
   };
+
   const underlineRef = useRef(null);
 
- // Configurations - Using "Meeting" as the display name
-const categoryConfig = {
-  Reminder: {
-    color: "#059669",       // Deeper green
-    bg: "#D1FAE5",         // Softer green
-    border: "#6EE7B7",     // Medium green
-    icon: Bell,
-  },
-  Deadline: {
-    color: "#7C3AED",      // Royal purple
-    bg: "#EDE9FE",         // Light purple
-    border: "#A78BFA",     // Medium purple
-    icon: AlertTriangle,
-  },
-  Leaves: { 
-    color: "#D97706",      // Amber
-    bg: "#FEF3C7",         // Light amber
-    border: "#FCD34D",     // Medium amber
-    icon: Plane 
-  },
-  Meeting: {
-    color: "#DC2626",      // Rich red
-    bg: "#FEE2E2",         // Light red
-    border: "#FCA5A5",     // Medium red
-    icon: Users,
-  },
-  "Daily Task": {
-    color: "#2563EB",      // Deep blue
-    bg: "#DBEAFE",         // Light blue
-    border: "#93C5FD",     // Medium blue
-    icon: CheckSquare,
-  },
-};
+  // Configurations
+  const categoryConfig = {
+    Reminder: {
+      color: "#059669",
+      bg: "#D1FAE5",
+      border: "#6EE7B7",
+      icon: Bell,
+    },
+    Deadline: {
+      color: "#7C3AED",
+      bg: "#EDE9FE",
+      border: "#A78BFA",
+      icon: AlertTriangle,
+    },
+    Leaves: { 
+      color: "#D97706",
+      bg: "#FEF3C7",
+      border: "#FCD34D",
+      icon: Plane 
+    },
+    Meeting: {
+      color: "#DC2626",
+      bg: "#FEE2E2",
+      border: "#FCA5A5",
+      icon: Users,
+    },
+    "Daily Task": {
+      color: "#2563EB",
+      bg: "#DBEAFE",
+      border: "#93C5FD",
+      icon: CheckSquare,
+    },
+  };
 
-// Using "Meeting" as the display name
-const categoryDotColors = {
-  "Daily Task": "bg-[#2563EB]",    // Matching blue
-  Deadline: "bg-[#7C3AED]",        // Matching purple
-  Meeting: "bg-[#DC2626]",         // Matching red
-  Leaves: "bg-[#D97706]",          // Matching amber
-  Reminder: "bg-[#059669]",        // Matching green
-};
+  const categoryDotColors = {
+    "Daily Task": "bg-[#2563EB]",
+    Deadline: "bg-[#7C3AED]",
+    Meeting: "bg-[#DC2626]",
+    Leaves: "bg-[#D97706]",
+    Reminder: "bg-[#059669]",
+  };
 
   const priorityOrder = [
     "Daily Task",
@@ -142,8 +139,6 @@ const categoryDotColors = {
         }
       );
 
-      console.log(response);
-
       if (response.status === 200) {
         processCalendarData(response.data);
       }
@@ -151,7 +146,6 @@ const categoryDotColors = {
       console.error("Error fetching calendar data:", err);
       showToast("Failed to fetch calendar data");
       
-      // Fallback to localStorage if API fails
       const storedEvents = localStorage.getItem("calendarEvents");
       if (storedEvents) {
         setEvents(JSON.parse(storedEvents));
@@ -164,8 +158,6 @@ const categoryDotColors = {
   };
 
   const processCalendarData = (data) => {
-    // Process the API response data and format it for the calendar
-    // Adjust this function based on your API response structure
     if (data && Array.isArray(data)) {
       const formattedEvents = data.map(event => ({
         id: event.id || Date.now(),
@@ -181,8 +173,6 @@ const categoryDotColors = {
       }));
       
       setEvents(formattedEvents);
-      
-      // Also save to localStorage as backup
       localStorage.setItem("calendarEvents", JSON.stringify(formattedEvents));
     } else {
       setEvents([]);
@@ -205,7 +195,6 @@ const categoryDotColors = {
       );
 
       if (response.status === 200 || response.status === 201) {
-        // Refresh calendar data after successful creation
         await fetchCalendarData(false);
         return { success: true, data: response.data };
       }
@@ -221,7 +210,7 @@ const categoryDotColors = {
   useGSAP(() => {
     gsap.fromTo(
       underlineRef.current,
-      { width: "0%" },
+      { width: "0%"},
       { width: "100%", duration: 1, ease: "power2.out" }
     );
   }, []);
@@ -237,13 +226,11 @@ const categoryDotColors = {
     setTodayKey(key);
   }, []);
 
-  // Fetch calendar data on component mount and when calType changes
   useEffect(() => {
     fetchCalendarData();
   }, []);
 
   useEffect(() => {
-    // Only save to localStorage when events are updated locally
     if (events.length > 0) {
       localStorage.setItem("calendarEvents", JSON.stringify(events));
     }
@@ -275,7 +262,6 @@ const categoryDotColors = {
   };
 
   const handleCreateEvent = async () => {
-    // Validation
     if (
       (activeTab === "Event" || activeTab === "Daily Task") &&
       (!formData.title || !formData.date)
@@ -295,15 +281,14 @@ const categoryDotColors = {
         ? `Meeting with ${formData.email}`
         : "");
 
-    // Normalize category names for consistent display
     let eventCategory;
     if (activeTab === "Event") {
       eventCategory = formData.category;
     } else if (activeTab === "Schedule Meeting") {
-      eventCategory = "Meeting"; // Convert to "Meeting" for display
+      eventCategory = "Meeting";
     } 
     else if( activeTab === "Task") {
-      eventCategory = "Task"; // Convert to "Daily Task" for display
+      eventCategory = "Task";
     }
       else {
       eventCategory = activeTab;
@@ -317,18 +302,20 @@ const categoryDotColors = {
       category: eventCategory,
     };
 
-    // Try to create event via API first
     const result = await createEventAPI(newEvent);
     
     if (result.success) {
       showToast(`${activeTab} created successfully!`);
     } else {
-      // Fallback to local storage if API fails
       setEvents([...events, newEvent]);
       showToast(`${activeTab} created locally (API unavailable)`);
     }
 
     setModalOpen(false);
+    resetFormData();
+  };
+
+  const resetFormData = () => {
     setFormData({
       title: "",
       date: formatDate(new Date()),
@@ -339,6 +326,7 @@ const categoryDotColors = {
       email: "",
       reminderTime: "15",
     });
+    setActiveTab("Event");
   };
 
   const handleDayClick = (day) => {
@@ -387,13 +375,11 @@ const categoryDotColors = {
     return events.filter((event) => event.date === formattedDate);
   };
 
-  // Fixed function to get unique categories with counts and limit to 5 dots
   const getUniqueEventsForDay = (day) => {
     const dayEvents = getEventsForDay(day);
 
     if (dayEvents.length === 0) return [];
 
-    // Group events by category and count them
     const categoryMap = {};
     dayEvents.forEach((event) => {
       const category = event.category || event.type;
@@ -404,7 +390,6 @@ const categoryDotColors = {
       }
     });
 
-    // Get unique categories and sort by priority
     const uniqueCategories = Object.values(categoryMap).sort((a, b) => {
       const aIndex = priorityOrder.indexOf(a.category);
       const bIndex = priorityOrder.indexOf(b.category);
@@ -413,15 +398,12 @@ const categoryDotColors = {
       return aPriority - bPriority;
     });
 
-    // Return only the first 5 categories (no more indicators)
     return uniqueCategories.slice(0, 5);
   };
 
-  // Keep the old function for backward compatibility in the modal
   const getGroupedEventsForDay = (day) => {
     const dayEvents = getEventsForDay(day);
 
-    // Group events by category
     const grouped = dayEvents.reduce((acc, event) => {
       const category = event.category || event.type;
       if (!acc[category]) {
@@ -431,7 +413,6 @@ const categoryDotColors = {
       return acc;
     }, {});
 
-    // Convert to array with category and count, then sort by priority
     const result = Object.entries(grouped)
       .map(([category, events]) => ({
         category,
@@ -469,7 +450,7 @@ const categoryDotColors = {
   const { firstDay, daysInMonth, endOffset } = generateCalendarDays();
 
   return (
-    <div className="min-h-screen  bg-white p-4">
+    <div className="min-h-screen bg-white p-4">
       {isLoading && (
         <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-4 shadow-lg">
@@ -539,7 +520,6 @@ const categoryDotColors = {
               </div>
 
               <div className="grid grid-cols-7 gap-1 mt-2">
-                {/* Empty cells for days before month starts */}
                 {Array.from({ length: firstDay }).map((_, i) => (
                   <div
                     key={`start-${i}`}
@@ -549,7 +529,6 @@ const categoryDotColors = {
                   </div>
                 ))}
 
-                {/* Days of the month */}
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                   const day = i + 1;
                   const uniqueEvents = getUniqueEventsForDay(day);
@@ -564,7 +543,6 @@ const categoryDotColors = {
                     >
                       <span className="text-lg font-bold">{day}</span>
 
-                      {/* Display only up to 5 category dots */}
                       <div className="flex gap-[2px] mt-[2px] flex-wrap justify-center">
                         {uniqueEvents.map(({ category, count }) => (
                           <span
@@ -579,7 +557,6 @@ const categoryDotColors = {
                   );
                 })}
 
-                {/* Empty cells for days after month ends */}
                 {Array.from({ length: endOffset }).map((_, i) => (
                   <div
                     key={`end-${i}`}
@@ -619,7 +596,6 @@ const categoryDotColors = {
         {clickedDay && (
           <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg mx-4 max-h-[80vh] overflow-hidden">
-              {/* Header */}
               <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800">
@@ -646,7 +622,6 @@ const categoryDotColors = {
                 </button>
               </div>
 
-              {/* Events List */}
               <div className="p-6 max-h-96 overflow-y-auto">
                 <div className="space-y-4">
                   {getEventsForDay(clickedDay).map((event, idx) => {
@@ -660,7 +635,6 @@ const categoryDotColors = {
                         key={idx}
                         className="border border-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow"
                       >
-                        {/* Event Header */}
                         <div className="flex items-center mb-3">
                           <div
                             className="w-4 h-4 rounded-full mr-3"
@@ -673,7 +647,6 @@ const categoryDotColors = {
                           </h4>
                         </div>
 
-                        {/* Event Details */}
                         {event.description && (
                           <p className="text-gray-600 text-sm mb-3">
                             {event.description}
@@ -724,7 +697,6 @@ const categoryDotColors = {
                 </div>
               </div>
 
-              {/* Footer */}
               <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
                 <button
                   onClick={() => setClickedDay(null)}
@@ -746,27 +718,45 @@ const categoryDotColors = {
             </div>
           </div>
         )}
-{/* 
-        <ToDoList selectedDate={selectedDate} /> */}
 
         {/* Modal */}
         {modalOpen && (
-          <div className="fixed inset-0 p-8 bg-black/30 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-              <div className="flex border-b  pb-2 mb-4">
-                {["Event", "Daily Task", "Schedule Meeting"].map((tab) => (
-                  <button
-                    key={tab}
-                    className={`mr-6 pb-2 ${
-                      activeTab === tab
-                        ? "border-b-2 border-[#018ABE]"
-                        : "text-gray-500"
-                    }`}
-                    onClick={() => setActiveTab(tab)}
-                  >
-                    {tab}
-                  </button>
-                ))}
+          <div 
+            className="fixed inset-0 p-8 bg-black/30 flex items-center justify-center z-50"
+            onClick={() => {
+              setModalOpen(false);
+              resetFormData();
+            }}
+          >
+            <div 
+              className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex border-b pb-2">
+                  {["Event", "Daily Task", "Schedule Meeting"].map((tab) => (
+                    <button
+                      key={tab}
+                      className={`mr-6 pb-2 ${
+                        activeTab === tab
+                          ? "border-b-2 border-[#018ABE]"
+                          : "text-gray-500"
+                      }`}
+                      onClick={() => setActiveTab(tab)}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+                <button 
+                  onClick={() => {
+                    setModalOpen(false);
+                    resetFormData();
+                  }}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X size={20} />
+                </button>
               </div>
 
               {activeTab === "Event" && (
@@ -774,7 +764,10 @@ const categoryDotColors = {
                   formData={formData}
                   handleInputChange={handleInputChange}
                   categoryDotColors={categoryDotColors}
-                  onCancel={() => setModalOpen(false)}
+                  onCancel={() => {
+                    setModalOpen(false);
+                    resetFormData();
+                  }}
                   onSubmit={handleCreateEvent}
                 />
               )}
@@ -783,7 +776,10 @@ const categoryDotColors = {
                   formData={formData}
                   handleInputChange={handleInputChange}
                   categoryDotColors={categoryDotColors}
-                  onCancel={() => setModalOpen(false)}
+                  onCancel={() => {
+                    setModalOpen(false);
+                    resetFormData();
+                  }}
                   onSubmit={handleCreateEvent}
                 />
               )}
@@ -792,7 +788,10 @@ const categoryDotColors = {
                   formData={formData}
                   handleInputChange={handleInputChange}
                   categoryDotColors={categoryDotColors}
-                  onCancel={() => setModalOpen(false)}
+                  onCancel={() => {
+                    setModalOpen(false);
+                    resetFormData();
+                  }}
                   onSubmit={handleCreateEvent}
                 />
               )}
