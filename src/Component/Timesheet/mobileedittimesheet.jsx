@@ -8,6 +8,9 @@ import {
   FiChevronLeft,
   FiChevronRight,
 } from "react-icons/fi";
+import toast, { Toaster } from "react-hot-toast";
+import * as XLSX from "xlsx";
+import { axiosInstance } from "@/lib/axiosInstance";
 
 export default function MobileEditTimeSheet() {
   const [items, setItems] = useState([]);
@@ -36,6 +39,13 @@ export default function MobileEditTimeSheet() {
     setDate(formattedDate);
   }, []);
 
+  // Fetch timesheet data when date changes
+  useEffect(() => {
+    if (date) {
+      fetchTimesheetData(date);
+    }
+  }, [date]);
+
   // Close calendar when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -47,6 +57,66 @@ export default function MobileEditTimeSheet() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Fetch timesheet data from the backend
+  const fetchTimesheetData = async (selectedDate) => {
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.get(`/timesheet/${selectedDate}`);
+      if (response.status === 200 && response.data.message === 'Timesheet found') {
+        const timesheetData = response.data.timesheet;
+
+        // Set project name and managers
+        setProjectName(timesheetData.projectName || "");
+        setSelectedManagers(timesheetData.notifiedManagers || []);
+
+        // Format items for our component
+        const formattedItems = timesheetData.items.map(item => ({
+          bucket: item.bucket || item.type,
+          task: item.task || "",
+          time: item.timeRange,
+          timeRange: item.timeRange,
+          duration: item.duration,
+          type: item.bucket || item.type,
+        }));
+
+        setItems(formattedItems);
+
+        // Calculate and set total hours
+        const durations = formattedItems.map(item => {
+          const [hours, minutes] = item.duration.split(":").map(Number);
+          return `${String(hours).padStart(2, "0")}${String(minutes).padStart(2, "0")}`;
+        });
+
+        setTodayHours(durations);
+        setTotalTime(calculateTotalTime(durations));
+
+        toast.success("Timesheet loaded successfully");
+      } else {
+        resetForm();
+        toast.error("No timesheet found for this date");
+      }
+    } catch (error) {
+      console.error("Error fetching timesheet:", error);
+      if (error.response && error.response.status === 404) {
+        toast.error("No timesheet found for this date");
+        resetForm();
+      } else {
+        toast.error("Error loading timesheet data");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Reset form to empty state
+  const resetForm = () => {
+    setProjectName("");
+    setSelectedManagers([]);
+    setItems([]);
+    setTodayHours([]);
+    setTotalTime("00:00");
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return "Select Date";
@@ -226,23 +296,24 @@ export default function MobileEditTimeSheet() {
   };
 
   const handleSubmit = async () => {
+    // Validate inputs
     if (!date) {
-      alert("Please select a date");
+      toast.error("Please select a date");
       return;
     }
 
     if (items.length === 0) {
-      alert("Please add at least one timesheet entry");
+      toast.error("Please add at least one timesheet entry");
       return;
     }
 
     if (!projectName.trim()) {
-      alert("Please enter a project name");
+      toast.error("Please enter a project name");
       return;
     }
 
     if (selectedManagers.length === 0) {
-      alert("Please select at least one manager");
+      toast.error("Please select at least one manager");
       return;
     }
 
@@ -250,22 +321,63 @@ export default function MobileEditTimeSheet() {
       (item) => !item.task || !item.task.trim()
     );
     if (emptyTaskIndex !== -1) {
-      alert(
+      toast.error(
         `Please fill in the task description for entry #${emptyTaskIndex + 1}`
       );
       return;
     }
 
-    console.log("Submitting timesheet...");
-    alert("Timesheet updated successfully!");
+    // Prepare payload for API
+    const payload = {
+      date,
+      projectName,
+      items: items.map(item => ({
+        timeRange: item.time || item.timeRange,
+        task: item.task,
+        type: item.bucket,
+        duration: item.duration,
+        bucket: item.bucket,
+      })),
+      notifiedManagers: selectedManagers,
+      totalWorkHours: totalTime
+    };
+
+    try {
+      setIsLoading(true);
+      const response = await axiosInstance.put(`/timesheet/${date}`, payload);
+
+      if (response.status === 200) {
+        toast.success("Timesheet updated successfully!");
+        // Optionally refresh data after update
+        fetchTimesheetData(date);
+      }
+    } catch (error) {
+      console.error("Error updating timesheet:", error);
+      toast.error(error.response?.data?.message || "Failed to update timesheet");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const exportToExcel = () => {
     if (items.length === 0) {
-      alert("No data to export");
+      toast.error("No data to export");
       return;
     }
-    alert("Exporting to Excel...");
+
+    const worksheetData = items.map((item) => ({
+      Bucket: item.bucket,
+      Task: item.task,
+      Time: item.time || item.timeRange,
+      Duration: item.duration,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Timesheet");
+    const fileName = `Timesheet_${date}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+    toast.success(`Exported as ${fileName}`);
   };
 
   const totalMinutes =
@@ -291,6 +403,7 @@ export default function MobileEditTimeSheet() {
 
   return (
     <div className="mx-4 bg-white p-4 rounded-xl relative">
+      <Toaster />
       <div className="flex items-center mb-4">
         <h2 className="text-2xl font-bold relative inline-block text-gray-800">
           <span

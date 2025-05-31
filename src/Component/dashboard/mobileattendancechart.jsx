@@ -188,33 +188,42 @@ const MobileAttendanceChart = ({
       </div>
 
       {/* Chart Section */}
-      <div className="w-full h-48 sm:h-56 flex items-center justify-center relative mt-2 sm:mt-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={window.innerWidth < 640 ? 30 : 40}
-              outerRadius={window.innerWidth < 640 ? 80 : 100}
-              dataKey="value"
-              nameKey="name"
-              label={renderCustomizedLabel}
-              labelLine={false}
-            >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip content={<CustomTooltip />} />
-          </PieChart>
-        </ResponsiveContainer>
+      <div className="w-full h-60 sm:h-56 flex items-center justify-center relative mt-2 sm:mt-0">
+        {data.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={window.innerWidth < 640 ? 30 : 40}
+                outerRadius={window.innerWidth < 640 ? 80 : 100}
+                dataKey="value"
+                nameKey="name"
+                label={renderCustomizedLabel}
+                labelLine={false}
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomTooltip />} />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="text-center text-gray-500">
+            <p className="text-sm">No attendance data available</p>
+            <p className="text-xs">for {selected.toLowerCase()}</p>
+          </div>
+        )}
 
         {/* Total Display - Centered in pie chart */}
-        <div className="absolute text-center bg-white bg-opacity-90 rounded px-2 py-1 sm:bg-transparent sm:px-0 sm:py-0">
-          <p className="text-xs sm:text-sm font-semibold">Total</p>
-          <p className="text-lg sm:text-2xl font-bold">{totalDays}</p>
-        </div>
+        {data.length > 0 && (
+          <div className="absolute text-center bg-white bg-opacity-90 rounded-full px-2 py-1 sm:bg-transparent sm:px-0 sm:py-0">
+            <p className="text-xs sm:text-sm font-semibold">Total</p>
+            <p className="text-lg sm:text-2xl font-bold">{totalDays}</p>
+          </div>
+        )}
       </div>
 
       {/* Period Display */}

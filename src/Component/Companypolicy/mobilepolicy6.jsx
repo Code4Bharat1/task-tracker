@@ -4,13 +4,14 @@ import React, { useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
-
+import { useRouter } from "next/navigation";
+import { IoChevronBackOutline } from "react-icons/io5";
 gsap.registerPlugin(ScrollTrigger);
 
 export default function MobilePolicy6() {
   const underlineRef = useRef(null);
   const sectionRef = useRef(null);
-
+ const router = useRouter();
   useGSAP(() => {
     gsap.fromTo(
       underlineRef.current,
@@ -34,10 +35,18 @@ export default function MobilePolicy6() {
   }, []);
 
   return (
-    <div
-      ref={sectionRef}
-      className="p-8 max-w-5xl mx-auto bg-white rounded-lg "
-    >
+   <div
+                 ref={sectionRef}
+                 className="p-3 max-w-5xl mx-auto bg-white rounded-lg relative"
+               >
+                 {/* ✨ Stylish Back Button */}
+                 <button
+                   onClick={() => router.back()}
+                   className="group flex items-center gap-2 px-5 py-2 mb-4 rounded-full bg-gradient-to-r from-[#4e97c8] via-[#56aade] to-[#4e8eb7] text-white shadow-xl transition-all hover:scale-105 hover:shadow-2xl hover:from-[#302b63] hover:to-[#0f0c29]"
+                 >
+                   <IoChevronBackOutline className="text-xl group-hover:-translate-x-1 transition-transform duration-300" />
+                   <span className="text-sm tracking-wide font-semibold"> Back</span>
+                 </button>
       <h2 className="text-2xl font-bold mb-8 relative inline-block text-gray-700">
         <span
           ref={underlineRef}

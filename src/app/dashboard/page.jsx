@@ -21,7 +21,7 @@ import MobileAttendanceChart from "@/Component/dashboard/mobileattendancechart";
 import MobileProjectStatusChart from "@/Component/dashboard/mobileprojectstatuschart";
 import MobileTaskPriorityChart from "@/Component/dashboard/MobileTaskPriorityChart";
 import MobilePerformanceChart from "@/Component/dashboard/mobileperformancechart";
-import MobilePerformanceBoard from "@/Component/dashboard/MobilePerformanceboard";
+import MobilePerformanceBoard from "@/Component/dashboard/mobilePerformanceboard";
 
 function Page() {
   const [selected, setSelected] = useState("This Year");

@@ -5,7 +5,6 @@ import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { TbCalendarPlus } from "react-icons/tb";
 import { FiX } from "react-icons/fi";
 
-
 const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const categoryColors = {
@@ -26,7 +25,6 @@ const priorityOrder = [
   "Other",
 ];
 
-
 export default function CalendarPage() {
   const initialDate = new Date(2025, 4); // May 2025
   const [currentDate, setCurrentDate] = useState(initialDate);
@@ -39,14 +37,14 @@ export default function CalendarPage() {
   const [activeTab, setActiveTab] = useState("Task");
   const [eventDates, setEventDates] = useState({});
   const dropdownRef = useRef(null);
-  // Replace with actual user ID
 
   useEffect(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const key = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(
-      today.getDate()
-    ).padStart(2, "0")}`;
+    const key = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}-${String(today.getDate()).padStart(2, "0")}`;
     setTodayKey(key);
   }, []);
 
@@ -54,18 +52,22 @@ export default function CalendarPage() {
     const fetchCalendarData = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/calendar/user/`, {
-          method: "GET",
-          credentials: "include",
-        }
+          `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/calendar/user/`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
         );
         const data = await res.json();
 
         const groupedEvents = data.reduce((acc, item) => {
           const eventDate = new Date(item.date);
-          const dateKey = `${eventDate.getUTCFullYear()}-${String(eventDate.getUTCMonth() + 1).padStart(2, "0")}-${String(
-            eventDate.getUTCDate()
-          ).padStart(2, "0")}`;
+          const dateKey = `${eventDate.getUTCFullYear()}-${String(
+            eventDate.getUTCMonth() + 1
+          ).padStart(2, "0")}-${String(eventDate.getUTCDate()).padStart(
+            2,
+            "0"
+          )}`;
 
           const eventData = {
             title: item.title,
@@ -74,12 +76,12 @@ export default function CalendarPage() {
             time: item.time ? formatTime(item.time) : null,
             startTime: item.startTime ? formatTime(item.startTime) : null,
             endTime: item.endTime ? formatTime(item.endTime) : null,
-            category: item.category || item.type // Support both category and type fields
+            category: item.category || item.type, // Support both category and type fields
           };
 
           return {
             ...acc,
-            [dateKey]: [...(acc[dateKey] || []), eventData]
+            [dateKey]: [...(acc[dateKey] || []), eventData],
           };
         }, {});
 
@@ -116,7 +118,9 @@ export default function CalendarPage() {
   }, []);
 
   const handleMonthChange = (direction) => {
-    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + direction));
+    setCurrentDate(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() + direction)
+    );
   };
 
   const handleDateClick = (dateKey, events) => {
@@ -127,11 +131,11 @@ export default function CalendarPage() {
 
   const formatDateForDisplay = (dateKey) => {
     const date = new Date(dateKey);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -139,20 +143,20 @@ export default function CalendarPage() {
   const year = currentDate.getFullYear();
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const endOffset = (7 - (firstDay + daysInMonth) % 7) % 7;
+  const endOffset = (7 - ((firstDay + daysInMonth) % 7)) % 7;
 
   return (
-    <div className="max-w-6xl mx-auto p-3">
+    <div className="max-w-6xl mx-auto p-3 sm:p-4">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
-        <h1 className="text-3xl font-bold underline underline-offset-8 decoration-4 decoration-red-500 font-[Poppins,sans-serif]">
+        <h1 className="text-2xl sm:text-3xl font-bold underline underline-offset-8 decoration-4 decoration-red-500 font-[Poppins,sans-serif]">
           My Calendar
         </h1>
 
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setShowDropdown((prev) => !prev)}
-            className="px-5 py-2 rounded-lg border border-[#877575] bg-white text-black font-medium transition duration-200 ease-in-out hover:bg-gray-100 hover:shadow ml-auto"
+            className="px-4 sm:px-5 py-2 rounded-lg border border-[#877575] bg-white text-black font-medium transition duration-200 ease-in-out hover:bg-gray-100 hover:shadow ml-auto text-sm sm:text-base"
           >
             Month
           </button>
@@ -161,7 +165,7 @@ export default function CalendarPage() {
             <div className="absolute top-full mt-2 right-0 bg-white rounded-lg shadow z-10 w-40">
               {[
                 { label: "Day", href: "/personalcalendar" },
-                { label: "Month", href: "/monthcalendar" },
+                { label: "Month", href: "/calendar" },
                 { label: "Year", href: "/yearcalendar" },
               ].map((item) => (
                 <Link key={item.label} href={item.href}>
@@ -176,46 +180,55 @@ export default function CalendarPage() {
       </div>
 
       {/* Calendar */}
-      <div className="bg-white rounded-xl shadow p-4">
+      <div className="bg-white rounded-xl shadow p-3 sm:p-4">
         <div className="flex items-center justify-between mb-4">
-          <div className="text-xl font-bold text-gray-800">
-            {currentDate.toLocaleString("default", { month: "long", year: "numeric" })}
+          <div className="text-lg sm:text-xl font-bold text-gray-800">
+            {currentDate.toLocaleString("default", {
+              month: "long",
+              year: "numeric",
+            })}
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => handleMonthChange(-1)}
-              className="p-2 rounded hover:bg-gray-200 transition"
+              className="p-1 sm:p-2 rounded hover:bg-gray-200 transition"
             >
-              <FiChevronLeft size={20} />
+              <FiChevronLeft size={18} className="sm:w-5 sm:h-5" />
             </button>
             <button
               onClick={() => handleMonthChange(1)}
-              className="p-2 rounded hover:bg-gray-200 transition"
+              className="p-1 sm:p-2 rounded hover:bg-gray-200 transition"
             >
-              <FiChevronRight size={20} />
+              <FiChevronRight size={18} className="sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>
 
-        <div className="py-6">
-          <div className="h-2 w-full rounded-md mb-4 bg-[#D9D9D9]"></div>
-          <div className="grid grid-cols-7 text-center font-semibold text-lg">
+        <div className="py-4 sm:py-6">
+          <div className="h-2 w-full rounded-md mb-3 sm:mb-4 bg-[#D9D9D9]"></div>
+          <div className="grid grid-cols-7 text-center font-semibold text-sm sm:text-lg">
             {days.map((day) => (
               <div key={day}>{day}</div>
             ))}
           </div>
         </div>
 
-        <div className="grid grid-cols-7 gap-3 mt-3">
+        <div className="grid grid-cols-7 gap-1 sm:gap-3 mt-1 sm:mt-3">
           {Array.from({ length: firstDay }).map((_, i) => (
-            <div key={`start-${i}`} className="h-20 rounded-xl bg-[#f2f4ff] shadow-sm text-sm text-gray-400 flex items-center justify-center">
+            <div
+              key={`start-${i}`}
+              className="h-12 sm:h-20 rounded-lg sm:rounded-xl bg-[#f2f4ff] shadow-sm text-xs sm:text-sm text-gray-400 flex items-center justify-center"
+            >
               <span className="invisible">0</span>
             </div>
           ))}
 
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1;
-            const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+            const dateKey = `${year}-${String(month + 1).padStart(
+              2,
+              "0"
+            )}-${String(day).padStart(2, "0")}`;
             const events = eventDates[dateKey] || [];
             const weekday = (firstDay + day - 1) % 7;
             const isSunday = weekday === 0;
@@ -238,8 +251,14 @@ export default function CalendarPage() {
                 return aPriority - bPriority;
               });
 
-            const displayedEvents = sortedEvents.slice(0, 5);
-            const remainingTypes = Math.max(sortedEvents.length - 5, 0);
+            const displayedEvents = sortedEvents.slice(
+              0,
+              window.innerWidth < 640 ? 2 : 5
+            );
+            const remainingTypes = Math.max(
+              sortedEvents.length - (window.innerWidth < 640 ? 2 : 5),
+              0
+            );
 
             let bgClass = "bg-[#f2f4ff] text-black";
             if (isSunday) bgClass = "bg-sky-400 text-white";
@@ -249,52 +268,66 @@ export default function CalendarPage() {
               <div
                 key={day}
                 onClick={() => handleDateClick(dateKey, events)}
-                className={`group relative h-20 rounded-xl flex flex-col justify-center items-center text-sm font-medium shadow-sm cursor-pointer hover:bg-sky-400 transition ${bgClass}`}
+                className={`group relative h-12 sm:h-20 rounded-lg sm:rounded-xl flex flex-col justify-center items-center text-xs sm:text-sm font-medium shadow-sm cursor-pointer hover:bg-sky-400 transition ${bgClass}`}
               >
-                <span className="text-lg font-bold">{day}</span>
-                <div className="flex gap-1 mt-1">
+                <span className="text-sm sm:text-lg font-bold">{day}</span>
+                <div className="flex gap-0.5 sm:gap-1 mt-0.5 sm:mt-1">
                   {displayedEvents.map(({ category, count }) => (
-                    <div key={category} className="flex items-center gap-0.5">
+                    <div
+                      key={category}
+                      className="flex items-center gap-0 sm:gap-0.5"
+                    >
                       <span
-                        className={`w-4 h-4 rounded-sm ${categoryColors[category] || ""}`}
+                        className={`w-2 h-2 sm:w-3 sm:h-3 rounded-sm ${
+                          categoryColors[category] || ""
+                        }`}
                         title={`${category}: ${count} event(s)`}
                       />
-                      {count > 1 && (
-                        <span className="text-xs font-medium text-gray-200">
+                      {count > 1 && window.innerWidth >= 640 && (
+                        <span className="text-[8px] sm:text-xs font-medium text-gray-200">
                           +{count - 1}
                         </span>
                       )}
                     </div>
                   ))}
-                  {remainingTypes > 0 && (
-                    <span className="text-xs font-medium text-gray-200 ml-0.5">
+                  {remainingTypes > 0 && window.innerWidth >= 640 && (
+                    <span className="text-[8px] sm:text-xs font-medium text-gray-200 ml-0.5">
                       +{remainingTypes}
                     </span>
                   )}
                 </div>
 
-                {/* Hover Tooltip */}
-                {events.length > 0 && (
-                  <div className="absolute z-50 bottom-full mb-2 w-64 bg-white text-gray-700 text-sm shadow-xl rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none left-1/2 transform -translate-x-1/2">
-                    <div className="text-lg font-bold mb-2 text-gray-800">
+                {/* Hover Tooltip - Only show on desktop */}
+                {events.length > 0 && window.innerWidth >= 640 && (
+                  <div className="absolute z-50 bottom-full mb-2 w-48 sm:w-64 bg-white text-gray-700 text-xs sm:text-sm shadow-xl rounded-lg p-2 sm:p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none left-1/2 transform -translate-x-1/2">
+                    <div className="text-sm sm:text-lg font-bold mb-1 sm:mb-2 text-gray-800">
                       {formatDateForDisplay(dateKey)}
                     </div>
-                    <ul className="space-y-2 max-h-48 overflow-y-auto">
+                    <ul className="space-y-1 sm:space-y-2 max-h-48 overflow-y-auto">
                       {events.slice(0, 3).map((event, index) => (
-                        <li key={index} className="border-b pb-2 last:border-b-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className={`inline-block w-3 h-3 rounded-sm ${categoryColors[event.category] || ""}`}></span>
-                            <span className="font-semibold truncate">{event.title}</span>
+                        <li
+                          key={index}
+                          className="border-b pb-1 sm:pb-2 last:border-b-0"
+                        >
+                          <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-1">
+                            <span
+                              className={`inline-block w-2 h-2 sm:w-3 sm:h-3 rounded-sm ${
+                                categoryColors[event.category] || ""
+                              }`}
+                            ></span>
+                            <span className="font-semibold truncate text-xs sm:text-sm">
+                              {event.title}
+                            </span>
                           </div>
                           {event.time && (
-                            <div className="text-xs text-blue-600">
+                            <div className="text-[8px] sm:text-xs text-blue-600">
                               🕒 {event.time}
                             </div>
                           )}
                         </li>
                       ))}
                       {events.length > 3 && (
-                        <div className="text-xs text-gray-500 text-center pt-1">
+                        <div className="text-[8px] sm:text-xs text-gray-500 text-center pt-0.5 sm:pt-1">
                           +{events.length - 3} more events. Click to view all.
                         </div>
                       )}
@@ -306,33 +339,38 @@ export default function CalendarPage() {
           })}
 
           {Array.from({ length: endOffset }).map((_, i) => (
-            <div key={`end-${i}`} className="h-20 rounded-xl bg-[#f2f4ff] shadow-sm text-sm text-gray-400 flex items-center justify-center">
+            <div
+              key={`end-${i}`}
+              className="h-12 sm:h-20 rounded-lg sm:rounded-xl bg-[#f2f4ff] shadow-sm text-xs sm:text-sm text-gray-400 flex items-center justify-center"
+            >
               <span className="invisible">0</span>
             </div>
           ))}
         </div>
       </div>
 
-
       {/* Create Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-md bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-6 relative">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-md bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-4 sm:p-6 relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setShowModal(false)}
-              className="absolute top-2 right-3 text-xl font-bold text-gray-500 hover:text-red-600"
+              className="absolute top-2 right-2 sm:top-3 sm:right-3 text-xl font-bold text-gray-500 hover:text-red-600"
             >
               &times;
             </button>
 
             {/* Tabs */}
-            <div className="flex justify-around mb-4 shadow-md">
+            <div className="flex justify-around mb-3 sm:mb-4 shadow-md">
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`py-2 px-4 font-medium ${activeTab === tab.key ? "border-b-4 border-[#018ABE] " : "text-black-500"
-                    }`}
+                  className={`py-1 sm:py-2 px-2 sm:px-4 text-sm sm:text-base font-medium ${
+                    activeTab === tab.key
+                      ? "border-b-4 border-[#018ABE] "
+                      : "text-black-500"
+                  }`}
                 >
                   {tab.label}
                 </button>
@@ -340,7 +378,7 @@ export default function CalendarPage() {
             </div>
 
             {/* Tab Content */}
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {tabs.find((tab) => tab.key === activeTab)?.content}
             </div>
           </div>
@@ -349,50 +387,66 @@ export default function CalendarPage() {
 
       {/* Day Detail Modal */}
       {showDayModal && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-md bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white w-full max-w-2xl rounded-xl shadow-lg p-6 relative max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-md bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white w-full max-w-2xl rounded-xl shadow-lg p-4 sm:p-6 relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setShowDayModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition"
+              className="absolute top-2 right-2 sm:top-4 sm:right-4 p-1 sm:p-2 rounded-full hover:bg-gray-100 transition"
             >
-              <FiX size={20} className="text-gray-500" />
+              <FiX size={18} className="text-gray-500" />
             </button>
 
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            <div className="mb-4 sm:mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1 sm:mb-2">
                 {formatDateForDisplay(selectedDate)}
               </h2>
-              <p className="text-gray-600">
-                {selectedDateEvents.length} {selectedDateEvents.length === 1 ? 'event' : 'events'} scheduled
+              <p className="text-sm sm:text-base text-gray-600">
+                {selectedDateEvents.length}{" "}
+                {selectedDateEvents.length === 1 ? "event" : "events"} scheduled
               </p>
             </div>
 
             {selectedDateEvents.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-gray-400 text-lg mb-2">No events scheduled</div>
-                <p className="text-gray-500">This day is free from any scheduled events.</p>
+              <div className="text-center py-6 sm:py-8">
+                <div className="text-gray-400 text-sm sm:text-lg mb-1 sm:mb-2">
+                  No events scheduled
+                </div>
+                <p className="text-xs sm:text-sm text-gray-500">
+                  This day is free from any scheduled events.
+                </p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2 sm:space-y-4">
                 {selectedDateEvents.map((event, index) => (
-                  <div key={index} className="border rounded-lg p-4 hover:bg-gray-50 transition">
-                    <div className="flex items-start gap-3">
-                      <span className={`inline-block w-4 h-4 rounded-sm mt-1 ${categoryColors[event.category] || ""}`}></span>
+                  <div
+                    key={index}
+                    className="border rounded-lg p-2 sm:p-4 hover:bg-gray-50 transition"
+                  >
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <span
+                        className={`inline-block w-3 h-3 sm:w-4 sm:h-4 rounded-sm mt-1 ${
+                          categoryColors[event.category] || ""
+                        }`}
+                      ></span>
                       <div className="flex-1">
-                        <h3 className="font-semibold text-lg text-gray-800 mb-1">
+                        <h3 className="font-semibold text-sm sm:text-lg text-gray-800 mb-0.5 sm:mb-1">
                           {event.title}
                         </h3>
 
                         {event.description && (
-                          <p className="text-gray-600 mb-2">
+                          <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">
                             {event.description}
                           </p>
                         )}
 
-                        <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                        <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500">
                           <div className="flex items-center gap-1">
                             <span className="font-medium">Category:</span>
-                            <span className={`px-2 py-1 rounded-full text-white text-xs ${categoryColors[event.category] || "bg-gray-400"}`}>
+                            <span
+                              className={`px-1 sm:px-2 py-0.5 sm:py-1 rounded-full text-white text-[8px] sm:text-xs ${
+                                categoryColors[event.category] || "bg-gray-400"
+                              }`}
+                            >
                               {event.category}
                             </span>
                           </div>
@@ -402,21 +456,27 @@ export default function CalendarPage() {
                               {event.startTime && event.endTime && (
                                 <div className="flex items-center gap-1">
                                   <span className="font-medium">Time:</span>
-                                  <span>{event.startTime} - {event.endTime}</span>
+                                  <span>
+                                    {event.startTime} - {event.endTime}
+                                  </span>
                                 </div>
                               )}
                               {event.participants?.length > 0 && (
-                                <div className="w-full mt-2">
-                                  <span className="font-medium text-gray-700">Participants:</span>
-                                  <div className="flex flex-wrap gap-2 mt-1">
-                                    {event.participants.map((participant, pIdx) => (
-                                      <span
-                                        key={pIdx}
-                                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs"
-                                      >
-                                        {participant}
-                                      </span>
-                                    ))}
+                                <div className="w-full mt-1 sm:mt-2">
+                                  <span className="font-medium text-gray-700">
+                                    Participants:
+                                  </span>
+                                  <div className="flex flex-wrap gap-1 sm:gap-2 mt-0.5 sm:mt-1">
+                                    {event.participants.map(
+                                      (participant, pIdx) => (
+                                        <span
+                                          key={pIdx}
+                                          className="px-2 sm:px-3 py-0.5 sm:py-1 bg-blue-100 text-blue-700 rounded-full text-[8px] sm:text-xs"
+                                        >
+                                          {participant}
+                                        </span>
+                                      )
+                                    )}
                                   </div>
                                 </div>
                               )}
@@ -437,10 +497,10 @@ export default function CalendarPage() {
               </div>
             )}
 
-            <div className="mt-6 pt-4 border-t flex justify-end gap-3">
+            <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t flex justify-end gap-2 sm:gap-3">
               <button
                 onClick={() => setShowDayModal(false)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                className="px-3 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
               >
                 Close
               </button>
@@ -449,7 +509,7 @@ export default function CalendarPage() {
                   setShowDayModal(false);
                   setShowModal(true);
                 }}
-                className="px-4 py-2 bg-[#058CBF] text-white rounded-lg hover:bg-[#0b7bab] transition"
+                className="px-3 sm:px-4 py-1 sm:py-2 bg-[#058CBF] text-white rounded-lg hover:bg-[#0b7bab] transition text-xs sm:text-sm"
               >
                 Add Event
               </button>

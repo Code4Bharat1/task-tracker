@@ -2,7 +2,7 @@
 import { useState, forwardRef } from "react";
 import { LuCalendarClock } from "react-icons/lu";
 import { IoMdArrowDropdown } from "react-icons/io";
-import { FaBell, FaPlane, FaHourglass, FaRegClock } from "react-icons/fa";
+import { FaBell, FaPlane, FaRegClock } from "react-icons/fa";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { toast, ToastContainer } from 'react-toastify';
@@ -88,18 +88,25 @@ const categoryData = {
     color: "text-purple-600",
     bgColor: "bg-purple-600",
     hoverBgColor: "hover:bg-purple-700",
-    icon: <FaRegClock className="text-purple-600" />,  // changed icon here
+    icon: <FaRegClock className="text-purple-600" />,
   },
 };
 
-export default function EventForm({ onSave, onClose, selectedDate }) {
-  const [note, setNote] = useState("");
+export default function EventForm({ 
+  formData, 
+  handleInputChange, 
+  categoryDotColors, 
+  onCancel, 
+  onSubmit, 
+  selectedDate 
+}) {
+  const [note, setNote] = useState(formData?.title || "");
   const [date, setDate] = useState(selectedDate ? new Date(selectedDate) : new Date());
-  const [startTime, setStartTime] = useState("");
+  const [startTime, setStartTime] = useState(formData?.time || "");
   const [isStartOpen, setIsStartOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("Reminder");
+  const [selectedCategory, setSelectedCategory] = useState(formData?.category || "Reminder");
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
-  const [remindBefore, setRemindBefore] = useState(15);
+  const [remindBefore, setRemindBefore] = useState(formData?.reminderTime || 15);
 
   const categories = ["Reminder", "Leaves", "Deadline"];
 
@@ -118,6 +125,20 @@ export default function EventForm({ onSave, onClose, selectedDate }) {
     const ampm = hour >= 12 ? "PM" : "AM";
     const hour12 = hour % 12 || 12;
     return `${hour12}:${minutes} ${ampm}`;
+  };
+
+  const handleCancel = () => {
+    // Reset form fields
+    setNote("");
+    setDate(new Date());
+    setStartTime("");
+    setSelectedCategory("Reminder");
+    setRemindBefore(15);
+    
+    // Call the onCancel prop function to close the modal
+    if (onCancel) {
+      onCancel();
+    }
   };
 
   const handleSubmit = async () => {
@@ -151,7 +172,11 @@ export default function EventForm({ onSave, onClose, selectedDate }) {
       if (!response.ok) throw new Error("Failed to create task");
 
       toast.success("Event created successfully!");
-      if (onSave) onSave(taskData.date, taskData.category, taskData.title);
+      
+      // Call onSubmit if provided, otherwise handle submission
+      if (onSubmit) {
+        onSubmit();
+      }
 
       // Reset form
       setNote("");
@@ -159,7 +184,7 @@ export default function EventForm({ onSave, onClose, selectedDate }) {
       setStartTime("");
       setSelectedCategory("Reminder");
       setRemindBefore(15);
-      if (onClose) onClose();
+      
     } catch (error) {
       console.error("Error creating task:", error);
       toast.error("Failed to create task");
@@ -168,7 +193,7 @@ export default function EventForm({ onSave, onClose, selectedDate }) {
 
   return (
     <div className="flex justify-center">
-      <div className="w-full max-w-md">
+      <div className="w-full p-2 max-w-sm">
         {/* Title */}
         <input
           type="text"
@@ -257,14 +282,16 @@ export default function EventForm({ onSave, onClose, selectedDate }) {
           {/* Buttons */}
           <div className="flex justify-end gap-4">
             <button
-              onClick={onClose}
+              onClick={handleCancel}
               className="px-5 py-2 text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium transition-colors"
+              type="button"
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
               className={`${categoryData[selectedCategory].bgColor} ${categoryData[selectedCategory].hoverBgColor} px-5 py-2 text-white rounded-lg font-medium transition-colors`}
+              type="button"
             >
               Create
             </button>

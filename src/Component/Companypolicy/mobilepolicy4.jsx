@@ -4,13 +4,14 @@ import React, { useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
-
+import { useRouter } from "next/navigation";
+import { IoChevronBackOutline } from "react-icons/io5";
 gsap.registerPlugin(ScrollTrigger);
 
 export default function MobilePolicy4() {
   const underlineRef = useRef(null);
   const sectionRef = useRef(null);
-
+  const router = useRouter();
   useGSAP(() => {
     gsap.fromTo(
       underlineRef.current,
@@ -36,8 +37,16 @@ export default function MobilePolicy4() {
   return (
     <div
       ref={sectionRef}
-      className="p-8 max-w-5xl mx-auto bg-white rounded-lg "
+      className="p-3 max-w-5xl mx-auto bg-white rounded-lg relative"
     >
+      {/* ✨ Stylish Back Button */}
+      <button
+        onClick={() => router.back()}
+        className="group flex items-center gap-2 px-5 py-2 mb-4 rounded-full bg-gradient-to-r from-[#4e97c8] via-[#56aade] to-[#4e8eb7] text-white shadow-xl transition-all hover:scale-105 hover:shadow-2xl hover:from-[#302b63] hover:to-[#0f0c29]"
+      >
+        <IoChevronBackOutline className="text-xl group-hover:-translate-x-1 transition-transform duration-300" />
+        <span className="text-sm tracking-wide font-semibold"> Back</span>
+      </button>
       <h2 className="text-2xl font-bold mb-8 relative inline-block text-gray-700">
         <span
           ref={underlineRef}
@@ -47,7 +56,8 @@ export default function MobilePolicy4() {
       </h2>
 
       <p className="text-gray-700 mb-4">
-        Our Work From Home Policy ensures flexibility and continued productivity while maintaining team collaboration and accountability.
+        Our Work From Home Policy ensures flexibility and continued productivity
+        while maintaining team collaboration and accountability.
       </p>
 
       <h2 className="text-xl font-semibold text-[#018ABE] mt-6 mb-2">
@@ -64,7 +74,9 @@ export default function MobilePolicy4() {
       </h2>
       <ol className="list-decimal list-inside text-gray-700">
         <li>Maintain regular working hours unless approved otherwise.</li>
-        <li>Be reachable during work hours through official communication tools.</li>
+        <li>
+          Be reachable during work hours through official communication tools.
+        </li>
         <li>Attend all scheduled virtual meetings and team check-ins.</li>
       </ol>
 
@@ -81,7 +93,9 @@ export default function MobilePolicy4() {
         Performance & Monitoring
       </h2>
       <p className="text-gray-700">
-        Regular performance reviews will include work-from-home contributions. Productivity, communication, and timely task completion are key evaluation metrics.
+        Regular performance reviews will include work-from-home contributions.
+        Productivity, communication, and timely task completion are key
+        evaluation metrics.
       </p>
 
       <h2 className="text-xl font-semibold text-[#018ABE] mt-6 mb-2">

@@ -188,15 +188,13 @@ const MobilePerformanceChart = ({ selected = "This Week" }) => {
     );
   }
 
-  // Ensure we have data structure even if API fails
-  if (!performanceData) {
-    setPerformanceData(getEmptyDataStructure(selected));
-  }
+  // Initialize empty data structure if no data is available
+  const currentData = performanceData || getEmptyDataStructure(selected);
 
   // Render pie chart for weekly data
   if (selected === "This Week") {
     // Always show chart, even with zero values
-    const scoreData = performanceData?.score?.[0] || {
+    const scoreData = currentData?.score?.[0] || {
       timesheetScore: 0,
       attendanceScore: 0,
       behaviourScore: 0,
@@ -206,7 +204,7 @@ const MobilePerformanceChart = ({ selected = "This Week" }) => {
     const { timesheetScore, attendanceScore, behaviourScore, totalScore } =
       scoreData;
     const backendRemark =
-      performanceData?.remark || "No data available for this period";
+      currentData?.remark || "No data available for this period";
 
     const pieData = {
       labels: ["Timesheet", "Attendance", "Behaviour"],
@@ -291,8 +289,7 @@ const MobilePerformanceChart = ({ selected = "This Week" }) => {
   // Render line chart for monthly/yearly data
   if (selected === "This Month" || selected === "This Year") {
     // Always show chart, even with zero values
-    const chartData =
-      performanceData?.data || getEmptyDataStructure(selected).data;
+    const chartData = currentData?.data || getEmptyDataStructure(selected).data;
 
     const labels = chartData.map((item) => {
       if (selected === "This Month") {
@@ -403,7 +400,7 @@ const MobilePerformanceChart = ({ selected = "This Week" }) => {
     };
 
     const backendRemark =
-      performanceData?.remark || "No data available for this period";
+      currentData?.remark || "No data available for this period";
 
     return (
       <>
@@ -437,7 +434,7 @@ const MobilePerformanceChart = ({ selected = "This Week" }) => {
           {/* Average Score and Button - responsive layout */}
           <div className="flex flex-col space-y-3 sm:flex-row sm:justify-between sm:items-center sm:space-y-0">
             <div className="text-base sm:text-lg font-medium text-gray-700 text-center sm:text-left">
-              Average Score: {performanceData?.overallAvgScore || 0}
+              Average Score: {currentData?.overallAvgScore || 0}
             </div>
             <button
               onClick={() => setShowRemarks(true)}
