@@ -55,19 +55,26 @@ export default function MobileForgotPassword() {
 
     try {
       // Use email for API call (adjust based on your backend API requirements)
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_API}/forgotpassword/generate-otp`, {
-        email: input, // or adjust field name based on your API
-      });
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_API}/forgotpassword/generate-otp`,
+        {
+          email: input, // or adjust field name based on your API
+        }
+      );
 
       // Store email/phone in localStorage like desktop version
       localStorage.setItem("email", input);
 
       if (res.status === 200) {
         if (inputType === "phone") {
-          toast.success(`OTP sent to ${input.slice(0, 3)}***${input.slice(-3)}`);
+          toast.success(
+            `OTP sent to ${input.slice(0, 3)}***${input.slice(-3)}`
+          );
         } else {
           const emailParts = input.split("@");
-          const maskedEmail = `${emailParts[0].slice(0, 2)}***@${emailParts[1]}`;
+          const maskedEmail = `${emailParts[0].slice(0, 2)}***@${
+            emailParts[1]
+          }`;
           toast.success(`OTP sent to ${maskedEmail}`);
         }
         router.push("/forgotpassword/verifyotp");
@@ -75,9 +82,10 @@ export default function MobileForgotPassword() {
         toast.error("Failed to send OTP. Please try again.");
       }
     } catch (error) {
-      console.error('Error sending OTP:', error);
+      console.error("Error sending OTP:", error);
       toast.error(
-        error?.response?.data?.message || 'Failed to send OTP. Please try again.'
+        error?.response?.data?.message ||
+          "Failed to send OTP. Please try again."
       );
     } finally {
       setIsSubmitting(false);
@@ -93,41 +101,50 @@ export default function MobileForgotPassword() {
     if (isResendDisabled) return;
 
     try {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_API}/forgotpassword/generate-otp`, {
-        email: input, // or adjust field name based on your API
-      });
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_API}/forgotpassword/generate-otp`,
+        {
+          email: input, // or adjust field name based on your API
+        }
+      );
 
       if (res.status === 200) {
         if (inputType === "phone") {
-          toast.success(`OTP resent to ${input.slice(0, 3)}***${input.slice(-3)}`);
+          toast.success(
+            `OTP resent to ${input.slice(0, 3)}***${input.slice(-3)}`
+          );
         } else {
           const emailParts = input.split("@");
-          const maskedEmail = `${emailParts[0].slice(0, 2)}***@${emailParts[1]}`;
+          const maskedEmail = `${emailParts[0].slice(0, 2)}***@${
+            emailParts[1]
+          }`;
           toast.success(`OTP resent to ${maskedEmail}`);
         }
-        
-        router.push('/forgotpassword/verifyotp');
+
+        router.push("/forgotpassword/verifyotp");
         setIsResendDisabled(true);
         setTimer(60);
 
         const expiryTimestamp = Date.now() + 60 * 1000;
-        Cookies.set('otp-timer-timestamp', expiryTimestamp.toString(), { expires: 1 / 24 });
-        Cookies.set('otp-email', input, { expires: 1 / 24 });
+        Cookies.set("otp-timer-timestamp", expiryTimestamp.toString(), {
+          expires: 1 / 24,
+        });
+        Cookies.set("otp-email", input, { expires: 1 / 24 });
       } else {
-        toast.error('Failed to resend OTP.');
+        toast.error("Failed to resend OTP.");
       }
     } catch (error) {
-      console.error('Resend OTP error:', error);
+      console.error("Resend OTP error:", error);
       toast.error(
-        error?.response?.data?.message || 'Failed to resend OTP. Try again.'
+        error?.response?.data?.message || "Failed to resend OTP. Try again."
       );
     }
   };
 
   // Timer logic from desktop version
   useEffect(() => {
-    const savedTimestamp = Cookies.get('otp-timer-timestamp');
-    const savedEmail = Cookies.get('otp-email');
+    const savedTimestamp = Cookies.get("otp-timer-timestamp");
+    const savedEmail = Cookies.get("otp-email");
 
     if (savedTimestamp && savedEmail) {
       const now = Date.now();
@@ -135,12 +152,12 @@ export default function MobileForgotPassword() {
 
       if (remaining > 0) {
         setInput(savedEmail);
-        setInputType(savedEmail.includes('@') ? 'email' : 'phone');
+        setInputType(savedEmail.includes("@") ? "email" : "phone");
         setIsResendDisabled(true);
         setTimer(remaining);
       } else {
-        Cookies.remove('otp-timer-timestamp');
-        Cookies.remove('otp-email');
+        Cookies.remove("otp-timer-timestamp");
+        Cookies.remove("otp-email");
       }
     }
   }, []);
@@ -153,8 +170,8 @@ export default function MobileForgotPassword() {
           if (prev === 1) {
             clearInterval(interval);
             setIsResendDisabled(false);
-            Cookies.remove('otp-timer-timestamp');
-            Cookies.remove('otp-email');
+            Cookies.remove("otp-timer-timestamp");
+            Cookies.remove("otp-email");
             return 60;
           }
           return prev - 1;
@@ -200,7 +217,6 @@ export default function MobileForgotPassword() {
       />
 
       <div className="bg-white/90 p-5 rounded-xl shadow-md w-full max-w-xs mt-4">
-        
         <h2 className="text-xl font-bold text-center text-[#018ABE]">
           Forget Password
         </h2>
@@ -235,7 +251,7 @@ export default function MobileForgotPassword() {
                 {getInputHint()}
               </div>
             )}
-            
+
             {/* Resend OTP Button - positioned similar to desktop but adapted for mobile */}
             {input && (
               <button
@@ -243,8 +259,8 @@ export default function MobileForgotPassword() {
                 onClick={handleResend}
                 disabled={isResendDisabled}
                 className={`absolute right-2 bottom-[-20px] text-xs ${
-                  isResendDisabled 
-                    ? "text-gray-400 cursor-not-allowed" 
+                  isResendDisabled
+                    ? "text-gray-400 cursor-not-allowed"
                     : "text-blue-600 hover:text-blue-800 cursor-pointer"
                 }`}
               >

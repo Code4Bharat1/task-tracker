@@ -1,14 +1,14 @@
-'use client';
-import axios from 'axios';
-import { toast } from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import Cookies from 'js-cookie';
-import Image from 'next/image';
+"use client";
+import axios from "axios";
+import { toast } from "react-hot-toast";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import Cookies from "js-cookie";
+import Image from "next/image";
 
 export default function Forgotpassword() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [isResendDisabled, setIsResendDisabled] = useState(false);
   const [timer, setTimer] = useState(60);
 
@@ -16,22 +16,26 @@ export default function Forgotpassword() {
     e.preventDefault();
 
     try {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_API}/forgotpassword/generate-otp`, {
-        email,
-      });
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_API}/forgotpassword/generate-otp`,
+        {
+          email,
+        }
+      );
 
       localStorage.setItem("email", email);
 
       if (res.status === 200) {
-        toast.success('OTP sent successfully!');
-        router.push('/forgotpassword/verifyotp');
+        toast.success("OTP sent successfully!");
+        router.push("/forgotpassword/verifyotp");
       } else {
-        toast.error('Failed to send OTP. Please try again.');
+        toast.error("Failed to send OTP. Please try again.");
       }
     } catch (error) {
-      console.error('Error sending OTP:', error);
+      console.error("Error sending OTP:", error);
       toast.error(
-        error?.response?.data?.message || 'Failed to send OTP. Please try again.'
+        error?.response?.data?.message ||
+          "Failed to send OTP. Please try again."
       );
     }
   };
@@ -45,33 +49,38 @@ export default function Forgotpassword() {
     if (isResendDisabled) return;
 
     try {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_API}/forgotpassword/generate-otp`, {
-        email,
-      });
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_API}/forgotpassword/generate-otp`,
+        {
+          email,
+        }
+      );
 
       if (res.status === 200) {
-        toast.success('OTP resent successfully!').setTimeout(() => {}, 2000);
-        router.push('/forgotpassword/verifyotp');
+        toast.success("OTP resent successfully!").setTimeout(() => {}, 2000);
+        router.push("/forgotpassword/verifyotp");
         setIsResendDisabled(true);
         setTimer(60);
 
         const expiryTimestamp = Date.now() + 60 * 1000;
-        Cookies.set('otp-timer-timestamp', expiryTimestamp.toString(), { expires: 1 / 24 }); // expires in 1 hour
-        Cookies.set('otp-email', email, { expires: 1 / 24 });
+        Cookies.set("otp-timer-timestamp", expiryTimestamp.toString(), {
+          expires: 1 / 24,
+        }); // expires in 1 hour
+        Cookies.set("otp-email", email, { expires: 1 / 24 });
       } else {
-        toast.error('Failed to resend OTP.');
+        toast.error("Failed to resend OTP.");
       }
     } catch (error) {
-      console.error('Resend OTP error:', error);
+      console.error("Resend OTP error:", error);
       toast.error(
-        error?.response?.data?.message || 'Failed to resend OTP. Try again.'
+        error?.response?.data?.message || "Failed to resend OTP. Try again."
       );
     }
   };
 
   useEffect(() => {
-    const savedTimestamp = Cookies.get('otp-timer-timestamp');
-    const savedEmail = Cookies.get('otp-email');
+    const savedTimestamp = Cookies.get("otp-timer-timestamp");
+    const savedEmail = Cookies.get("otp-email");
 
     if (savedTimestamp && savedEmail) {
       const now = Date.now();
@@ -82,8 +91,8 @@ export default function Forgotpassword() {
         setIsResendDisabled(true);
         setTimer(remaining);
       } else {
-        Cookies.remove('otp-timer-timestamp');
-        Cookies.remove('otp-email');
+        Cookies.remove("otp-timer-timestamp");
+        Cookies.remove("otp-email");
       }
     }
   }, []);
@@ -96,8 +105,8 @@ export default function Forgotpassword() {
           if (prev === 1) {
             clearInterval(interval);
             setIsResendDisabled(false);
-            Cookies.remove('otp-timer-timestamp');
-            Cookies.remove('otp-email');
+            Cookies.remove("otp-timer-timestamp");
+            Cookies.remove("otp-email");
             return 60;
           }
           return prev - 1;
@@ -107,26 +116,80 @@ export default function Forgotpassword() {
     return () => clearInterval(interval);
   }, [isResendDisabled, timer]);
 
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-[url('/loginbg.png')] bg-cover bg-center relative">
       <div className="relative bg-white rounded-lg shadow-lg p-12 w-full max-w-3xl z-10 h-120 text-center">
-        <Image src="/image2.png" alt="vector" height={100} width={100} className="absolute top-204.71px left-432.82px rotation-160.01 deg z-0 " />
-        <Image src="/image1.png" alt="vector" height={70} width={60} className="absolute top-15 right-10 z-0" />
-        <Image src="/image8.png" alt="vector" height={80} width={80} className="absolute top-50 left-5 rotate-[350deg] z-[-1]" />
-        <Image src="/image3.png" alt="vector" height={80} width={80} className="absolute bottom-14 left-25 right-30 rotate-[350deg] z-0" />
-        <Image src="/image4.png" alt="vector" height={80} width={80} className="absolute top-40 right-40 rotate-[15deg] z-0" />
-        <Image src="/image7.png" alt="vector" height={80} width={80} className="absolute top-77 right-10 left-128 z-0" />
-        <Image src="/image5.png" alt="vector" height={85} width={85} className="absolute top-64 left-51 z-[-1]" />
-        <Image src="/image6.png" alt="vector" height={80} width={80} className="absolute top-7 right-50 z-0" />
+        <Image
+          src="/image2.png"
+          alt="vector"
+          height={100}
+          width={100}
+          className="absolute top-204.71px left-432.82px rotation-160.01 deg z-0 "
+        />
+        <Image
+          src="/image1.png"
+          alt="vector"
+          height={70}
+          width={60}
+          className="absolute top-15 right-10 z-0"
+        />
+        <Image
+          src="/image8.png"
+          alt="vector"
+          height={80}
+          width={80}
+          className="absolute top-50 left-5 rotate-[350deg] z-[-1]"
+        />
+        <Image
+          src="/image3.png"
+          alt="vector"
+          height={80}
+          width={80}
+          className="absolute bottom-14 left-25 right-30 rotate-[350deg] z-0"
+        />
+        <Image
+          src="/image4.png"
+          alt="vector"
+          height={80}
+          width={80}
+          className="absolute top-40 right-40 rotate-[15deg] z-0"
+        />
+        <Image
+          src="/image7.png"
+          alt="vector"
+          height={80}
+          width={80}
+          className="absolute top-77 right-10 left-128 z-0"
+        />
+        <Image
+          src="/image5.png"
+          alt="vector"
+          height={85}
+          width={85}
+          className="absolute top-64 left-51 z-[-1]"
+        />
+        <Image
+          src="/image6.png"
+          alt="vector"
+          height={80}
+          width={80}
+          className="absolute top-7 right-50 z-0"
+        />
 
-        <h2 className="text-[#0077B6] text-3xl font-extrabold mb-6 z-10">Forgot Password</h2>
-        <h3 className="text-black text-3xl font-extrabold mb-9 z-10">Request OTP</h3>
+        <h2 className="text-[#0077B6] text-3xl font-extrabold mb-6 z-10">
+          Forgot Password
+        </h2>
+        <h3 className="text-black text-3xl font-extrabold mb-9 z-10">
+          Request OTP
+        </h3>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="max-w-6xl">
             <div className="text-left text-black md:px-22">
-              <label htmlFor="email" className="block text-lg font-medium mb-1 z-10">
+              <label
+                htmlFor="email"
+                className="block text-lg font-medium mb-1 z-10"
+              >
                 E-mail / Phone
               </label>
             </div>
@@ -145,8 +208,11 @@ export default function Forgotpassword() {
                 type="button"
                 onClick={handleResend}
                 disabled={isResendDisabled}
-                className={`absolute leading-10 cursor-pointer right-25 top-10 text-lg z-10 ${isResendDisabled ? "text-gray-400 cursor-not-allowed" : "text-black hover:text-blue-600"
-                  }`}
+                className={`absolute leading-10 cursor-pointer right-25 top-10 text-lg z-10 ${
+                  isResendDisabled
+                    ? "text-gray-400 cursor-not-allowed"
+                    : "text-black hover:text-blue-600"
+                }`}
               >
                 {isResendDisabled ? `Resend in ${timer}s` : "Resend OTP?"}
               </button>

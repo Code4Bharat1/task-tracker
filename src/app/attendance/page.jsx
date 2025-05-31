@@ -59,7 +59,7 @@ function Page() {
 
         {/* Mobile Attendance Page */}
         <div className="p-4">
-          <MobileAttendancePage />
+          <AttendancePage />
         </div>
       </div>
     </div>
