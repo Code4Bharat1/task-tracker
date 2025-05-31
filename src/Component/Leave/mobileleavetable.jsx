@@ -227,7 +227,7 @@ export default function MobileLeaveTable() {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "Accepted":
+      case "Approved":
         return <CheckCircle className="w-4 h-4 text-green-500" />;
       case "Rejected":
         return <XCircle className="w-4 h-4 text-red-500" />;
@@ -247,14 +247,15 @@ export default function MobileLeaveTable() {
   return (
     <div className="p-4 bg-gray-50 min-h-screen">
       <Toaster />
-     <h2 className="text-2xl font-bold mb-7 relative inline-block text-gray-800"> {/* Reduced mb-8 to mb-4 */}
-      <span
-        ref={underlineRef}
-        className="absolute left-0 bottom-0 h-[2px] bg-[#018ABE] w-full"
-      ></span>
-      My Leave
-    </h2>
-     
+      <h2 className="text-2xl font-bold mb-7 relative inline-block text-gray-800">
+        {" "}
+        {/* Reduced mb-8 to mb-4 */}
+        <span
+          ref={underlineRef}
+          className="absolute left-0 bottom-0 h-[2px] bg-[#018ABE] w-full"
+        ></span>
+        My Leave
+      </h2>
 
       <button
         onClick={() => setShowModal(true)}
@@ -265,7 +266,7 @@ export default function MobileLeaveTable() {
 
       {/* Filter Buttons */}
       <div className="mb-4 flex flex-wrap gap-2">
-        {["All", "Pending", "Accepted", "Rejected"].map((status) => (
+        {["All", "Pending", "Approved", "Rejected"].map((status) => (
           <button
             key={status}
             onClick={() => setFilterStatus(status)}
@@ -438,7 +439,7 @@ export default function MobileLeaveTable() {
               </div>
               <span
                 className={`px-2 py-1 rounded-full text-white text-xs font-medium ${
-                  leave.status === "Accepted"
+                  leave.status === "Approved"
                     ? "bg-green-500"
                     : leave.status === "Rejected"
                     ? "bg-red-500"
