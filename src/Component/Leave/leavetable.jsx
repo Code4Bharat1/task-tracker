@@ -18,9 +18,9 @@ export default function LeaveTable() {
   const [wordCount, setWordCount] = useState(0);
   const fileInputRef = useRef(null);
   const underlineRef = useRef(null);
-  
+
   const today = new Date().toISOString().split("T")[0];
-  
+
   const isDateOverlap = (start1, end1, start2, end2) => {
     return !(
       new Date(end1) < new Date(start2) || new Date(start1) > new Date(end2)
@@ -91,7 +91,7 @@ export default function LeaveTable() {
   }, [fromDate]);
 
   const approverMap = Object.fromEntries(approvers.map((a) => [a.id, a.name]));
-  
+
   const submitLeave = async () => {
     if (
       !leaveType ||
@@ -211,35 +211,41 @@ export default function LeaveTable() {
   };
 
   return (
-   <div className="p-6 bg-gray-50 min-h-screen">
-  <Toaster />
-  <div className="mb-6"> {/* Added wrapper div */}
-    <h2 className="text-2xl font-bold mb-4 relative inline-block text-gray-800"> {/* Reduced mb-8 to mb-4 */}
-      <span
-        ref={underlineRef}
-        className="absolute left-0 bottom-0 h-[2px] bg-[#018ABE] w-full"
-      ></span>
-      My Leave
-    </h2>
-  </div>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <Toaster />
+      <div className="mb-6">
+        {" "}
+        {/* Added wrapper div */}
+        <h2 className="text-2xl font-bold mb-4 relative inline-block text-gray-800">
+          {" "}
+          {/* Reduced mb-8 to mb-4 */}
+          <span
+            ref={underlineRef}
+            className="absolute left-0 bottom-0 h-[2px] bg-[#018ABE] w-full"
+          ></span>
+          My Leave
+        </h2>
+      </div>
 
-  <div className="mb-6"> {/* Added wrapper div for the button */}
-    <button
-      onClick={() => setShowModal(true)}
-      className="px-5 py-2 bg-[#018ABE] text-white rounded-full cursor-pointer hover:bg-[#017ba9]"
-    >
-      Leave Application
-    </button>
-  </div>
+      <div className="mb-6">
+        {" "}
+        {/* Added wrapper div for the button */}
+        <button
+          onClick={() => setShowModal(true)}
+          className="px-5 py-2 bg-[#018ABE] text-white rounded-full cursor-pointer hover:bg-[#017ba9]"
+        >
+          Leave Application
+        </button>
+      </div>
 
-  {showModal && (
-    <div className="fixed inset-0 bg-gray-500/50 backdrop-blur-sm flex justify-center items-center z-50">
-      <div className="bg-white shadow-xl rounded-lg p-6 w-full max-w-5xl max-h-[90vh] overflow-y-auto relative">
-        <div className="flex justify-center mb-10">
-          <h2 className="text-xl font-bold inline-block border-b-3 border-[#018ABE] pb-1">
-            Leave Application
-          </h2>
-        </div>
+      {showModal && (
+        <div className="fixed inset-0 bg-gray-500/50 backdrop-blur-sm flex justify-center items-center z-50">
+          <div className="bg-white shadow-xl rounded-lg p-6 w-full max-w-5xl max-h-[90vh] overflow-y-auto relative">
+            <div className="flex justify-center mb-10">
+              <h2 className="text-xl font-bold inline-block border-b-3 border-[#018ABE] pb-1">
+                Leave Application
+              </h2>
+            </div>
 
             <div className="flex">
               {/* Left Column */}
@@ -435,8 +441,8 @@ export default function LeaveTable() {
                   <td className="p-3 border-t">
                     <span
                       className={`px-2 py-1 rounded-full text-white ${
-                        leave.status === "Accepted"
-                          ? "bg-green-500"
+                        leave.status === "Approved"
+                          ? "bg-green-600"
                           : leave.status === "Rejected"
                           ? "bg-red-500"
                           : leave.status === "Pending"
