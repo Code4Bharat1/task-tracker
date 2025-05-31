@@ -1,15 +1,15 @@
-
 'use client';
 
-import { axiosInstance } from '@/lib/axiosInstance';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
-import { FaRegBell, FaRegCalendarAlt, FaRegNewspaper, FaSignOutAlt, FaUser, FaUserPlus, FaVideo } from "react-icons/fa";
+import { FaRegBell, FaVideo, FaUser, FaSignOutAlt, FaRegNewspaper, FaUserPlus, FaRegCalendarAlt } from "react-icons/fa";
 import { FiSettings } from "react-icons/fi";
-import { MdClose, MdContentCopy, MdNotifications, MdVideoCall } from "react-icons/md";
+import { MdVideoCall, MdContentCopy } from "react-icons/md";
+import { axiosInstance } from '@/lib/axiosInstance';
+import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
+import VideoCall from '@/Component/videocall';
 
 export default function NavBar() {
   const [userData, setUserData] = useState({
@@ -20,7 +20,7 @@ export default function NavBar() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMeetingPopup, setShowMeetingPopup] = useState(false);
-  const [showVideoCall, setShowVideoCall] = useState(false);
+  const [showVideoCall, setShowVideoCall] = useState(false); // New state for video call
   const [imageError, setImageError] = useState(false);
   const [isCreatingMeeting, setIsCreatingMeeting] = useState(false);
   const [createdMeeting, setCreatedMeeting] = useState(null);
@@ -34,74 +34,27 @@ export default function NavBar() {
     duration: "",
     participants: []
   });
-
-  // Notification states
-  const [leaveNotifications, setLeaveNotifications] = useState([]);
-  const [postNotifications, setPostNotifications] = useState([]);
-  const [expenseNotifications, setExpenseNotifications] = useState([]);
-  const [calendarNotifications, setCalendarNotifications] = useState([]);
-  const [meetingNotifications, setMeetingNotifications] = useState([]);
-  const [notificationError, setNotificationError] = useState('');
-  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
-
+  
+  const notifications = [];
   const router = useRouter();
-
-  // Fetch notifications
-  const fetchNotifications = async () => {
-    setIsLoadingNotifications(true);
-    try {
-      const [
-        leaveRes,
-        postRes,
-        expenseRes,
-        calendarRes,
-        meetingRes
-      ] = await Promise.all([
-        axiosInstance.get('/user-leave'),
-        axiosInstance.get('/post-notification'),
-        axiosInstance.get('/expense-notification'),
-        axiosInstance.get('/calendar-notification'),
-        axiosInstance.get('/meeting-notification')
-      ]);
-
-      setLeaveNotifications(leaveRes.data.notifications || []);
-      setPostNotifications(postRes.data.notifications || []);
-      setExpenseNotifications(expenseRes.data.notifications || []);
-      setCalendarNotifications(calendarRes.data.notifications || []);
-      setMeetingNotifications(meetingRes.data.notifications || []);
-      setNotificationError('');
-    } catch (err) {
-      console.error('Error fetching notifications:', err);
-      setNotificationError('Failed to fetch notifications.');
-    } finally {
-      setIsLoadingNotifications(false);
-    }
-  };
-
-  // Get total notification count
-  const getTotalNotificationCount = () => {
-    return leaveNotifications.length +
-      postNotifications.length +
-      expenseNotifications.length +
-      calendarNotifications.length +
-      meetingNotifications.length;
-  };
 
   // Fetch all user emails for participants
   const fetchUserEmails = async () => {
     try {
       const response = await axiosInstance.get('/tasks/getAllUserEmails');
-
+      
+      // Adjust this based on your actual API response structure
       const users = response.data.map((user, index) => ({
         id: user.email || `user_${index}`,
         name: user.name || user.fullName || user.email || `User ${index + 1}`,
         email: user.email
       }));
-
+      
       setAvailableParticipants(users);
     } catch (error) {
       console.error("Failed to fetch user emails:", error);
       toast.error("Failed to load users");
+      // Fallback to default participants if API fails
       setAvailableParticipants([
         { id: "member1", name: "Member 1", email: "member1@example.com" },
         { id: "member2", name: "Member 2", email: "member2@example.com" },
@@ -113,6 +66,7 @@ export default function NavBar() {
   const toggleMeetingPopup = () => {
     setShowMeetingPopup(!showMeetingPopup);
     if (!showMeetingPopup) {
+      // Reset form when opening
       setMeetingData({
         host: userData.firstName || "Host",
         title: "",
@@ -123,19 +77,14 @@ export default function NavBar() {
         participants: []
       });
       setCreatedMeeting(null);
+      // Fetch users when opening the popup
       fetchUserEmails();
     }
   };
 
+  // New function to handle video call popup
   const toggleVideoCall = () => {
     setShowVideoCall(!showVideoCall);
-  };
-
-  const toggleNotifications = () => {
-    setShowNotifications(!showNotifications);
-    if (!showNotifications) {
-      fetchNotifications();
-    }
   };
 
   const handleProfileAction = () => {
@@ -176,7 +125,8 @@ export default function NavBar() {
   // Create Zoom Meeting
   const createZoomMeeting = async (e) => {
     e.preventDefault();
-
+    
+    // Validate form data first
     if (!meetingData.title || !meetingData.description || !meetingData.date ||
       !meetingData.time || !meetingData.duration) {
       toast.error("Please fill in all required fields");
@@ -196,9 +146,17 @@ export default function NavBar() {
         participants: meetingData.participants
       };
 
+      console.log("Creating meeting with payload:", payload);
+
       const response = await axiosInstance.post('/meeting/create', payload);
+
+      console.log("Meeting created successfully:", response.data);
+
+      // Set the created meeting
       setCreatedMeeting(response.data.meeting);
+      
       toast.success("Meeting created successfully!");
+
     } catch (error) {
       console.error("Failed to create meeting:", error);
       toast.error(error.response?.data?.message || "Failed to create meeting");
@@ -246,73 +204,12 @@ export default function NavBar() {
     fetchData();
   }, []);
 
+  // Function to get the appropriate image source
   const getImageSource = () => {
     if (imageError || !userData.photoUrl) {
       return "/profile.png";
     }
     return userData.photoUrl;
-  };
-
-  // Render notification item
-  const renderNotificationItem = (notification, type, index) => {
-    const getNotificationIcon = (type) => {
-      switch (type) {
-        case 'leave': return '🏖️';
-        case 'post': return '📝';
-        case 'expense': return '💰';
-        case 'calendar': return '📅';
-        case 'meeting': return '🎥';
-        default: return '🔔';
-      }
-    };
-
-    const getNotificationColor = (type) => {
-      switch (type) {
-        case 'leave': return 'bg-blue-50 border-blue-200';
-        case 'post': return 'bg-green-50 border-green-200';
-        case 'expense': return 'bg-yellow-50 border-yellow-200';
-        case 'calendar': return 'bg-purple-50 border-purple-200';
-        case 'meeting': return 'bg-indigo-50 border-indigo-200';
-        default: return 'bg-gray-50 border-gray-200';
-      }
-    };
-
-    return (
-      <div
-        key={`${type}-${index}`}
-        className={`p-3 rounded-lg border ${getNotificationColor(type)} hover:shadow-sm transition-all duration-200 mb-2 last:mb-0`}
-      >
-        <div className="flex items-start space-x-3">
-          <span className="text-lg flex-shrink-0 mt-0.5">{getNotificationIcon(type)}</span>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                {type} Notification
-              </span>
-              <span className="text-xs text-gray-400">
-                {notification.createdAt ? new Date(notification.createdAt).toLocaleDateString() :
-                  notification.updatedAt ? new Date(notification.updatedAt).toLocaleDateString() :
-                    'Recent'}
-              </span>
-            </div>
-            <p className="text-sm text-gray-800 mb-1 line-clamp-2">
-              {notification.message || notification.title || 'No message available'}
-            </p>
-            {notification.status && (
-              <span className={`inline-block px-2 py-1 text-xs rounded-full ${notification.status === 'approved' ? 'bg-green-100 text-green-800' :
-                notification.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                  'bg-yellow-100 text-yellow-800'
-                }`}>
-                {notification.status}
-              </span>
-            )}
-            {notification.amount && (
-              <span className="text-xs text-gray-600 ml-2">₹{notification.amount}</span>
-            )}
-          </div>
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -327,7 +224,8 @@ export default function NavBar() {
           <button title="Video Call" onClick={toggleVideoCall}>
             <FaVideo className="w-6 h-7 text-black cursor-pointer hover:text-white transition-colors duration-200" />
           </button>
-
+          
+          {/* Video Call Dropdown Menu */}
           {showVideoCall && (
             <div className="absolute right-0 top-10 w-48 bg-white rounded-lg shadow-lg z-20">
               <div className="py-2">
@@ -344,7 +242,8 @@ export default function NavBar() {
                 <button
                   onClick={() => {
                     setShowVideoCall(false);
-                    window.open('/videocall', '_blank', 'width=1200,height=800');
+                    // Open VideoCallPage in a new window/modal
+                    window.open('/videocall', 'width=1200,height=800');
                   }}
                   className="w-full px-4 py-2 text-left flex items-center space-x-3 hover:bg-gray-100 cursor-pointer"
                 >
@@ -371,107 +270,27 @@ export default function NavBar() {
           <FaRegNewspaper className="w-6 h-6 text-black cursor-pointer hover:text-white transition-colors duration-200" />
         </button>
 
-        {/* Enhanced Notifications */}
+        {/* Notifications */}
         <div className="relative">
-          <button
-            onClick={toggleNotifications}
-            className="relative cursor-pointer group"
-            title="Notifications"
-          >
-            <FaRegBell className="text-black w-6 h-6 hover:text-white transition-colors duration-200" />
-            {getTotalNotificationCount() > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium animate-pulse">
-                {getTotalNotificationCount() > 99 ? '99+' : getTotalNotificationCount()}
-              </span>
-            )}
-          </button>
-
+          <FaRegBell
+            className="cursor-pointer text-black w-10 h-6 hover:text-white transition-colors duration-200"
+            onClick={() => setShowNotifications((prev) => !prev)}
+          />
           {showNotifications && (
-            <div className="absolute right-0 top-10 w-96 bg-white rounded-xl shadow-2xl z-20 border border-gray-200 max-h-[80vh] flex flex-col">
-              {/* Header */}
-              <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-[#018ABE] to-[#65B7D4] text-white rounded-t-xl">
-                <div className="flex items-center space-x-2">
-                  <MdNotifications className="text-xl" />
-                  <h3 className="font-semibold text-lg">Notifications</h3>
-                  {getTotalNotificationCount() > 0 && (
-                    <span className="bg-white text-black bg-opacity-20 px-2 py-1 rounded-full text-xs font-medium">
-                      {getTotalNotificationCount()}
-                    </span>
-                  )}
-                </div>
-                <button
-                  onClick={() => setShowNotifications(false)}
-                  className="text-white hover:text-gray-200 transition-colors"
-                >
-                  <MdClose className="text-xl" />
-                </button>
+            <div className="absolute right-0 top-10 w-80 bg-white rounded-lg shadow-lg z-20">
+              <div
+                className="p-4 font-semibold border-b cursor-pointer"
+                onClick={() => router.push('/notification')}
+              >
+                Notifications
               </div>
-
-              {/* Content */}
-              <div className="flex-1 overflow-hidden flex flex-col">
-                {isLoadingNotifications ? (
-                  <div className="p-6 text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#018ABE] mx-auto mb-2"></div>
-                    <p className="text-gray-600 text-sm">Loading notifications...</p>
-                  </div>
-                ) : notificationError ? (
-                  <div className="p-6 text-center">
-                    <p className="text-red-500 text-sm">{notificationError}</p>
-                    <button
-                      onClick={fetchNotifications}
-                      className="mt-2 px-4 py-2 bg-[#018ABE] text-white rounded-lg text-sm hover:bg-[#016a96] transition-colors"
-                    >
-                      Retry
-                    </button>
-                  </div>
-                ) : getTotalNotificationCount() === 0 ? (
-                  <div className="p-8 text-center">
-                    <div className="text-6xl mb-4">🔔</div>
-                    <h4 className="text-lg font-medium text-gray-600 mb-2">No new notifications</h4>
-                    <p className="text-sm text-gray-500">You're all caught up!</p>
-                  </div>
+              <div className="p-4 text-gray-600 text-sm max-h-60 overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <div>No new notifications</div>
                 ) : (
-                  <div className="p-4 overflow-y-auto flex-1 space-y-1">
-                    {/* Leave Notifications */}
-                    {leaveNotifications.map((notification, index) =>
-                      renderNotificationItem(notification, 'leave', index)
-                    )}
-
-                    {/* Post Notifications */}
-                    {postNotifications.map((notification, index) =>
-                      renderNotificationItem(notification, 'post', index)
-                    )}
-
-                    {/* Expense Notifications */}
-                    {expenseNotifications.map((notification, index) =>
-                      renderNotificationItem(notification, 'expense', index)
-                    )}
-
-                    {/* Calendar Notifications */}
-                    {calendarNotifications.map((notification, index) =>
-                      renderNotificationItem(notification, 'calendar', index)
-                    )}
-
-                    {/* Meeting Notifications */}
-                    {meetingNotifications.map((notification, index) =>
-                      renderNotificationItem(notification, 'meeting', index)
-                    )}
-                  </div>
-                )}
-
-                {/* Footer */}
-                {getTotalNotificationCount() > 0 && (
-                  <div className="p-3 border-t border-gray-200 bg-gray-50 rounded-b-xl">
-                    <button
-                      onClick={() => {
-                        router.push('/view-notification');
-                        setShowNotifications(false);
-                      }}
-                      className="w-full text-center text-[#018ABE] hover:text-[#016a96] font-medium text-sm transition-colors"
-                    >
-                      View All Notifications →
-                    </button>
-                  </div>
+                  notifications.map((note, idx) => (
+                    <div key={idx} className="mb-2">{note}</div>
+                  ))
                 )}
               </div>
             </div>
@@ -484,7 +303,7 @@ export default function NavBar() {
             onClick={() => {
               setShowProfileMenu(!showProfileMenu);
               setShowNotifications(false);
-              setShowVideoCall(false);
+              setShowVideoCall(false); // Close video call dropdown when opening profile
             }}
             className="focus:outline-none"
           >

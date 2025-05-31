@@ -1,46 +1,111 @@
-import { useState } from 'react';
-import { Video, VideoOff, Mic, MicOff, Phone, Copy, ExternalLink } from 'lucide-react';
+// src/app/video-call/page.js
+"use client";
+import { useState, useEffect } from 'react';
+import { Video, VideoOff, Mic, MicOff, Phone, Copy, ExternalLink, Loader } from 'lucide-react';
 
-export default function VideoCallPage() {
+export default function VideoCall() {
   const [isJoined, setIsJoined] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [userName, setUserName] = useState('');
   const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [meetingDetails, setMeetingDetails] = useState(null);
+  const [otherParticipants, setOtherParticipants] = useState([]);
 
-  const meetingId = "123 456 7890";
-  const zoomLink = "https://zoom.us/j/1234567890?pwd=example";
-  const meetingPassword = "meeting123";
+  const API_URL = "http://localhost:4110/api/meeting/participant";
 
-  const handleJoinCall = () => {
-    if (userName.trim()) {
+  const handleJoinCall = async () => {
+    if (!userName.trim()) {
+      setError('Please enter your name');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+      
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ participantName: userName }),
+      });
+
+      const data = await response.json();
+      console.log('Meeting data:', data);
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch meeting details');
+      }
+
+      if (data.meetings.length === 0) {
+        throw new Error('No meetings found for this participant');
+      }
+      
+      // Use the first meeting for simplicity
+      const meeting = data.meetings[0];
+      setMeetingDetails(meeting);
+      
+      // Filter out the current user from participants
+      const others = meeting.participants
+        .filter(p => p.name.toLowerCase() !== userName.trim().toLowerCase())
+        .slice(0, 2); // Only show first 2 others
+      
+      setOtherParticipants(others);
+      
+      // Auto-join the call
       setIsJoined(true);
+    } catch (err) {
+      setError(err.message || 'An error occurred');
+      console.error('Meeting fetch error:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleLeaveCall = () => {
     setIsJoined(false);
     setUserName('');
+    setMeetingDetails(null);
+    setOtherParticipants([]);
   };
 
   const copyLink = () => {
-    navigator.clipboard.writeText(zoomLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (meetingDetails) {
+      navigator.clipboard.writeText(meetingDetails.meetingLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
-  if (isJoined) {
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-12 text-center">
+          <Loader className="w-16 h-16 mx-auto animate-spin text-blue-500" />
+          <p className="mt-4 text-lg font-medium text-gray-700">Finding your meeting...</p>
+          <p className="text-sm text-gray-500 mt-2">Please wait while we retrieve your meeting details</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isJoined && meetingDetails) {
     return (
       <div className="min-h-screen bg-gray-900 flex flex-col">
         {/* Header */}
         <div className="bg-gray-800 text-white p-4 flex justify-between items-center">
           <div>
-            <h1 className="text-lg font-semibold">Team Meeting</h1>
-            <p className="text-sm text-gray-300">Meeting ID: {meetingId}</p>
+            <h1 className="text-lg font-semibold">{meetingDetails.title}</h1>
+            <p className="text-sm text-gray-300">Meeting ID: {meetingDetails.zoomMeetingId}</p>
           </div>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-green-400">● Connected as {userName}</span>
-            <span className="text-xs bg-gray-700 px-2 py-1 rounded">3 participants</span>
+            <span className="text-xs bg-gray-700 px-2 py-1 rounded">
+              {meetingDetails.participants.length} participants
+            </span>
           </div>
         </div>
 
@@ -74,27 +139,34 @@ export default function VideoCallPage() {
             </div>
 
             {/* Other participants */}
-            <div className="bg-gray-800 rounded-lg relative overflow-hidden">
-              <div className="w-full h-full bg-gradient-to-br from-green-600 to-teal-600 flex items-center justify-center">
-                <div className="text-white text-center">
-                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-2 mx-auto">
-                    <span className="text-2xl font-bold">J</span>
+            {otherParticipants.map((participant, index) => (
+              <div key={index} className="bg-gray-800 rounded-lg relative overflow-hidden">
+                <div className={`w-full h-full flex items-center justify-center ${
+                  index === 0 ? 'bg-gradient-to-br from-green-600 to-teal-600' : 'bg-gradient-to-br from-orange-600 to-red-600'
+                }`}>
+                  <div className="text-white text-center">
+                    <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-2 mx-auto">
+                      <span className="text-2xl font-bold">{participant.name.charAt(0).toUpperCase()}</span>
+                    </div>
+                    <p className="text-sm">{participant.name}</p>
                   </div>
-                  <p className="text-sm">John Doe</p>
                 </div>
               </div>
-            </div>
+            ))}
 
-            <div className="bg-gray-800 rounded-lg relative overflow-hidden">
-              <div className="w-full h-full bg-gradient-to-br from-orange-600 to-red-600 flex items-center justify-center">
-                <div className="text-white text-center">
-                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-2 mx-auto">
-                    <span className="text-2xl font-bold">S</span>
+            {/* Placeholder for additional participants */}
+            {meetingDetails.participants.length > 3 && (
+              <div className="bg-gray-800 rounded-lg relative overflow-hidden">
+                <div className="w-full h-full bg-gray-700 flex items-center justify-center">
+                  <div className="text-center text-gray-400">
+                    <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-2 mx-auto">
+                      <span className="text-2xl font-bold">+{meetingDetails.participants.length - 3}</span>
+                    </div>
+                    <p className="text-sm">more participants</p>
                   </div>
-                  <p className="text-sm">Sarah Wilson</p>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -137,90 +209,53 @@ export default function VideoCallPage() {
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 text-center">
           <h1 className="text-2xl font-bold mb-2">Join Video Call</h1>
-          <p className="text-blue-100">Team Meeting</p>
+          <p className="text-blue-100">Enter your name to find your meeting</p>
         </div>
 
-        {/* Meeting Info */}
+        {/* Join Form */}
         <div className="p-6 space-y-4">
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-800 mb-3">Meeting Details</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Meeting ID:</span>
-                <span className="font-mono font-semibold">{meetingId}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Password:</span>
-                <span className="font-mono font-semibold">{meetingPassword}</span>
-              </div>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Your Name
+            </label>
+            <input
+              type="text"
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
+              placeholder="Enter your name as registered"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+            />
           </div>
 
-          {/* Zoom Link */}
-          <div className="bg-green-50 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-semibold text-green-800">Zoom Link</h4>
-              <button
-                onClick={copyLink}
-                className="flex items-center space-x-1 text-green-600 hover:text-green-700 text-sm"
-              >
-                <Copy className="w-4 h-4" />
-                <span>{copied ? 'Copied!' : 'Copy'}</span>
-              </button>
+          {error && (
+            <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm">
+              {error}
             </div>
-            <div className="flex items-center space-x-2">
-              <input
-                type="text"
-                value={zoomLink}
-                readOnly
-                className="flex-1 text-xs bg-white border border-green-200 rounded px-2 py-1 text-gray-600"
-              />
-              <a
-                href={zoomLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-green-600 hover:text-green-700"
-              >
-                <ExternalLink className="w-4 h-4" />
-              </a>
-            </div>
-          </div>
+          )}
 
-          {/* Join Form */}
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Your Name
-              </label>
-              <input
-                type="text"
-                value={userName}
-                onChange={(e) => setUserName(e.target.value)}
-                placeholder="Enter your name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-              />
-            </div>
+          <button
+            onClick={handleJoinCall}
+            disabled={!userName.trim() || loading}
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
+          >
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <Loader className="w-5 h-5 mr-2 animate-spin" />
+                Finding Meeting...
+              </span>
+            ) : (
+              'Find My Meeting'
+            )}
+          </button>
 
-            <button
-              onClick={handleJoinCall}
-              disabled={!userName.trim()}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
-            >
-              Join Video Call
-            </button>
-          </div>
-
-          {/* Alternative Options */}
-          <div className="pt-4 border-t border-gray-200">
-            <p className="text-center text-sm text-gray-600 mb-3">Or join with</p>
-            <div className="flex space-x-2">
-              <button className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium transition-colors">
-                Phone
-              </button>
-              <button className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium transition-colors">
-                Browser
-              </button>
-            </div>
+          {/* Info Section */}
+          <div className="bg-blue-50 rounded-lg p-4 text-sm text-blue-700">
+            <p className="font-medium mb-1">How this works:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Enter your name exactly as it appears in meeting invites</li>
+              <li>We'll find all meetings you're scheduled to attend</li>
+              <li>You'll be automatically connected to the meeting</li>
+            </ul>
           </div>
         </div>
       </div>
