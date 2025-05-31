@@ -22,7 +22,7 @@ const MobileNavbar = () => {
   const [createdMeeting, setCreatedMeeting] = useState(null);
   const [isCreatingMeeting, setIsCreatingMeeting] = useState(false);
   const [availableParticipants, setAvailableParticipants] = useState([]);
-  
+
   const [meetingData, setMeetingData] = useState({
     title: "",
     description: "",
@@ -30,7 +30,7 @@ const MobileNavbar = () => {
     date: "",
     time: "",
     duration: "",
-    participants: []
+    participants: [],
   });
 
   const notifications = [];
@@ -47,7 +47,7 @@ const MobileNavbar = () => {
         date: "",
         time: "",
         duration: "",
-        participants: []
+        participants: [],
       });
     }
   };
@@ -72,26 +72,32 @@ const MobileNavbar = () => {
   };
 
   const handleInputChange = (field, value) => {
-    setMeetingData(prev => ({
+    setMeetingData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const handleParticipantToggle = (participantId) => {
-    setMeetingData(prev => {
+    setMeetingData((prev) => {
       const newParticipants = prev.participants.includes(participantId)
-        ? prev.participants.filter(id => id !== participantId)
+        ? prev.participants.filter((id) => id !== participantId)
         : [...prev.participants, participantId];
       return {
         ...prev,
-        participants: newParticipants
+        participants: newParticipants,
       };
     });
   };
 
   const createZoomMeeting = async () => {
-    if (!meetingData.title || !meetingData.description || !meetingData.date || !meetingData.time || !meetingData.duration) {
+    if (
+      !meetingData.title ||
+      !meetingData.description ||
+      !meetingData.date ||
+      !meetingData.time ||
+      !meetingData.duration
+    ) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -99,11 +105,14 @@ const MobileNavbar = () => {
     setIsCreatingMeeting(true);
     try {
       // Simulate API call - replace with your actual API call
-      const response = await axiosInstance.post("/meetings/create", meetingData);
+      const response = await axiosInstance.post(
+        "/meetings/create",
+        meetingData
+      );
       setCreatedMeeting({
         ...response.data,
         date: meetingData.date,
-        time: meetingData.time
+        time: meetingData.time,
       });
       toast.success("Meeting created successfully!");
     } catch (error) {
@@ -137,13 +146,13 @@ const MobileNavbar = () => {
         const response = await axiosInstance.get("/profile/getProfile");
         setUserData(response.data);
         setImageError(false);
-        
+
         // Set default host name
-        setMeetingData(prev => ({
+        setMeetingData((prev) => ({
           ...prev,
-          host: response.data.firstName || ""
+          host: response.data.firstName || "",
         }));
-        
+
         // Fetch participants - replace with your actual API call
         const participantsResponse = await axiosInstance.get("/team/members");
         setAvailableParticipants(participantsResponse.data);
@@ -183,7 +192,7 @@ const MobileNavbar = () => {
 
             {/* Add Team Members */}
             <button
-              onClick={() => handleNavigation("/dashboard/addteammembers")}
+              onClick={() => handleNavigation("/dashboard/viewteammembers")}
               title="Add Team Members"
               className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors"
             >
@@ -334,7 +343,9 @@ const MobileNavbar = () => {
                     <input
                       type="text"
                       value={meetingData.host}
-                      onChange={(e) => handleInputChange('host', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("host", e.target.value)
+                      }
                       placeholder="Host Name"
                       className="w-full p-2 border border-gray-300 rounded-lg focus:border-[#018ABE] focus:outline-none"
                     />
@@ -347,7 +358,9 @@ const MobileNavbar = () => {
                     <input
                       type="text"
                       value={meetingData.title}
-                      onChange={(e) => handleInputChange('title', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("title", e.target.value)
+                      }
                       placeholder="Enter meeting title"
                       required
                       className="w-full p-2 border border-gray-300 rounded-lg focus:border-[#018ABE] focus:outline-none"
@@ -360,7 +373,9 @@ const MobileNavbar = () => {
                     </label>
                     <textarea
                       value={meetingData.description}
-                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("description", e.target.value)
+                      }
                       placeholder="Enter meeting description"
                       required
                       rows="3"
@@ -375,17 +390,28 @@ const MobileNavbar = () => {
                     <div className="max-h-32 overflow-y-auto border border-gray-300 rounded-lg p-2 space-y-2 text-sm">
                       {availableParticipants.length > 0 ? (
                         availableParticipants.map((participant) => (
-                          <label key={participant.id} className="flex items-center space-x-2">
+                          <label
+                            key={participant.id}
+                            className="flex items-center space-x-2"
+                          >
                             <input
                               type="checkbox"
-                              checked={meetingData.participants.includes(participant.id)}
-                              onChange={() => handleParticipantToggle(participant.id)}
+                              checked={meetingData.participants.includes(
+                                participant.id
+                              )}
+                              onChange={() =>
+                                handleParticipantToggle(participant.id)
+                              }
                               className="rounded border-gray-300 text-[#018ABE] focus:ring-[#018ABE]"
                             />
                             <div className="flex flex-col">
-                              <span className="text-gray-700">{participant.name}</span>
+                              <span className="text-gray-700">
+                                {participant.name}
+                              </span>
                               {participant.email && (
-                                <span className="text-xs text-gray-500">{participant.email}</span>
+                                <span className="text-xs text-gray-500">
+                                  {participant.email}
+                                </span>
                               )}
                             </div>
                           </label>
@@ -406,7 +432,9 @@ const MobileNavbar = () => {
                       <input
                         type="date"
                         value={meetingData.date}
-                        onChange={(e) => handleInputChange('date', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange("date", e.target.value)
+                        }
                         min={new Date().toISOString().split("T")[0]}
                         required
                         className="w-full p-2 border border-gray-300 rounded-lg focus:border-[#018ABE] focus:outline-none"
@@ -419,7 +447,9 @@ const MobileNavbar = () => {
                       <input
                         type="time"
                         value={meetingData.time}
-                        onChange={(e) => handleInputChange('time', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange("time", e.target.value)
+                        }
                         required
                         className="w-full p-2 border border-gray-300 rounded-lg focus:border-[#018ABE] focus:outline-none"
                       />
@@ -432,7 +462,9 @@ const MobileNavbar = () => {
                     </label>
                     <select
                       value={meetingData.duration}
-                      onChange={(e) => handleInputChange('duration', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("duration", e.target.value)
+                      }
                       required
                       className="w-full p-2 border border-gray-300 rounded-lg focus:border-[#018ABE] focus:outline-none"
                     >
@@ -492,33 +524,49 @@ const MobileNavbar = () => {
                     <p className="text-gray-600">{createdMeeting.title}</p>
                   </div>
                   <div>
-                    <span className="font-semibold text-gray-700">Meeting ID:</span>
-                    <p className="text-gray-600 font-mono">{createdMeeting.zoomMeetingId}</p>
+                    <span className="font-semibold text-gray-700">
+                      Meeting ID:
+                    </span>
+                    <p className="text-gray-600 font-mono">
+                      {createdMeeting.zoomMeetingId}
+                    </p>
                   </div>
                   <div>
-                    <span className="font-semibold text-gray-700">Password:</span>
+                    <span className="font-semibold text-gray-700">
+                      Password:
+                    </span>
                     <p className="text-gray-600 font-mono">
                       {(() => {
                         try {
                           if (createdMeeting?.meetingLink) {
-                            const urlParams = new URLSearchParams(new URL(createdMeeting.meetingLink).search);
-                            return urlParams.get('pwd') || 'No password required';
+                            const urlParams = new URLSearchParams(
+                              new URL(createdMeeting.meetingLink).search
+                            );
+                            return (
+                              urlParams.get("pwd") || "No password required"
+                            );
                           }
-                          return 'Not available';
+                          return "Not available";
                         } catch (error) {
                           console.error("Error extracting password:", error);
-                          return 'Error extracting password';
+                          return "Error extracting password";
                         }
                       })()}
                     </p>
                   </div>
                   <div>
-                    <span className="font-semibold text-gray-700">Date & Time:</span>
-                    <p className="text-gray-600">{createdMeeting.date} at {createdMeeting.time}</p>
+                    <span className="font-semibold text-gray-700">
+                      Date & Time:
+                    </span>
+                    <p className="text-gray-600">
+                      {createdMeeting.date} at {createdMeeting.time}
+                    </p>
                   </div>
                   {createdMeeting.meetingLink && (
                     <div>
-                      <span className="font-semibold text-gray-700">Meeting Link:</span>
+                      <span className="font-semibold text-gray-700">
+                        Meeting Link:
+                      </span>
                       <div className="flex items-center gap-1 mt-1">
                         <p className="text-blue-600 text-xs break-all flex-1">
                           {createdMeeting.meetingLink}
