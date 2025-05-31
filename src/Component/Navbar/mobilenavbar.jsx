@@ -153,9 +153,9 @@ const MobileNavbar = () => {
           host: response.data.firstName || "",
         }));
 
-        // Fetch participants - replace with your actual API call
-        const participantsResponse = await axiosInstance.get("/team/members");
-        setAvailableParticipants(participantsResponse.data);
+        // // Fetch participants - replace with your actual API call
+        // const participantsResponse = await axiosInstance.get("/team/members");
+        // setAvailableParticipants(participantsResponse.data);
       } catch (error) {
         console.error("Failed to fetch user data:", error);
         toast.error("Failed to fetch user data.");

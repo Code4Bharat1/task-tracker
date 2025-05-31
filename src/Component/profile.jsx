@@ -785,7 +785,7 @@ function Profile() {
                 id="position"
                 value={formData.position}
                 onChange={handleChange}
-                disabled={!isEditing}
+                disabled
                 className="px-4 py-2 rounded-xl shadow disabled:bg-gray-100 disabled:cursor-not-allowed focus:outline-none"
               />
             </div>
@@ -840,7 +840,7 @@ function Profile() {
                 id="dateOfJoining"
                 value={formData.dateOfJoining?.slice(0, 10)}
                 onChange={handleChange}
-                disabled={!isEditing}
+                disabled
                 className="px-4 py-2 rounded-xl shadow disabled:bg-gray-100 disabled:cursor-not-allowed focus:outline-none"
               />
             </div>
