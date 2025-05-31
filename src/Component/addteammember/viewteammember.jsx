@@ -146,18 +146,20 @@ const ViewTeamMember = () => {
 
     return (
         <div className="max-w-7xl mx-auto p-6">
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Task Management</h1>
-                    <p className="text-gray-600">Manage your tasks and team members</p>
-                </div>
-                <div>
-                    <button className="bg-[#018ABE] hover:bg-[#018ABE] text-white font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out"
-                    onClick={handleTeamMemberClick}>
-                        Add Team Members
-                    </button>
-                </div>
-            </div>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+  <div className="flex-1 min-w-0">
+    <h1 className="text-2xl font-bold text-gray-900 truncate">Task Management</h1>
+    <p className="text-gray-600 truncate">Manage your tasks and team members</p>
+  </div>
+  <div className="w-full sm:w-auto">
+    <button 
+      className="w-full sm:w-auto bg-[#018ABE] hover:bg-[#018ABE] text-white font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out"
+      onClick={handleTeamMemberClick}
+    >
+      Add Team Members
+    </button>
+  </div>
+</div>
             <div className="grid gap-6">
                 {tasks.map((task) => (
                     <div key={task._id} className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">

@@ -155,7 +155,7 @@ const ProjectOverview = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-white p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -187,96 +187,101 @@ const ProjectOverview = () => {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border mb-8">
-          <div className="flex flex-wrap gap-4 items-center justify-between">
-            <div className="flex flex-wrap gap-4 items-center">
-              <div className="flex items-center space-x-2">
-                <Filter className="w-5 h-5 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">Filters:</span>
-              </div>
+      {/* Filters */}
+<div className="bg-white p-6 rounded-lg shadow-sm border mb-8">
+  <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+    {/* Left side - Filters */}
+    <div className="flex flex-wrap gap-8 items-center w-full md:w-auto">
+      <div className="flex items-center space-x-2">
+        <Filter className="w-5 h-5 ml-3 text-gray-500" />
+        <span className="text-sm font-medium text-gray-700">Filters:</span>
+      </div>
 
-              {/* Project Filter */}
-              <div className="relative">
-                <select
-                  value={selectedProject}
-                  onChange={(e) => setSelectedProject(e.target.value)}
-                  className="appearance-none bg-white border border-gray-300 rounded-md px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="all">All Projects</option>
-                  {uniqueProjects.map(project => (
-                    <option key={project} value={project}>{project}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              </div>
+      {/* Project Filter */}
+      <div className="relative">
+        <select
+          value={selectedProject}
+          onChange={(e) => setSelectedProject(e.target.value)}
+          className="appearance-none bg-white border border-gray-300 rounded-md px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="all">All Projects</option>
+          {uniqueProjects.map(project => (
+            <option key={project} value={project}>{project}</option>
+          ))}
+        </select>
+        <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+      </div>
 
-              {/* Time Filter */}
-              <div className="relative">
-                <select
-                  value={timeFilter}
-                  onChange={(e) => setTimeFilter(e.target.value)}
-                  className="appearance-none bg-white border border-gray-300 rounded-md px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="all">All Time</option>
-                  <option value="week">This Week</option>
-                  <option value="month">This Month</option>
-                  <option value="year">This Year</option>
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              </div>
+      {/* Time Filter */}
+      <div className="relative">
+        <select
+          value={timeFilter}
+          onChange={(e) => setTimeFilter(e.target.value)}
+          className="appearance-none bg-white border border-gray-300 rounded-md px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="all">All Time</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+          <option value="year">This Year</option>
+        </select>
+        <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+      </div>
 
-              {/* Status Filter */}
-              <div className="relative">
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="appearance-none bg-white border border-gray-300 rounded-md px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="all">All Status</option>
-                  <option value="Open">Open</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Completed">Closed</option>
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              </div>
+      {/* Status Filter */}
+      <div className="relative">
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="appearance-none bg-white border border-gray-300 rounded-md px-6 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="all">All Status</option>
+          <option value="Open">Open</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Completed">Closed</option>
+        </select>
+        <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+      </div>
+    </div>
 
-              <button
-                onClick={fetchTasks}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition-colors"
-              >
-                Refresh
-              </button>
-            </div>
+    {/* Right side - Actions */}
+    <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+      <button
+        onClick={fetchTasks}
+        className="bg-blue-600 text-white px-10 py-2 rounded-md text-sm hover:bg-blue-700 transition-colors"
+      >
+        Refresh
+      </button>
 
-            {/* View Mode Toggle - Hide list option on mobile */}
-            <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm transition-colors ${viewMode === 'grid'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-800'
-                  }`}
-              >
-                <Grid3X3 className="w-4 h-4" />
-                <span>Grid</span>
-              </button>
-              {!isMobile && (
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm transition-colors ${viewMode === 'list'
-                      ? 'bg-white text-blue-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
-                    }`}
-                >
-                  <List className="w-4 h-4" />
-                  <span>List</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
+      {/* View Mode Toggle - Always at the end */}
+      <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1 ml-auto md:ml-0">
+        <button
+          onClick={() => setViewMode('grid')}
+          className={`flex items-center space-x-1 px-10 py-2 rounded-md text-sm transition-colors ${
+            viewMode === 'grid'
+              ? 'bg-white text-blue-600 shadow-sm'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          <Grid3X3 className="w-4 h-4" />
+          <span>Grid</span>
+        </button>
+        {!isMobile && (
+          <button
+            onClick={() => setViewMode('list')}
+            className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm transition-colors ${
+              viewMode === 'list'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            <List className="w-4 h-4" />
+            <span>List</span>
+          </button>
+        )}
+      </div>
+    </div>
+  </div>
+</div>
         {/* Tasks Display */}
         {filteredTasks.length === 0 ? (
           <div className="bg-white p-12 rounded-lg shadow-sm border text-center">

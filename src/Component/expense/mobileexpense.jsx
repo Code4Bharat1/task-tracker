@@ -1,5 +1,9 @@
-import { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Toaster, toast } from "react-hot-toast";
+import axios from "axios";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import {
   CheckCircle,
   AlertCircle,
@@ -102,6 +106,14 @@ export default function MobileExpense() {
         return () => document.removeEventListener("click", handleClickOutside);
       }
     }, [isOpen, id]);
+      useGSAP(() => {
+    gsap.fromTo(
+      underlineRef.current,
+      { width: "0%" },
+      { width: "100%", duration: 1, ease: "power2.out" }
+    );
+  }, []);
+
 
     return (
       <div className="relative" id={`dropdown-${id}`}>
@@ -513,9 +525,13 @@ export default function MobileExpense() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Expense Request
-              </h1>
+            <h2 className="text-2xl font-bold mb-7 relative inline-block text-gray-800"> {/* Reduced mb-8 to mb-4 */}
+      <span
+        ref={underlineRef}
+        className="absolute left-0 bottom-0 h-[2px] bg-[#018ABE] w-full"
+      ></span>
+      Expense Request
+    </h2>
               <p className="text-sm text-gray-600 mt-1">
                 Submit your expenses easily
               </p>

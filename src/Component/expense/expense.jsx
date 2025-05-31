@@ -276,10 +276,10 @@ export default function Expense() {
                     <h1 className="text-3xl font-bold text-black">
                         Expense Request
                     </h1>
-                    {/* <span
-                        ref={underlineRef}
-                        className="absolute left-0 bottom-0 h-1 bg-[#0179a4] w-full scale-x-0 rounded-full"
-                    ></span> */}
+                 <span
+  ref={underlineRef}
+  className="absolute left-0 bottom-[-4px] h-[2px] bg-[#0179a4] w-full scale-x-0 rounded-full"
+></span>
                     </div>
 
                 {/* History Button */}

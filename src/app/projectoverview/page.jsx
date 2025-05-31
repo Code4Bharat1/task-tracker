@@ -23,7 +23,7 @@ export default function Page() {
       </div>
 
       {/* ✅ Desktop Content */}
-      <div className="hidden md:block ml-[16.6667%] mt-16 p-6 h-[calc(100vh-64px)] overflow-y-auto">
+      <div className="hidden md:block ml-[16.6667%] mt-16 p-6 h-[calc(100vh-64px)] ">
         <div className="max-w-5xl mx-auto">
           <ProjectOverview />
         </div>

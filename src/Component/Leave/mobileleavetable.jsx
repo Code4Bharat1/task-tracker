@@ -1,7 +1,9 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Toaster, toast } from "react-hot-toast";
-import axios from "axios";
+import axios from "axios"; // Make sure axios is imported
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import {
   Trash2,
   Calendar,
@@ -25,6 +27,7 @@ export default function MobileLeaveTable() {
   const [wordCount, setWordCount] = useState(0);
   const [filterStatus, setFilterStatus] = useState("All");
   const fileInputRef = useRef(null);
+  const underlineRef = useRef(null); // Added the missing ref
   const today = new Date().toISOString().split("T")[0];
 
   const isDateOverlap = (start1, end1, start2, end2) => {
@@ -32,6 +35,14 @@ export default function MobileLeaveTable() {
       new Date(end1) < new Date(start2) || new Date(start1) > new Date(end2)
     );
   };
+
+  useGSAP(() => {
+    gsap.fromTo(
+      underlineRef.current,
+      { width: "0%" },
+      { width: "100%", duration: 1, ease: "power2.out" }
+    );
+  }, []);
 
   // Fetch approvers from backend
   useEffect(() => {
@@ -236,8 +247,14 @@ export default function MobileLeaveTable() {
   return (
     <div className="p-4 bg-gray-50 min-h-screen">
       <Toaster />
-      <h1 className="text-xl font-bold mb-2">My Leave</h1>
-      <div className="w-16 h-1 bg-red-500 mb-4"></div>
+     <h2 className="text-2xl font-bold mb-7 relative inline-block text-gray-800"> {/* Reduced mb-8 to mb-4 */}
+      <span
+        ref={underlineRef}
+        className="absolute left-0 bottom-0 h-[2px] bg-[#018ABE] w-full"
+      ></span>
+      My Leave
+    </h2>
+     
 
       <button
         onClick={() => setShowModal(true)}

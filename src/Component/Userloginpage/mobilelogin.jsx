@@ -198,7 +198,7 @@ export default function MobileLogin() {
               type="submit"
               className="px-8 py-2 rounded-lg bg-cyan-300 hover:bg-cyan-400 text-black font-semibold text-lg mx-auto block"
             >
-              Submit
+              Login
             </button>
           </form>
         </div>

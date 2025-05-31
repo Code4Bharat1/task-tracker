@@ -1,8 +1,10 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Toaster, toast } from "react-hot-toast";
 import axios from "axios";
 import { Trash2 } from "lucide-react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 
 export default function LeaveTable() {
   const [leaves, setLeaves] = useState([]);
@@ -10,18 +12,28 @@ export default function LeaveTable() {
   const [approvers, setApprovers] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [leaveType, setLeaveType] = useState("");
-
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [reason, setReason] = useState("");
   const [wordCount, setWordCount] = useState(0);
   const fileInputRef = useRef(null);
+  const underlineRef = useRef(null);
+  
   const today = new Date().toISOString().split("T")[0];
+  
   const isDateOverlap = (start1, end1, start2, end2) => {
     return !(
       new Date(end1) < new Date(start2) || new Date(start1) > new Date(end2)
     );
   };
+
+  useGSAP(() => {
+    gsap.fromTo(
+      underlineRef.current,
+      { width: "0%" },
+      { width: "100%", duration: 1, ease: "power2.out" }
+    );
+  }, []);
 
   useEffect(() => {
     const fetchApprovers = async () => {
@@ -37,6 +49,7 @@ export default function LeaveTable() {
     };
     fetchApprovers();
   }, []);
+
   useEffect(() => {
     const fetchLeaves = async () => {
       try {
@@ -78,6 +91,7 @@ export default function LeaveTable() {
   }, [fromDate]);
 
   const approverMap = Object.fromEntries(approvers.map((a) => [a.id, a.name]));
+  
   const submitLeave = async () => {
     if (
       !leaveType ||
@@ -119,11 +133,8 @@ export default function LeaveTable() {
           fontWeight: "500",
         },
       });
-
       return;
     }
-
-    // Removed the check for attachment being required for Sick Leave
 
     // Get the selected approver name instead of ID
     let managerId = approvalTo;
@@ -200,26 +211,35 @@ export default function LeaveTable() {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <Toaster />
-      <h1 className="text-2xl font-bold mb-2">My Leave</h1>
-      <div className="w-24 h-1 bg-red-500 mb-6"></div>
+   <div className="p-6 bg-gray-50 min-h-screen">
+  <Toaster />
+  <div className="mb-6"> {/* Added wrapper div */}
+    <h2 className="text-2xl font-bold mb-4 relative inline-block text-gray-800"> {/* Reduced mb-8 to mb-4 */}
+      <span
+        ref={underlineRef}
+        className="absolute left-0 bottom-0 h-[2px] bg-[#018ABE] w-full"
+      ></span>
+      My Leave
+    </h2>
+  </div>
 
-      <button
-        onClick={() => setShowModal(true)}
-        className="mb-6 px-5 py-2 bg-[#018ABE] text-white rounded-full cursor-pointer hover:bg-[#017ba9]"
-      >
-        Leave Application
-      </button>
+  <div className="mb-6"> {/* Added wrapper div for the button */}
+    <button
+      onClick={() => setShowModal(true)}
+      className="px-5 py-2 bg-[#018ABE] text-white rounded-full cursor-pointer hover:bg-[#017ba9]"
+    >
+      Leave Application
+    </button>
+  </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-gray-500/50 backdrop-blur-sm flex justify-center items-center z-50">
-          <div className="bg-white  shadow-xl rounded-lg p-6 w-full max-w-5xl max-h-[90vh] overflow-y-auto relative">
-            <div className="flex justify-center mb-10">
-              <h2 className="text-xl font-bold inline-block border-b-3 border-[#018ABE] pb-1">
-                Leave Application
-              </h2>
-            </div>
+  {showModal && (
+    <div className="fixed inset-0 bg-gray-500/50 backdrop-blur-sm flex justify-center items-center z-50">
+      <div className="bg-white shadow-xl rounded-lg p-6 w-full max-w-5xl max-h-[90vh] overflow-y-auto relative">
+        <div className="flex justify-center mb-10">
+          <h2 className="text-xl font-bold inline-block border-b-3 border-[#018ABE] pb-1">
+            Leave Application
+          </h2>
+        </div>
 
             <div className="flex">
               {/* Left Column */}
@@ -275,13 +295,12 @@ export default function LeaveTable() {
                         if (fileInputRef.current)
                           fileInputRef.current.value = "";
                       }}
-                      className="text-black  p-2 rounded hover:bg-red-50"
+                      className="text-black p-2 rounded hover:bg-red-50"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-                {/* Removed the conditional message that attachment is required for Sick Leave */}
               </div>
 
               {/* Right Column */}
@@ -339,7 +358,6 @@ export default function LeaveTable() {
             </div>
 
             {/* Reason For Leave - Full Width */}
-            {/* Reason For Leave - With Left Label */}
             <div className="mt-6 flex items-start">
               <div className="w-40 whitespace-nowrap pt-2">
                 <label className="font-bold">Reason For Leave</label>
