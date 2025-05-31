@@ -60,7 +60,7 @@ function Page() {
 
         {/* Mobile Attendance Page */}
         <div className="p-4 bg-gradient-to-br from-blue-50 via-white to-indigo-50 ">
-          <MobileExpense />
+          <Expense />
         </div>
       </div>
     </div>
