@@ -138,7 +138,6 @@ export default function TaskDetails() {
   const handleCloseTask = async () => {
     if (!selectedTask) return;
 
-    // Validate if attachment is required but not provided
     if (selectedTask.attachmentRequired && !file) {
       alert("Attachment is required to close this task");
       return;
@@ -149,40 +148,36 @@ export default function TaskDetails() {
     try {
       let uploadedFileData = null;
 
-      // Upload file first if provided
       if (file) {
-        uploadedFileData = await uploadFile(file);
+        uploadedFileData = await uploadFile(file); // You said this is working fine
+        console.log("Uploaded file data: ", uploadedFileData);
       }
 
-      // Prepare the form data for closing the task
       const formData = new FormData();
       formData.append("remarkDescription", remark);
 
-      // If file was uploaded, add the attachment
-      if (uploadedFileData && file) {
-        formData.append("attachment", file);
+      if (uploadedFileData) {
+        formData.append("fileUrl", uploadedFileData.fileUrl);
+        formData.append("filePublicId", uploadedFileData.filePublicId);
+        formData.append("fileResourceType", uploadedFileData.fileResourceType);
+        formData.append("fileName", file.name);
       }
 
       const response = await axiosInstance.post(
         `/tasks/${selectedTask._id}/close`,
         formData,
         {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+          headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true,
         }
       );
 
       if (response.data.success) {
         alert("Task closed successfully!");
-        // Refresh the task list
-        await fetchTaskData();
-        // Clear the form
+        await fetchTaskData(); // Refresh
         setRemark("");
         setFile(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
+        if (fileInputRef.current) fileInputRef.current.value = "";
       } else {
         throw new Error(response.data.message || "Failed to close task");
       }
@@ -195,6 +190,7 @@ export default function TaskDetails() {
       setUploading(false);
     }
   };
+
 
   if (loading) {
     return (
@@ -253,16 +249,15 @@ export default function TaskDetails() {
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center">
               <div
-                className={`px-3 py-1 rounded-full text-white font-medium ${
-                  selectedTask.status === "Completed" ||
-                  selectedTask.status === "Closed"
+                className={`px-3 py-1 rounded-full text-white font-medium ${selectedTask.status === "Completed" ||
+                    selectedTask.status === "Closed"
                     ? "bg-green-500"
                     : selectedTask.status === "In Progress"
-                    ? "bg-blue-500"
-                    : selectedTask.status === "Open"
-                    ? "bg-yellow-500"
-                    : "bg-gray-500"
-                }`}
+                      ? "bg-blue-500"
+                      : selectedTask.status === "Open"
+                        ? "bg-yellow-500"
+                        : "bg-gray-500"
+                  }`}
               >
                 {selectedTask.status}
               </div>
@@ -273,15 +268,14 @@ export default function TaskDetails() {
               </h2>
             </div>
             <div
-              className={`px-3 py-2 rounded-full whitespace-nowrap text-white font-medium ${
-                selectedTask.priority === "High"
+              className={`px-3 py-2 rounded-full whitespace-nowrap text-white font-medium ${selectedTask.priority === "High"
                   ? "bg-red-600"
                   : selectedTask.priority === "Medium"
-                  ? "bg-orange-500"
-                  : selectedTask.priority === "Low"
-                  ? "bg-yellow-700"
-                  : "bg-green-500"
-              }`}
+                    ? "bg-orange-500"
+                    : selectedTask.priority === "Low"
+                      ? "bg-yellow-700"
+                      : "bg-green-500"
+                }`}
             >
               {selectedTask.priority} Priority
             </div>
@@ -445,11 +439,10 @@ export default function TaskDetails() {
                 <button
                   onClick={handleCloseTask}
                   disabled={uploading}
-                  className={`${
-                    uploading
+                  className={`${uploading
                       ? "bg-gray-400 cursor-not-allowed"
                       : "bg-[#018ABE] hover:bg-[#0173a1]"
-                  } text-white font-medium text-lg px-6 py-2 rounded shadow transition duration-200`}
+                    } text-white font-medium text-lg px-6 py-2 rounded shadow transition duration-200`}
                 >
                   {uploading ? "Closing Task..." : "Close Task"}
                 </button>
@@ -486,11 +479,10 @@ export default function TaskDetails() {
                             handleFileDownload(doc.fileUrl, doc.fileName, index)
                           }
                           disabled={downloading === index}
-                          className={`${
-                            downloading === index
+                          className={`${downloading === index
                               ? "text-gray-400 cursor-not-allowed"
                               : "text-blue-600 hover:text-blue-800"
-                          } underline transition-colors duration-200`}
+                            } underline transition-colors duration-200`}
                         >
                           {downloading === index
                             ? "Downloading..."
