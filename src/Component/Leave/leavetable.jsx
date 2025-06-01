@@ -211,7 +211,7 @@ export default function LeaveTable() {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-white-50 min-h-screen">
       <Toaster />
       <div className="mb-6">
         {" "}
@@ -440,13 +440,13 @@ export default function LeaveTable() {
                   <td className="p-3 border-t">{leave.days || "1"}</td>
                   <td className="p-3 border-t">
                     <span
-                      className={`px-2 py-1 rounded-full text-white ${
+                      className={`px-2 py-1 rounded-full text-black ${
                         leave.status === "Approved"
                           ? "bg-green-600"
                           : leave.status === "Rejected"
                           ? "bg-red-500"
                           : leave.status === "Pending"
-                          ? "bg-yellow-500"
+                          ? "bg-yellow-300"
                           : "bg-gray-500"
                       }`}
                     >

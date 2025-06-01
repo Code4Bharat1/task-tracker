@@ -6,8 +6,6 @@ import { useRouter } from 'next/navigation';
 import gsap from 'gsap';
 import { TbDoorExit, TbDoorEnter } from 'react-icons/tb';
 import { LuAlarmClock } from "react-icons/lu";
-import { FiCamera, FiX, FiUser } from 'react-icons/fi';
-import { BiImageAlt } from 'react-icons/bi';
 import { axiosInstance } from '@/lib/axiosInstance';
 import toast from 'react-hot-toast';
 import { useGSAP } from '@gsap/react';
@@ -28,10 +26,6 @@ export default function AttendancePage() {
   const [showCameraModal, setShowCameraModal] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
   const [captureAction, setCaptureAction] = useState(null);
-  const [showPhotoModal, setShowPhotoModal] = useState(false);
-  const [selectedPhoto, setSelectedPhoto] = useState(null);
-  const [punchInPhoto, setPunchInPhoto] = useState(null);
-  const [punchOutPhoto, setPunchOutPhoto] = useState(null);
   const underlineRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -57,17 +51,15 @@ export default function AttendancePage() {
           setHasPunchedIn(true);
           setInTime(formatTime(punchInDate));
           setInLocation(data.punchInLocation || 'Unknown');
-          setPunchInPhoto(data.punchInPhoto || null);
         }
         if (data.punchedOut) {
           setHasPunchedOut(true);
           const punchOutDate = new Date(data.punchOutTime);
           setOutTime(formatTime(punchOutDate));
           setOutLocation(data.punchOutLocation || 'Unknown');
-          setPunchOutPhoto(data.punchOutPhoto || null);
         }
       } catch (error) {
-        console.error('Failed to fetch todays attendance:', error);
+        console.error('Failed to fetch today’s attendance:', error);
       }
     };
     checkTodayAttendance();
@@ -147,7 +139,7 @@ export default function AttendancePage() {
 
     try {
       const res = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+        https//maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
       );
       const data = await res.json();
 
@@ -160,6 +152,7 @@ export default function AttendancePage() {
       return 'Failed to fetch location';
     }
   };
+
 
   const handlePunchIn = () => {
     if (hasPunchedIn || isPunchingIn) return;
@@ -177,7 +170,6 @@ export default function AttendancePage() {
       setInTime(formatTime(now));
       setInLocation(location);
       setHasPunchedIn(true);
-      setPunchInPhoto(selfieImage);
       try {
         await axiosInstance.post("/attendance/punch-in", {
           punchInTime: now.toISOString(),
@@ -229,19 +221,13 @@ export default function AttendancePage() {
       }
       try {
         await axiosInstance.post("/attendance/punch-out", {
-          punchOutTime: now.toISOString(),
-          punchOutLocation: location,
-          selfieImage,
-          userLocation: {
-            latitude,
-            longitude
-          }
+          ...pendingPunchOutData,
+          emergencyReason: trimmedReason,
         });
 
         setOutTime(formatTime(now));
         setOutLocation(location);
         setHasPunchedOut(true);
-        setPunchOutPhoto(selfieImage);
         toast.success('Punched out successfully!');
       } catch (error) {
         console.error('Punch out failed:', error);
@@ -269,7 +255,6 @@ export default function AttendancePage() {
       setOutTime(formatTime(time));
       setOutLocation(pendingPunchOutData.punchOutLocation);
       setHasPunchedOut(true);
-      setPunchOutPhoto(pendingPunchOutData.selfieImage);
       toast.success('Emergency punch out recorded!');
     } catch (error) {
       console.error('Punch out failed:', error);
@@ -281,270 +266,144 @@ export default function AttendancePage() {
     }
   };
 
-  const handlePhotoClick = (photo, type) => {
-    if (photo) {
-      setSelectedPhoto({ image: photo, type });
-      setShowPhotoModal(true);
-    }
-  };
-
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-2 sm:p-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
-            {/* Header Section */}
-            <div className="bg-gradient-to-r from-[#058CBF] to-[#0ea5e9] p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="flex flex-col gap-3">
-                  <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-xl w-fit">
-                    <span className="text-white font-semibold text-sm sm:text-base">{currentDate}</span>
-                  </div>
-                  <button
-                    onClick={() => router.push('/attendance/punchhistory')}
-                    className="bg-white/10 backdrop-blur-sm text-white px-4 py-2 rounded-xl hover:bg-white/20 transition-all duration-200 w-fit text-sm sm:text-base"
-                  >
-                    📊 Punch History
-                  </button>
-                </div>
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/20 backdrop-blur-sm p-1">
-                  <div className="w-full h-full rounded-full overflow-hidden bg-white">
-                    <Image src="/profile.png" alt="avatar" width={80} height={80} className="w-full h-full object-cover" />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-6 text-center">
-                <h1 className="text-2xl sm:text-4xl font-bold text-white mb-2">ATTENDANCE</h1>
-                <div
-                  ref={underlineRef}
-                  className="h-1 bg-white/30 rounded-full mx-auto w-32 sm:w-48"
-                ></div>
+      <div className="flex items-center justify-center mt-15 bg-white p-4">
+        <div className="bg-white rounded-xl shadow-md w-full max-w-3xl p-6 border-2 border-gray-300 relative">
+          <div className="flex flex-col mx-4 space-y-4">
+            <button className="bg-[#F4F5FD] px-4 w-30 py-2 text-md rounded-xl shadow-md font-semibold">
+              {currentDate}
+            </button>
+            <button
+              onClick={() => router.push('/attendance/punchhistory')}
+              className="bg-[#058CBF] text-white w-30 whitespace-nowrap px-2 py-2 rounded cursor-pointer hover:bg-[#69b0c9]"
+            >
+              Punch History
+            </button>
+          </div>
+          <div className="relative -mt-20 mb-8 w-max mx-auto">
+            <h2 className="text-3xl font-medium font-roboto text-gray-700">ATTENDANCE</h2>
+            <span
+              ref={underlineRef}
+              className="absolute left-0 bottom-[-6px] h-[3px] bg-[#058CBF] w-full scale-x-0"
+            ></span>
+          </div>
+          <div className="flex justify-end -ml-20 -mt-25 mb-10 items-start w-full h-full pt-4">
+            <div className="w-[70px] h-[70px] rounded-full overflow-hidden flex justify-center items-center">
+              <Image src="/profile.png" alt="avatar" width={70} height={70} />
+            </div>
+          </div>
+          <hr className="h-0.5 bg-gray-400 border-0" />
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center gap-2 mb-2">
+              <strong className="w-40">Punch in Time:</strong>
+              <div className="bg-[#F4F5FD] p-2 rounded-md shadow-md min-w-[80px]">
+                {inTime || '--:--:--'}
               </div>
             </div>
-
-            {/* Content Section */}
-            <div className="p-4 sm:p-8 space-y-6">
-              {/* Punch In Section */}
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 sm:p-6 border border-green-100">
-                <h3 className="text-lg sm:text-xl font-semibold text-green-800 mb-4 flex items-center gap-2">
-                  <TbDoorEnter className="text-xl" />
-                  Punch In Details
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                      <label className="font-medium text-gray-700 min-w-[120px]">Time:</label>
-                      <div className="bg-white px-4 py-2 rounded-lg shadow-sm border flex-1">
-                        {inTime || '--:--:--'}
-                      </div>
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-2">
-                      <label className="font-medium text-gray-700 min-w-[120px] mt-2">Location:</label>
-                      <div className="bg-white px-4 py-2 rounded-lg shadow-sm border flex-1 text-sm">
-                        {inLocation || 'Not punched in yet'}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex justify-center items-center">
-                    <div 
-                      className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gray-100 border-4 border-green-200 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-all duration-200 group"
-                      onClick={() => handlePhotoClick(punchInPhoto, 'Punch In')}
-                    >
-                      {punchInPhoto ? (
-                        <div className="relative w-full h-full rounded-full overflow-hidden">
-                          <img src={punchInPhoto} alt="Punch In" className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                            <BiImageAlt className="text-white text-2xl" />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center">
-                          <FiUser className="text-3xl text-gray-400 mx-auto mb-1" />
-                          <span className="text-xs text-gray-500">No Photo</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+            <div className="flex items-center gap-2">
+              <strong className="w-40">Punch in Location:</strong>
+              <div className="bg-[#F4F5FD] p-2 rounded-md shadow-md text-sm min-w-[200px]">
+                {inLocation || 'Not punched in yet'}
               </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row justify-center gap-4 py-6">
-                <button
-                  onClick={handlePunchIn}
-                  disabled={hasPunchedIn || isPunchingIn}
-                  className="flex items-center justify-center bg-gradient-to-r from-[#058CBF] to-[#0ea5e9] text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed disabled:transform-none transition-all duration-200"
-                >
-                  <LuAlarmClock className="mr-2 text-xl" />
-                  {isPunchingIn ? 'Punching In...' : 'Punch In'}
-                  <TbDoorEnter className="ml-2 text-xl" />
-                </button>
-                <button
-                  onClick={handlePunchOut}
-                  disabled={!hasPunchedIn || hasPunchedOut || isPunchingOut}
-                  className="flex items-center justify-center bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed disabled:transform-none transition-all duration-200"
-                >
-                  <LuAlarmClock className="mr-2 text-xl" />
-                  {isPunchingOut ? 'Punching Out...' : 'Punch Out'}
-                  <TbDoorExit className="ml-2 text-xl" />
-                </button>
+            </div>
+            <div className="flex justify-center gap-x-10 mt-8 mb-8">
+              <button
+                onClick={handlePunchIn}
+                disabled={hasPunchedIn || isPunchingIn}
+                className="flex items-center bg-[#058CBF] ml-2 text-lg text-white px-6 py-2 rounded hover:bg-cyan-600 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <LuAlarmClock className="mr-2" />
+                {isPunchingIn ? 'Punching In...' : 'Punch In'}
+                <TbDoorEnter className="ml-2" />
+              </button>
+              <button
+                onClick={handlePunchOut}
+                disabled={!hasPunchedIn || hasPunchedOut || isPunchingOut}
+                className="flex items-center bg-[#058CBF] text-lg text-white px-6 py-2 rounded hover:bg-cyan-600 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <LuAlarmClock className="mr-2" />
+                {isPunchingOut ? 'Punching Out...' : 'Punch Out'}
+                <TbDoorExit className="ml-2" />
+              </button>
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <strong className="w-40">Punch Out Time:</strong>
+              <div className="bg-[#F4F5FD] p-2 rounded-md shadow-md min-w-[80px]">
+                {outTime || '--:--:--'}
               </div>
-
-              {/* Punch Out Section */}
-              <div className="bg-gradient-to-r from-red-50 to-rose-50 rounded-xl p-4 sm:p-6 border border-red-100">
-                <h3 className="text-lg sm:text-xl font-semibold text-red-800 mb-4 flex items-center gap-2">
-                  <TbDoorExit className="text-xl" />
-                  Punch Out Details
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                      <label className="font-medium text-gray-700 min-w-[120px]">Time:</label>
-                      <div className="bg-white px-4 py-2 rounded-lg shadow-sm border flex-1">
-                        {outTime || '--:--:--'}
-                      </div>
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-2">
-                      <label className="font-medium text-gray-700 min-w-[120px] mt-2">Location:</label>
-                      <div className="bg-white px-4 py-2 rounded-lg shadow-sm border flex-1 text-sm">
-                        {outLocation || 'Not punched out yet'}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex justify-center items-center">
-                    <div 
-                      className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gray-100 border-4 border-red-200 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-all duration-200 group"
-                      onClick={() => handlePhotoClick(punchOutPhoto, 'Punch Out')}
-                    >
-                      {punchOutPhoto ? (
-                        <div className="relative w-full h-full rounded-full overflow-hidden">
-                          <img src={punchOutPhoto} alt="Punch Out" className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                            <BiImageAlt className="text-white text-2xl" />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center">
-                          <FiUser className="text-3xl text-gray-400 mx-auto mb-1" />
-                          <span className="text-xs text-gray-500">No Photo</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <strong className="w-40">Punch Out Location:</strong>
+              <div className="bg-[#F4F5FD] p-2 rounded-md shadow-md text-sm min-w-[200px]">
+                {outLocation || 'Not punched out yet'}
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Camera Modal */}
       {showCameraModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Take Attendance Selfie</h2>
-                <button
-                  onClick={() => {
-                    setShowCameraModal(false);
-                    stopCameraStream();
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <FiX className="text-xl" />
-                </button>
-              </div>
-              <div className="relative aspect-video bg-gray-100 rounded-xl overflow-hidden mb-4">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  className="w-full h-full object-cover"
-                />
-                <canvas ref={canvasRef} className="hidden" />
-              </div>
-              <div className="flex justify-center gap-4">
-                <button
-                  onClick={() => {
-                    setShowCameraModal(false);
-                    stopCameraStream();
-                  }}
-                  className="px-6 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCapturePhoto}
-                  className="px-6 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors flex items-center gap-2"
-                >
-                  <FiCamera />
-                  Capture
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Photo View Modal */}
-      {showPhotoModal && selectedPhoto && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg sm:text-xl font-bold text-gray-800">{selectedPhoto.type} Photo</h3>
-                <button
-                  onClick={() => setShowPhotoModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <FiX className="text-xl" />
-                </button>
-              </div>
-              <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden">
-                <img 
-                  src={selectedPhoto.image} 
-                  alt={selectedPhoto.type}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Emergency Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div className="p-6">
-              <h2 className="text-2xl sm:text-3xl text-red-600 text-center font-bold mb-4">Emergency Punch Out</h2>
-              <p className="mb-4 text-lg text-gray-700">You're punching out early. Please provide a reason:</p>
-              <textarea
-                value={emergencyReason}
-                onChange={(e) => setEmergencyReason(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-xl mb-4 resize-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                rows={3}
-                placeholder="Enter your reason here..."
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
+            <h2 className="text-2xl font-bold mb-4">Take Attendance Selfie</h2>
+            <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover"
               />
-              <div className="flex flex-col sm:flex-row justify-end gap-3">
-                <button
-                  onClick={() => {
-                    setShowModal(false);
-                    setEmergencyReason('');
-                  }}
-                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-400 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmEmergencyPunchOut}
-                  className="px-6 py-2 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 active:scale-95 transition-all duration-200"
-                >
-                  Confirm
-                </button>
-              </div>
+              <canvas ref={canvasRef} className="hidden" />
+            </div>
+            <div className="flex justify-center gap-4 mt-4">
+              <button
+                onClick={() => {
+                  setShowCameraModal(false);
+                  stopCameraStream();
+                }}
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCapturePhoto}
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+              >
+                Capture Photo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
+            <h2 className="text-3xl text-red-600 text-center font-bold mb-4">Emergency Punch Out</h2>
+            <p className="mb-2 text-xl">You’re punching out early. Please provide a reason:</p>
+            <textarea
+              value={emergencyReason}
+              onChange={(e) => setEmergencyReason(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded mb-4 resize-none overflow-y-auto"
+              rows={3}
+            />
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setEmergencyReason('');
+                }}
+                className="bg-gray-300 px-4 py-2 rounded font-bold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmEmergencyPunchOut}
+                className="bg-red-600 active:scale-90 text-white px-4 py-2 rounded font-bold cursor-pointer"
+              >
+                Confirm
+              </button>
             </div>
           </div>
         </div>
