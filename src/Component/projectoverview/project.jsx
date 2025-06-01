@@ -173,12 +173,6 @@ const ProjectOverview = () => {
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Task Dashboard</h1>
               <p className="text-gray-600 text-sm">Manage and track your project tasks</p>
             </div>
-            <div className="mt-4 sm:mt-0">
-              <button className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-                <Plus className="w-4 h-4 mr-2" />
-                New Task
-              </button>
-            </div>
           </div>
         </div>
 

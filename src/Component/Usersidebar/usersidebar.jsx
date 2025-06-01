@@ -15,7 +15,7 @@ import { MdAccessTime } from 'react-icons/md';
 import { IoMdListBox } from 'react-icons/io';
 import { BiMoney } from 'react-icons/bi';
 import { RiMoneyDollarCircleLine } from 'react-icons/ri';
-import { FaSignOutAlt } from 'react-icons/fa';
+import { FaSignOutAlt, FaGamepad } from 'react-icons/fa';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -76,7 +76,7 @@ export default function Sidebar() {
     { label: 'Salary', icon: <BiMoney />, href: '/salarypage', alwaysVisible: true },
     { label: 'Expense', icon: <RiMoneyDollarCircleLine />, href: '/expense', alwaysVisible: true },
     { label: 'Project Overview', icon: <AiOutlineProject />, href: '/projectoverview', alwaysVisible: true },
-
+    { label: 'Games', icon: <FaGamepad />, href: '/games', alwaysVisible:true },
     // Restricted by featureKey
     { label: 'Leave Application', icon: <IoMdListBox />, href: '/viewleave', featureKey: 'viewleave' },
     { label: 'View Expense', icon: <IoMdListBox />, href: '/expenseRequest', featureKey: 'viewexpense' },
@@ -84,7 +84,6 @@ export default function Sidebar() {
     { label: 'Upload Post', icon: <IoMdListBox />, href: '/postupload', featureKey: 'postUpload' },
     { label: 'View Attendance', icon: <IoMdListBox />, href: '/viewattendance', featureKey: 'viewattendance' },
     { label: 'Team Task', icon: <AiOutlineProject />, href: '/teamtask', featureKey: 'teamTasks' },
-
     { label: 'Logout', icon: <FaSignOutAlt />, href: '/', alwaysVisible: true },
   ];
 

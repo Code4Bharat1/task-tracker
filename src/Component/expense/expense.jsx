@@ -289,12 +289,12 @@ export default function Expense() {
       )}
 
       {/* Header Section with Title and History Button */}
-      <div className="max-w-4xl mx-auto mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+      <div className="max-w-4xl mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-8">
         <div className="relative">
           <h1 className="text-3xl font-bold text-black">Expense Request</h1>
           <span
             ref={underlineRef}
-            className="absolute left-0 bottom-[-4px] h-[2px] bg-[#0179a4] w-full scale-x-0 rounded-full"
+            className="absolute left-0 bottom-[-4px] h-[2.5px] bg-[#0179a4] w-full scale-x-0 rounded-full"
           ></span>
         </div>
 
@@ -305,7 +305,7 @@ export default function Expense() {
             className="group flex items-center gap-3 bg-white/80 backdrop-blur-sm hover:bg-white border border-blue-200/50 hover:border-blue-300 text-blue-700 px-6 py-3 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-100/50"
           >
             <div className="p-1 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-              <History size={18} />
+              <History size={20} />
             </div>
             <span className="font-semibold">View History</span>
           </div>
