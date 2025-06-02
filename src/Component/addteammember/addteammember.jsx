@@ -83,6 +83,14 @@ const MultiSelect = ({ options, value, onChange, placeholder, disabled, error })
   );
 };
 
+const getCategoryColor = (category) => {
+  switch (category) {
+    case 'Self': return 'bg-purple-100 text-purple-800 border-purple-200';
+    case 'Client': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+    default: return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};
+
 export default function AddTeamMember() {
   const [formData, setFormData] = useState({
     projectName: '',
@@ -287,7 +295,7 @@ export default function AddTeamMember() {
         <option value="">{loading ? 'Loading...' : placeholder}</option>
         {options.map((option, index) => (
           <option key={index} value={option.value || option}>
-            {option.label || option}
+            {option.display || option.label || option}
           </option>
         ))}
       </select>
@@ -355,13 +363,50 @@ export default function AddTeamMember() {
                 name="projectName"
                 options={projects.map(project => ({
                   value: project.bucketName,
-                  label: project.bucketName
+                  label: (
+                    <div className="flex items-center justify-between w-full">
+                      <span>{project.bucketName}</span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getCategoryColor(project.projectCategory)} ml-2`}>
+                        {project.projectCategory || 'N/A'}
+                      </span>
+                    </div>
+                  ),
+                  display: project.bucketName // For the selected value display
                 }))}
                 placeholder="Choose a project"
                 required
                 onChange={handleProjectChange}
               />
-
+              {selectedTask && (
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Project Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-600">Project Name: </span>
+                      <span className="text-gray-800">{selectedTask.bucketName}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-600">Category: </span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getCategoryColor(selectedTask.projectCategory)}`}>
+                        {selectedTask.projectCategory || 'N/A'}
+                      </span>
+                    </div>
+                    {selectedTask.projectCategory === 'Client' && selectedTask.clientId && (
+                      <div className="md:col-span-2">
+                        <span className="font-medium text-gray-600">Client: </span>
+                        <span className="text-gray-800">{selectedTask.clientId.name}</span>
+                        {selectedTask.clientId.email && (
+                          <span className="text-gray-500 ml-2">({selectedTask.clientId.email})</span>
+                        )}
+                      </div>
+                    )}
+                    <div className="md:col-span-2">
+                      <span className="font-medium text-gray-600">Description: </span>
+                      <span className="text-gray-800">{selectedTask.taskDescription || 'No description available'}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
               {/* Multiple Employee Selection */}
               {formData.projectName && (
                 <div className="space-y-2">

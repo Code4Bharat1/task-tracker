@@ -1,27 +1,34 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import { X, Users, Calendar, Clock, AlertCircle, FileText, User, Trash2 } from 'lucide-react';
-import {useRouter} from 'next/navigation';
+import { X, Users, Calendar, Clock, AlertCircle, FileText, User, Trash2, Filter } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
 const ViewTeamMember = () => {
     const [tasks, setTasks] = useState([]);
+    const [filteredTasks, setFilteredTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showRemoveModal, setShowRemoveModal] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
     const [selectedMember, setSelectedMember] = useState(null);
     const [removing, setRemoving] = useState(false);
+    const [categoryFilter, setCategoryFilter] = useState('All');
     const router = useRouter();
-
 
     // Fetch tasks from API
     useEffect(() => {
         fetchTasks();
     }, []);
 
+    // Filter tasks when category filter changes
+    useEffect(() => {
+        filterTasks();
+    }, [tasks, categoryFilter]);
+
     const fetchTasks = async () => {
         try {
             setLoading(true);
-            const response = await fetch('http://localhost:4110/api/tasks/getTasks',{
+            const response = await fetch('http://localhost:4110/api/tasks/getTasks', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -38,6 +45,18 @@ const ViewTeamMember = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const filterTasks = () => {
+        if (categoryFilter === 'All') {
+            setFilteredTasks(tasks);
+        } else {
+            setFilteredTasks(tasks.filter(task => task.projectCategory === categoryFilter));
+        }
+    };
+
+    const handleCategoryFilterChange = (category) => {
+        setCategoryFilter(category);
     };
 
     const handleRemoveMember = async () => {
@@ -104,9 +123,18 @@ const ViewTeamMember = () => {
         }
     };
 
-    const handleTeamMemberClick = ()=>{
+    const getCategoryColor = (category) => {
+        switch (category) {
+            case 'Self': return 'bg-purple-100 text-purple-800 border-purple-200';
+            case 'Client': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+            default: return 'bg-gray-100 text-gray-800 border-gray-200';
+        }
+    };
+
+    const handleTeamMemberClick = () => {
         router.push('/dashboard/addteammembers');
-    }
+    };
+
     const getStatusColor = (status) => {
         switch (status) {
             case 'Open': return 'bg-blue-100 text-blue-800 border-blue-200';
@@ -116,6 +144,12 @@ const ViewTeamMember = () => {
             case 'Deferred': return 'bg-purple-100 text-purple-800 border-purple-200';
             default: return 'bg-gray-100 text-gray-800 border-gray-200';
         }
+    };
+
+    // Get unique categories from tasks
+    const getAvailableCategories = () => {
+        const categories = [...new Set(tasks.map(task => task.projectCategory).filter(Boolean))];
+        return ['All', ...categories];
     };
 
     if (loading) {
@@ -147,21 +181,62 @@ const ViewTeamMember = () => {
     return (
         <div className="max-w-7xl mx-auto p-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-  <div className="flex-1 min-w-0">
-    <h1 className="text-2xl font-bold text-gray-900 truncate">Task Management</h1>
-    <p className="text-gray-600 truncate">Manage your tasks and team members</p>
-  </div>
-  <div className="w-full sm:w-auto">
-    <button 
-      className="w-full sm:w-auto bg-[#018ABE] hover:bg-[#018ABE] text-white font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out"
-      onClick={handleTeamMemberClick}
-    >
-      Add Team Members
-    </button>
-  </div>
-</div>
+                <div className="flex-1 min-w-0">
+                    <h1 className="text-2xl font-bold text-gray-900 truncate">Task Management</h1>
+                    <p className="text-gray-600 truncate">Manage your tasks and team members</p>
+                </div>
+                <div className="w-full sm:w-auto">
+                    <button
+                        className="w-full sm:w-auto bg-[#018ABE] hover:bg-[#018ABE] text-white font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out"
+                        onClick={handleTeamMemberClick}
+                    >
+                        Add Team Members
+                    </button>
+                </div>
+            </div>
+
+            {/* Category Filter */}
+            <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
+                <div className="flex items-center gap-3 mb-3">
+                    <Filter className="h-5 w-5 text-gray-500" />
+                    <h3 className="text-sm font-medium text-gray-700">Filter by Category</h3>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {getAvailableCategories().map((category) => (
+                        <button
+                            key={category}
+                            onClick={() => handleCategoryFilterChange(category)}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${categoryFilter === category
+                                    ? 'bg-[#018ABE] text-white'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                        >
+                            {category}
+                            {category !== 'All' && (
+                                <span className="ml-1 text-xs opacity-75">
+                                    ({tasks.filter(task => task.projectCategory === category).length})
+                                </span>
+                            )}
+                            {category === 'All' && (
+                                <span className="ml-1 text-xs opacity-75">
+                                    ({tasks.length})
+                                </span>
+                            )}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Tasks Results Summary */}
+            <div className="mb-4 text-sm text-gray-600">
+                Showing {filteredTasks.length} of {tasks.length} tasks
+                {categoryFilter !== 'All' && (
+                    <span className="ml-1">in "{categoryFilter}" category</span>
+                )}
+            </div>
+
             <div className="grid gap-6">
-                {tasks.map((task) => (
+                {filteredTasks.map((task) => (
                     <div key={task._id} className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                         <div className="p-6">
                             {/* Task Header */}
@@ -170,7 +245,10 @@ const ViewTeamMember = () => {
                                     <h3 className="text-lg font-semibold text-gray-900">{task.bucketName}</h3>
                                     <p className="text-gray-600 mt-1">{task.taskDescription}</p>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 flex-wrap">
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getCategoryColor(task.projectCategory)}`}>
+                                        {task.projectCategory || 'N/A'}
+                                    </span>
                                     <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(task.priority)}`}>
                                         {task.priority}
                                     </span>
@@ -179,7 +257,6 @@ const ViewTeamMember = () => {
                                     </span>
                                 </div>
                             </div>
-
                             {/* Task Details */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                                 <div className="flex items-center text-sm text-gray-600">
@@ -196,6 +273,17 @@ const ViewTeamMember = () => {
                                 </div>
                             </div>
 
+                            {task.projectCategory === 'Client' && task.clientId && (
+                                <div className="mb-4 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                                    <div className="text-sm">
+                                        <span className="font-medium text-indigo-700">Client: </span>
+                                        <span className="text-indigo-600">{task.clientId.name}</span>
+                                        {task.clientId.email && (
+                                            <span className="text-indigo-500 ml-2">({task.clientId.email})</span>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                             {/* Assigned By */}
                             <div className="mb-4">
                                 <span className="text-sm text-gray-600">
@@ -271,11 +359,26 @@ const ViewTeamMember = () => {
                 ))}
             </div>
 
-            {tasks.length === 0 && !loading && (
+            {filteredTasks.length === 0 && !loading && (
                 <div className="text-center py-12">
                     <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks found</h3>
-                    <p className="text-gray-600">There are no tasks to display at the moment.</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        {categoryFilter === 'All' ? 'No tasks found' : `No ${categoryFilter} tasks found`}
+                    </h3>
+                    <p className="text-gray-600">
+                        {categoryFilter === 'All'
+                            ? 'There are no tasks to display at the moment.'
+                            : `There are no tasks in the "${categoryFilter}" category.`
+                        }
+                    </p>
+                    {categoryFilter !== 'All' && (
+                        <button
+                            onClick={() => setCategoryFilter('All')}
+                            className="mt-2 text-[#018ABE] hover:text-blue-700 text-sm font-medium"
+                        >
+                            View all tasks
+                        </button>
+                    )}
                 </div>
             )}
 
