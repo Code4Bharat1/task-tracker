@@ -668,10 +668,10 @@ export default function SiteVisit() {
                                                     <div className="flex items-start">
                                                         <LuMapPin className="w-3 h-3 lg:w-4 lg:h-4 mr-1 text-orange-500 mt-0.5 flex-shrink-0" />
                                                         <span className="truncate text-xs lg:text-sm"
-                                                            title={locationNames[`${visit.punchInLocation.latitude},${visit.punchInLocation.longitude}`] ||
-                                                                `${visit.punchInLocation.latitude?.toFixed(4)}, ${visit.punchInLocation.longitude?.toFixed(4)}`}>
-                                                            {locationNames[`${visit.punchInLocation.latitude},${visit.punchInLocation.longitude}`] ||
-                                                                `${visit.punchInLocation.latitude?.toFixed(4)}, ${visit.punchInLocation.longitude?.toFixed(4)}`}
+                                                            title={locationNames[`${visit.punchOutLocation.latitude},${visit.punchOutLocation.longitude}`] ||
+                                                                `${visit.punchOutLocation.latitude?.toFixed(4)}, ${visit.punchOutLocation.longitude?.toFixed(4)}`}>
+                                                            {locationNames[`${visit.punchOutLocation.latitude},${visit.punchOutLocation.longitude}`] ||
+                                                                `${visit.punchOutLocation.latitude?.toFixed(4)}, ${visit.punchOutLocation.longitude?.toFixed(4)}`}
                                                         </span>
                                                     </div>
                                                 ) : 'N/A'}
