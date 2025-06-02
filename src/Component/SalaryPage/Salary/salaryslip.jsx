@@ -12,8 +12,98 @@ export default function SalarySlipPage() {
     const [salaryData, setSalaryData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [employeeId, setEmployeeId] = useState('');
+    const [payPeriod, setPayPeriod] = useState('');
+    const [user, setUser] = useState(null);
     
+    // Helper function to get cookie value
+    const getCookie = (name) => {
+        if (typeof document === 'undefined') return null;
+        
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) {
+            const cookieValue = parts.pop().split(';').shift();
+            return cookieValue ? decodeURIComponent(cookieValue) : null;
+        }
+        return null;
+    };
+
+    // Helper function to parse user data from cookie
+    const getUserFromCookie = () => {
+        try {
+            // Try different possible cookie names
+            const possibleCookieNames = ['user', 'userData', 'authUser', 'userInfo', 'token'];
+            
+            console.log('All cookies:', document.cookie); // Debug log
+            
+            for (const cookieName of possibleCookieNames) {
+                const userCookie = getCookie(cookieName);
+                console.log(`Cookie ${cookieName}:`, userCookie); // Debug log
+                
+                if (userCookie) {
+                    try {
+                        // Try to parse as JSON
+                        const userData = JSON.parse(userCookie);
+                        if (userData && userData.employeeId) {
+                            console.log('Found user data:', userData);
+                            return userData;
+                        }
+                    } catch (parseError) {
+                        // If it's not JSON, maybe it's a token - try to decode if it looks like JWT
+                        if (userCookie.includes('.')) {
+                            try {
+                                const payload = JSON.parse(atob(userCookie.split('.')[1]));
+                                if (payload && payload.employeeId) {
+                                    console.log('Found JWT payload:', payload);
+                                    return payload;
+                                }
+                            } catch (jwtError) {
+                                console.log('Not a valid JWT');
+                            }
+                        }
+                        console.log(`Cookie ${cookieName} is not valid JSON:`, parseError);
+                    }
+                }
+            }
+            
+            // If no user data found, try localStorage as fallback
+            if (typeof window !== 'undefined' && window.localStorage) {
+                const localStorageUser = localStorage.getItem('user');
+                if (localStorageUser) {
+                    console.log('Found user in localStorage:', localStorageUser);
+                    return JSON.parse(localStorageUser);
+                }
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Error parsing user data:', error);
+            return null;
+        }
+    };
+
+    // Helper function to format date for API (convert from YYYY-MM to "Month, YYYY")
+    const formatDateForAPI = (dateString) => {
+        if (!dateString) return '';
+        const [year, month] = dateString.split('-');
+        const monthNames = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        const monthName = monthNames[parseInt(month) - 1];
+        return `${monthName}, ${year}`;
+    };
+    
+    // Get logged-in user on component mount
+    useEffect(() => {
+        const userData = getUserFromCookie();
+        if (userData) {
+            setUser(userData);
+        } else {
+            setError('User not logged in. Please login first.');
+        }
+    }, []);
+
     useGSAP(() => {
         gsap.fromTo(
           underlineRef.current,
@@ -23,9 +113,14 @@ export default function SalarySlipPage() {
     }, []);
 
     // API function to fetch salary data
-    const fetchSalaryData = async (empId) => {
-        if (!empId.trim()) {
-            setError('Please enter an Employee ID');
+    const fetchSalaryData = async () => {
+        if (!user) {
+            setError('User not logged in');
+            return;
+        }
+
+        if (!payPeriod) {
+            setError('Please select a month');
             return;
         }
 
@@ -33,17 +128,47 @@ export default function SalarySlipPage() {
             setLoading(true);
             setError(null);
             
-            const response = await fetch(`http://localhost:4110/api/salary/${employeeId}`);
+            // Format the date for the API
+            const formattedDate = formatDateForAPI(payPeriod);
+            
+            // Prepare request body
+            const requestBody = {
+                employeeId: user.employeeId,
+                date: formattedDate
+            };
+            
+            console.log('Sending request:', requestBody); // Debug log
+            
+            // API call with cookies and credentials
+            const response = await fetch(
+                'http://localhost:4110/api/salary/fetchSalary',
+                {
+                    method: 'POST', // Changed to POST since you're sending a body
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include', // Include cookies in the request
+                    body: JSON.stringify(requestBody)
+                }
+            );
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
-              console.log("respone",response)
+            console.log('API Response:', data); // Debug log
+            
             if (data.success) {
                 setSalaryData(data.data);
+                setError(null);
             } else {
-                setError(data.message || 'Failed to fetch salary data');
+                setError(data.message || 'Salary not generated for this month');
                 setSalaryData(null);
             }
         } catch (err) {
-            setError('Failed to fetch salary data. Please check your connection.');
+            console.error('API Error:', err);
+            setError('Failed to fetch salary data. Please check your connection and try again.');
             setSalaryData(null);
         } finally {
             setLoading(false);
@@ -101,12 +226,13 @@ export default function SalarySlipPage() {
             
             // Month line
             const monthLineY = titleTopMargin + 30;
-            pdf.text(`PaySlip for the Month of ${salaryData.payPeriod || 'N/A'}`, pdfWidth / 2, monthLineY, { align: "center" });
+            const displayDate = formatDateForAPI(payPeriod);
+            pdf.text(`PaySlip for the Month of ${displayDate}`, pdfWidth / 2, monthLineY, { align: "center" });
             pdf.line(20, monthLineY + 3, pdfWidth - 20, monthLineY + 3);
             
             // Employee details
             pdf.setFontSize(9);
-            pdf.text(`Employee: ${salaryData.name || 'N/A'}`, 20, monthLineY + 8);
+            pdf.text(`Employee: ${salaryData.employeeName || salaryData.name || 'N/A'}`, 20, monthLineY + 8);
             pdf.text(`ID: ${salaryData.employeeId || 'N/A'}`, 20, monthLineY + 12);
             pdf.text(`Department: ${salaryData.department || 'N/A'}`, 120, monthLineY + 8);
             pdf.text(`Designation: ${salaryData.designation || 'N/A'}`, 120, monthLineY + 12);
@@ -254,7 +380,8 @@ export default function SalarySlipPage() {
             pdf.setFont("helvetica", "italic");
             pdf.text(numberToWords(salaryData.netPayable), pdfWidth/2, netPayableY + 14, { align: "center" });
             
-            pdf.save(`salary-slip-${salaryData.employeeId}.pdf`);
+            const fileName = `salary-slip-${salaryData.employeeId}-${formatDateForAPI(payPeriod).replace(', ', '-')}.pdf`;
+            pdf.save(fileName);
         } catch (error) {
             console.error('Error generating PDF:', error);
             alert('Failed to generate PDF. Please check console for details.');
@@ -265,24 +392,43 @@ export default function SalarySlipPage() {
         <div className="max-w-4xl mx-auto p-8 bg-white">
             {/* Fetch Data Section */}
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <h3 className="text-lg font-semibold mb-4">Fetch Salary Data</h3>
-                <div className="flex gap-4 items-center">
-                    <input 
-                        type="text" 
-                        value={employeeId}
-                        onChange={(e) => setEmployeeId(e.target.value)}
-                        placeholder="Enter Employee ID"
-                        className="border border-gray-300 p-2 rounded flex-1"
-                        disabled={loading}
-                    />
-                    <button 
-                        onClick={() => fetchSalaryData(employeeId)}
-                        disabled={loading}
-                        className="bg-[#018ABE] hover:bg-[#016a95] text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-                    >
-                        {loading ? 'Loading...' : 'Fetch Data'}
-                    </button>
-                </div>
+                <h3 className="text-lg font-semibold mb-4">Fetch Salary Slip</h3>
+                
+                {!user ? (
+                    <div className="p-3 bg-red-100 text-red-700 rounded">
+                        Please login to view salary slips
+                    </div>
+                ) : (
+                    <>
+                        <div className="mb-4">
+                            <p className="font-medium">Logged in as: {user.name} ({user.employeeId})</p>
+                        </div>
+                        
+                        <div className="flex gap-4 items-center">
+                            <input 
+                                type="month"
+                                value={payPeriod}
+                                onChange={(e) => setPayPeriod(e.target.value)}
+                                className="border border-gray-300 p-2 rounded flex-1"
+                                disabled={loading}
+                                placeholder="Select month (YYYY-MM)"
+                            />
+                            <button 
+                                onClick={fetchSalaryData}
+                                disabled={loading || !payPeriod}
+                                className="bg-[#018ABE] hover:bg-[#016a95] text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+                            >
+                                {loading ? 'Loading...' : 'Fetch Slip'}
+                            </button>
+                        </div>
+                        
+                        {payPeriod && (
+                            <div className="mt-2 text-sm text-gray-600">
+                                Will fetch data for: {formatDateForAPI(payPeriod)}
+                            </div>
+                        )}
+                    </>
+                )}
                 
                 {error && (
                     <div className="mt-2 p-2 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -292,7 +438,7 @@ export default function SalarySlipPage() {
                 
                 {salaryData && (
                     <div className="mt-2 p-2 bg-green-100 border border-green-400 text-green-700 rounded">
-                        Salary data loaded for {salaryData.name} (ID: {salaryData.employeeId})
+                        Salary slip loaded for {formatDateForAPI(payPeriod)}
                     </div>
                 )}
             </div>
@@ -332,7 +478,7 @@ export default function SalarySlipPage() {
                     {/* Employee Details */}
                     <div className="mb-4 grid grid-cols-2 gap-4">
                         <div>
-                            <p><strong>Employee:</strong> {salaryData.name}</p>
+                            <p><strong>Employee:</strong> {salaryData.employeeName || salaryData.name}</p>
                             <p><strong>Employee ID:</strong> {salaryData.employeeId}</p>
                         </div>
                         <div>
@@ -342,7 +488,7 @@ export default function SalarySlipPage() {
                     </div>
 
                     <div className="flex justify-center items-center pb-4">
-                        <p>PaySlip for the Month of {salaryData.payPeriod}</p>
+                        <p>PaySlip for the Month of {formatDateForAPI(payPeriod)}</p>
                     </div>
 
                     {/* Table Head */}
@@ -376,7 +522,7 @@ export default function SalarySlipPage() {
                             <div className="px-4 py-2">{formatCurrency(salaryData.professionalTax)}</div>
                         </div>
 
-                        <div className="grid grid-cols-4 text-sm border-b border-gray-300">
+                        <div className="grid grid-cols-4 text-sm border-border-gray-300">
                             <div className="px-4 py-2 border-r border-gray-300 text-left">Medical</div>
                             <div className="px-4 py-2 border-r border-gray-300">{formatCurrency(salaryData.medical)}</div>
                             <div className="px-4 py-2 border-r border-gray-300 text-left">TDS</div>
@@ -445,7 +591,7 @@ export default function SalarySlipPage() {
 
             {!salaryData && !loading && (
                 <div className="text-center py-8 text-gray-500">
-                    Please enter an Employee ID and fetch data to view the salary slip.
+                    Please select a month and fetch data to view the salary slip.
                 </div>
             )}
         </div>
