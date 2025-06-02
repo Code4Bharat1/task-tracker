@@ -1,274 +1,402 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Clock, RotateCcw, Trophy, Zap } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
-export default function TypingSpeedTest() {
-    const [selectedTime, setSelectedTime] = useState(60);
-    const [timeLeft, setTimeLeft] = useState(60);
-    const [isActive, setIsActive] = useState(false);
-    const [isCompleted, setIsCompleted] = useState(false);
-    const [userInput, setUserInput] = useState('');
-    const [currentWordIndex, setCurrentWordIndex] = useState(0);
-    const [currentCharIndex, setCurrentCharIndex] = useState(0);
-    const [correctChars, setCorrectChars] = useState(0);
-    const [totalChars, setTotalChars] = useState(0);
-    const [wpm, setWpm] = useState(0);
-    const [accuracy, setAccuracy] = useState(100);
-    const [errors, setErrors] = useState([]);
+const textModes = {
+  words: {
+    name: 'Words',
+    content: ['the', 'quick', 'brown', 'fox', 'jumps', 'over', 'lazy', 'dog', 'pack', 'my', 'box', 'with', 'five', 'dozen', 'liquor', 'jugs', 'bright', 'vixens', 'jump', 'dozy', 'fowl', 'quack', 'sphinx', 'of', 'black', 'quartz', 'judge', 'my', 'vow', 'how', 'vexingly', 'daft', 'jumping', 'zebras']
+  },
+  sentences: {
+    name: 'Sentences',
+    content: [
+      'The quick brown fox jumps over the lazy dog.',
+      'A wizard\'s job is to vex chumps quickly in fog.',
+      'Pack my box with five dozen liquor jugs.',
+      'How vexingly daft jumping zebras bewitch.',
+      'Bright vixens jump; dozy fowl quack.',
+      'Sphinx of black quartz, judge my vow.',
+      'Two driven jocks help fax my big quiz.',
+      'Five quacking zephyrs jolt my wax bed.',
+      'The five boxing wizards jump quickly.',
+      'Jackdaws love my big sphinx of quartz.',
+      'My girl wove six dozen plaid jackets before she quit.',
+      'Few black taxis drive up major roads on quiet hazy nights.',
+      'Several fabulous dixieland jazz groups played with quick tempo.',
+      'A large fawn jumped quickly over white zinc boxes.',
+      'Crazy Fredrick bought many very exquisite opal jewels.'
+    ]
+  },
+  paragraphs: {
+    name: 'Paragraphs',
+    content: [
+      'The art of programming requires patience, creativity, and logical thinking. Every developer knows the satisfaction of solving a complex problem with elegant code. Debugging can be frustrating, but it teaches valuable lessons about attention to detail and systematic problem-solving approaches.',
+      'Technology continues to evolve at an unprecedented pace, transforming how we work, communicate, and live. From artificial intelligence to quantum computing, innovations are reshaping entire industries. The key to success in this digital age is adaptability and continuous learning.',
+      'Writing clean, maintainable code is more important than writing clever code. Future developers, including yourself, will thank you for clear variable names, proper documentation, and logical structure. Code is read far more often than it is written.',
+      'The best programmers are not those who write the most code, but those who solve problems efficiently with the least amount of code necessary. Understanding the problem thoroughly before coding saves countless hours of debugging and refactoring later.',
+      'Open source software has revolutionized the technology industry by enabling collaboration on a global scale. Developers from different continents work together to build tools that benefit millions of users worldwide. This collaborative spirit drives innovation and knowledge sharing.'
+    ]
+  },
+  quotes: {
+    name: 'Quotes',
+    content: [
+      "The only way to do great work is to love what you do.",
+      "Innovation distinguishes between a leader and a follower.",
+      "Stay hungry, stay foolish.",
+      "The future belongs to those who believe in the beauty of their dreams.",
+      "It is during our darkest moments that we must focus to see the light."
+    ]
+  },
+  programming: {
+    name: 'Code',
+    content: [
+      "function calculateSum(arr) { return arr.reduce((sum, num) => sum + num, 0); }",
+      "const users = await fetch('/api/users').then(res => res.json());",
+      "if (condition && !isLoading) { setData(prevData => [...prevData, newItem]); }",
+      "const [state, setState] = useState({ count: 0, isActive: false });",
+      "try { const result = JSON.parse(response); } catch (error) { console.error(error); }"
+    ]
+  },
+  numbers: {
+    name: 'Numbers',
+    content: ['123', '456', '789', '012', '345', '678', '901', '234', '567', '890', '1234', '5678', '9012', '3456', '7890']
+  }
+};
 
-    const inputRef = useRef(null);
-    const intervalRef = useRef(null);
+export default function EnhancedTypingTest() {
+  const [selectedTime, setSelectedTime] = useState(30);
+  const [selectedMode, setSelectedMode] = useState('words');
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [userInput, setUserInput] = useState('');
+  const [isActive, setIsActive] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [wpmHistory, setWpmHistory] = useState([]);
+  const [currentText, setCurrentText] = useState('');
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [currentCharIndex, setCurrentCharIndex] = useState(0);
+  const [errors, setErrors] = useState(0);
+  const [totalCharsTyped, setTotalCharsTyped] = useState(0);
+  const intervalRef = useRef(null);
+  const inputRef = useRef(null);
 
-    const timeOptions = [15, 30, 60, 120, 300];
+  // Generate text based on mode
+  const generateText = (mode) => {
+    const modeData = textModes[mode];
+    if (mode === 'quotes' || mode === 'programming') {
+      return modeData.content[Math.floor(Math.random() * modeData.content.length)];
+    } else if (mode === 'sentences') {
+      const shuffled = [...modeData.content].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, 3).join(' ');
+    } else if (mode === 'paragraphs') {
+      return modeData.content[Math.floor(Math.random() * modeData.content.length)];
+    } else if (mode === 'words' || mode === 'numbers') {
+      const shuffled = [...modeData.content].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, 50).join(' ');
+    }
+  };
 
-    const sampleText = "The quick brown fox jumps over the lazy dog near the riverbank where children often play during summer afternoons while their parents sit on wooden benches reading newspapers and watching clouds drift slowly across the bright blue sky filled with possibilities and dreams that seem within reach when the world feels peaceful and calm like this moment in time when everything seems perfect and nothing else matters except the gentle breeze that carries the scent of blooming flowers from nearby gardens where butterflies dance among colorful petals creating a symphony of natural beauty that reminds us why life is worth living and cherishing every single day we are blessed to experience on this amazing planet we call home".split(' ');
+  // Initialize text
+  useEffect(() => {
+    setCurrentText(generateText(selectedMode));
+  }, [selectedMode]);
 
-    useEffect(() => {
-        if (isActive && timeLeft > 0) {
-            intervalRef.current = setInterval(() => {
-                setTimeLeft(time => {
-                    if (time <= 1) {
-                        setIsActive(false);
-                        setIsCompleted(true);
-                        return 0;
-                    }
-                    return time - 1;
-                });
-            }, 1000);
-        } else {
-            clearInterval(intervalRef.current);
-        }
+  // Calculate real-time stats
+  const getCurrentStats = () => {
+    const elapsed = selectedTime - timeLeft;
+    const minutes = elapsed / 60;
+    const correctChars = userInput.split('').filter((char, i) => char === currentText[i]).length;
+    const wpm = minutes > 0 ? Math.round((correctChars / 5) / minutes) : 0;
+    const accuracy = totalCharsTyped > 0 ? Math.round(((totalCharsTyped - errors) / totalCharsTyped) * 100) : 100;
+    return { wpm, accuracy, correctChars };
+  };
 
-        return () => clearInterval(intervalRef.current);
-    }, [isActive, timeLeft]);
+  const { wpm: currentWpm, accuracy: currentAccuracy } = getCurrentStats();
 
-    useEffect(() => {
-        if (totalChars > 0) {
-            const timeElapsed = selectedTime - timeLeft;
-            const minutes = timeElapsed / 60;
-            const wordsTyped = correctChars / 5;
-            setWpm(minutes > 0 ? Math.round(wordsTyped / minutes) : 0);
-            setAccuracy(Math.round((correctChars / totalChars) * 100));
-        }
-    }, [correctChars, totalChars, timeLeft, selectedTime]);
-
-    const startTest = () => {
+  // Handle typing
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (isCompleted) return;
+      if (!isActive && e.key.length === 1) {
         setIsActive(true);
-        setIsCompleted(false);
-        setUserInput('');
-        setCurrentWordIndex(0);
-        setCurrentCharIndex(0);
-        setCorrectChars(0);
-        setTotalChars(0);
-        setErrors([]);
-        setTimeLeft(selectedTime);
-        inputRef.current?.focus();
-    };
+      }
 
-    const resetTest = () => {
-        setIsActive(false);
-        setIsCompleted(false);
-        setUserInput('');
-        setCurrentWordIndex(0);
-        setCurrentCharIndex(0);
-        setCorrectChars(0);
-        setTotalChars(0);
-        setWpm(0);
-        setAccuracy(100);
-        setErrors([]);
-        setTimeLeft(selectedTime);
-    };
+      const key = e.key;
 
-    const handleInputChange = (e) => {
-        if (!isActive || isCompleted) return;
-
-        const value = e.target.value;
-        setUserInput(value);
-
-        const words = value.split(' ');
-        const currentWord = words[words.length - 1];
-
-        let correct = 0;
-        let total = value.length;
-        setTotalChars(total);
-
-        const fullText = sampleText.slice(0, words.length).join(' ');
-        for (let i = 0; i < Math.min(value.length, fullText.length); i++) {
-            if (value[i] === fullText[i]) {
-                correct++;
-            }
+      if (key === 'Backspace') {
+        e.preventDefault();
+        if (userInput.length > 0) {
+          setUserInput(prev => prev.slice(0, -1));
+          setCurrentCharIndex(prev => Math.max(0, prev - 1));
+        }
+      } else if (key.length === 1 && userInput.length < currentText.length) {
+        e.preventDefault();
+        const newInput = userInput + key;
+        setUserInput(newInput);
+        setCurrentCharIndex(prev => prev + 1);
+        setTotalCharsTyped(prev => prev + 1);
+        
+        // Check for errors
+        if (key !== currentText[userInput.length]) {
+          setErrors(prev => prev + 1);
         }
 
-        setCorrectChars(correct);
-
-        if (value.endsWith(' ') && words.length <= sampleText.length) {
-            const completedWord = words[words.length - 2];
-            if (completedWord !== sampleText[words.length - 2]) {
-                setErrors(prev => [...prev, words.length - 2]);
-            }
+        // Update word index
+        if (key === ' ') {
+          setCurrentWordIndex(prev => prev + 1);
         }
+      }
     };
 
-    const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [userInput, currentText, isActive, isCompleted]);
 
-    const getCharacterClass = (wordIndex, charIndex, char) => {
-        const userWords = userInput.split(' ');
-        const currentUserWord = userWords[wordIndex] || '';
+  // Timer logic
+  useEffect(() => {
+    if (isActive && timeLeft > 0 && !intervalRef.current) {
+      intervalRef.current = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+            setIsCompleted(true);
+            setIsActive(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+  }, [isActive, timeLeft]);
 
-        if (wordIndex < userWords.length - 1 || (wordIndex === userWords.length - 1 && userInput.endsWith(' '))) {
-            if (charIndex < currentUserWord.length) {
-                return currentUserWord[charIndex] === char ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800';
-            }
-            return 'text-gray-400';
-        } else if (wordIndex === userWords.length - 1) {
-            if (charIndex < currentUserWord.length) {
-                return currentUserWord[charIndex] === char ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800';
-            } else if (charIndex === currentUserWord.length) {
-                return 'bg-blue-200 animate-pulse';
-            }
-            return 'text-gray-600';
+  // WPM tracking
+  useEffect(() => {
+    if (isActive && !isCompleted && timeLeft % 2 === 0) {
+      const elapsed = selectedTime - timeLeft;
+      if (elapsed > 0) {
+        const stats = getCurrentStats();
+        setWpmHistory(prev => [...prev, { time: elapsed, wpm: stats.wpm }]);
+      }
+    }
+  }, [timeLeft, isActive, isCompleted, selectedTime]);
+
+  // Reset test
+  const resetTest = () => {
+    clearInterval(intervalRef.current);
+    intervalRef.current = null;
+    setTimeLeft(selectedTime);
+    setUserInput('');
+    setIsActive(false);
+    setIsCompleted(false);
+    setWpmHistory([]);
+    setCurrentWordIndex(0);
+    setCurrentCharIndex(0);
+    setErrors(0);
+    setTotalCharsTyped(0);
+    setCurrentText(generateText(selectedMode));
+    inputRef.current?.focus();
+  };
+
+  // Focus input on mount
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const renderText = () => {
+    return currentText.split('').map((char, i) => {
+      let className = 'text-gray-400';
+      
+      if (i < userInput.length) {
+        if (userInput[i] === char) {
+          className = 'text-white bg-gray-700';
+        } else {
+          className = 'text-red-400 bg-red-900/30';
         }
+      } else if (i === userInput.length) {
+        className = 'text-white bg-yellow-500/50 animate-pulse';
+      }
 
-        return 'text-gray-600';
-    };
+      // Special handling for spaces
+      if (char === ' ') {
+        className += ' !text-gray-300'; // Light gray color for spaces
+      }
 
-    return (
-        <div className="max-w-4xl mx-auto p-6 bg-white min-h-screen">
-            <div className="text-center mb-8">
-                <h1 className="text-4xl font-bold text-gray-800 mb-2 flex items-center justify-center gap-2">
-                    <Zap className="text-blue-500" />
-                    Typing Speed Test
-                </h1>
-                <p className="text-gray-600">Test your typing speed and accuracy</p>
-            </div>
+      return (
+        <span key={i} className={className}>
+          {char}
+        </span>
+      );
+    });
+  };
 
-            {!isActive && !isCompleted && (
-                <div className="mb-8">
-                    <h2 className="text-xl font-semibold text-gray-700 mb-4 text-center">Select Test Duration</h2>
-                    <div className="flex flex-wrap justify-center gap-3">
-                        {timeOptions.map((time) => (
-                            <button
-                                key={time}
-                                onClick={() => {
-                                    setSelectedTime(time);
-                                    setTimeLeft(time);
-                                }}
-                                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${selectedTime === time
-                                    ? 'bg-blue-500 text-white shadow-lg'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                    }`}
-                            >
-                                {time < 60 ? `${time}s` : `${time / 60}m`}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
+  return (
+    <div className="min-h-screen bg-gray-900 text-white p-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-light mb-4 text-yellow-400">Typing Master</h1>
+          
+          {/* Mode Selection */}
+          <div className="flex flex-wrap justify-center gap-2 mb-4">
+            {Object.entries(textModes).map(([key, mode]) => (
+              <button
+                key={key}
+                onClick={() => {
+                  setSelectedMode(key);
+                  resetTest();
+                }}
+                className={`px-4 py-2 rounded-lg transition ${
+                  selectedMode === key
+                    ? 'bg-yellow-500 text-gray-900 font-semibold'
+                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                }`}
+              >
+                {mode.name}
+              </button>
+            ))}
+          </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-blue-50 p-4 rounded-lg text-center">
-                    <Clock className="w-6 h-6 text-blue-500 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-blue-600">{formatTime(timeLeft)}</div>
-                    <div className="text-sm text-gray-600">Time Left</div>
-                </div>
-                <div className="bg-green-50 p-4 rounded-lg text-center">
-                    <Zap className="w-6 h-6 text-green-500 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-green-600">{wpm}</div>
-                    <div className="text-sm text-gray-600">WPM</div>
-                </div>
-                <div className="bg-purple-50 p-4 rounded-lg text-center">
-                    <Trophy className="w-6 h-6 text-purple-500 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-purple-600">{accuracy}%</div>
-                    <div className="text-sm text-gray-600">Accuracy</div>
-                </div>
-                <div className="bg-orange-50 p-4 rounded-lg text-center">
-                    <div className="w-6 h-6 bg-orange-500 rounded mx-auto mb-2 flex items-center justify-center text-white text-xs font-bold">
-                        {errors.length}
-                    </div>
-                    <div className="text-2xl font-bold text-orange-600">{errors.length}</div>
-                    <div className="text-sm text-gray-600">Errors</div>
-                </div>
-            </div>
-
-            {/* Improved text display with proper wrapping */}
-            <div className="bg-gray-50 p-6 rounded-lg mb-6 border-2 border-gray-200 max-h-48 overflow-y-auto">
-                <div className="text-lg font-mono leading-relaxed break-words">
-                    {sampleText.slice(0, 50).map((word, wordIndex) => (
-                        <span
-                            key={wordIndex}
-                            className={`inline-block mr-2 mb-1 ${errors.includes(wordIndex) ? 'border-b-2 border-red-400' : ''}`}
-                        >
-                            {word.split('').map((char, charIndex) => (
-                                <span
-                                    key={charIndex}
-                                    className={`${getCharacterClass(wordIndex, charIndex, char)} px-0.5 rounded`}
-                                >
-                                    {char}
-                                </span>
-                            ))}
-                        </span>
-                    ))}
-                </div>
-            </div>
-
-            <div className="mb-6">
-                <textarea
-                    ref={inputRef}
-                    value={userInput}
-                    onChange={handleInputChange}
-                    disabled={!isActive || isCompleted}
-                    placeholder={isActive ? "Start typing..." : "Click Start Test to begin"}
-                    className="w-full h-32 p-4 border-2 border-gray-300 rounded-lg resize-none text-lg font-mono focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
-                />
-            </div>
-
-            <div className="flex justify-center gap-4">
-                {!isActive && !isCompleted && (
-                    <button
-                        onClick={startTest}
-                        className="px-8 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors duration-200 flex items-center gap-2"
-                    >
-                        <Zap className="w-5 h-5" />
-                        Start Test
-                    </button>
-                )}
-
-                {(isActive || isCompleted) && (
-                    <button
-                        onClick={resetTest}
-                        className="px-8 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-colors duration-200 flex items-center gap-2"
-                    >
-                        <RotateCcw className="w-5 h-5" />
-                        Reset Test
-                    </button>
-                )}
-            </div>
-
-            {isCompleted && (
-                <div className="mt-8 bg-blue-50 p-6 rounded-lg border-2 border-blue-200">
-                    <h2 className="text-2xl font-bold text-blue-800 mb-4 text-center flex items-center justify-center gap-2">
-                        <Trophy className="text-yellow-500" />
-                        Test Complete!
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                        <div>
-                            <div className="text-3xl font-bold text-blue-600">{wpm}</div>
-                            <div className="text-gray-600">Words per Minute</div>
-                        </div>
-                        <div>
-                            <div className="text-3xl font-bold text-green-600">{accuracy}%</div>
-                            <div className="text-gray-600">Accuracy</div>
-                        </div>
-                        <div>
-                            <div className="text-3xl font-bold text-purple-600">{correctChars}</div>
-                            <div className="text-gray-600">Correct Characters</div>
-                        </div>
-                    </div>
-                </div>
-            )}
+          {/* Time Selection */}
+          <div className="flex justify-center gap-2 mb-6">
+            {[15, 30, 60, 120].map((time) => (
+              <button
+                key={time}
+                onClick={() => {
+                  setSelectedTime(time);
+                  setTimeLeft(time);
+                  resetTest();
+                }}
+                className={`px-3 py-1 rounded transition ${
+                  selectedTime === time
+                    ? 'bg-yellow-500 text-gray-900'
+                    : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
+                }`}
+              >
+                {time}
+              </button>
+            ))}
+          </div>
         </div>
-    );
+
+        {/* Real-time Stats */}
+        {(isActive || isCompleted) && (
+          <div className="flex justify-center gap-8 mb-6 text-2xl">
+            <div className="text-center">
+              <div className="text-yellow-400 font-mono">{currentWpm}</div>
+              <div className="text-xs text-gray-400">wpm</div>
+            </div>
+            <div className="text-center">
+              <div className="text-blue-400 font-mono">{currentAccuracy}%</div>
+              <div className="text-xs text-gray-400">acc</div>
+            </div>
+            <div className="text-center">
+              <div className="text-gray-400 font-mono">{timeLeft}</div>
+              <div className="text-xs text-gray-400">time</div>
+            </div>
+          </div>
+        )}
+
+        {/* Typing Area */}
+        <div className="relative mb-8">
+          <div 
+            className="bg-gray-800 rounded-lg p-6 min-h-[200px] text-xl leading-relaxed font-mono focus-within:ring-2 focus-within:ring-yellow-500/50 overflow-hidden"
+            onClick={() => inputRef.current?.focus()}
+          >
+            <div className="relative break-words overflow-wrap-anywhere">
+              <div className="whitespace-pre-wrap">
+                {renderText()}
+              </div>
+            </div>
+          </div>
+          
+          {/* Hidden input for mobile support */}
+          <input
+            ref={inputRef}
+            className="absolute opacity-0 pointer-events-none"
+            value={userInput}
+            onChange={() => {}} // Controlled by keydown handler
+            autoFocus
+          />
+        </div>
+
+        {/* Instructions */}
+        {!isActive && !isCompleted && (
+          <div className="text-center text-gray-400 mb-6">
+            <p>Click here or start typing to begin the test</p>
+          </div>
+        )}
+
+        {/* Reset Button */}
+        <div className="text-center mb-8">
+          <button
+            onClick={resetTest}
+            className="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition flex items-center gap-2 mx-auto"
+          >
+            <span>↻</span> Reset
+          </button>
+        </div>
+
+        {/* Results */}
+        {isCompleted && (
+          <div className="bg-gray-800 rounded-lg p-6">
+            <h2 className="text-2xl font-light text-center mb-6 text-yellow-400">Results</h2>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="text-center">
+                <div className="text-3xl font-mono text-yellow-400">{currentWpm}</div>
+                <div className="text-gray-400">WPM</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-mono text-blue-400">{currentAccuracy}%</div>
+                <div className="text-gray-400">Accuracy</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-mono text-red-400">{errors}</div>
+                <div className="text-gray-400">Errors</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-mono text-green-400">{totalCharsTyped}</div>
+                <div className="text-gray-400">Characters</div>
+              </div>
+            </div>
+
+            {wpmHistory.length > 1 && (
+              <div className="mt-6">
+                <h3 className="text-lg mb-4 text-center text-gray-300">WPM Over Time</h3>
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={wpmHistory}>
+                    <Line 
+                      type="monotone" 
+                      dataKey="wpm" 
+                      stroke="#facc15" 
+                      strokeWidth={2} 
+                      dot={{ fill: '#facc15', r: 3 }}
+                    />
+                    <XAxis 
+                      dataKey="time" 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#9ca3af', fontSize: 12 }}
+                    />
+                    <YAxis 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#9ca3af', fontSize: 12 }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#374151', 
+                        border: 'none', 
+                        borderRadius: '8px',
+                        color: '#fff'
+                      }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
