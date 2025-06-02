@@ -1,9 +1,9 @@
 "use client"
 
-import { AlertCircle, Bell, Calendar, CheckCircle, Clock, DollarSign, FileText, Users, XCircle } from 'lucide-react';
+import { AlertCircle, Bell, Calendar, CheckCircle, Clock, DollarSign, FileText, Users, XCircle, Video, Phone } from 'lucide-react';
 import { useEffect, useState } from 'react';
 // Import your axiosInstance
- import { axiosInstance } from '@/lib/axiosInstance';
+import { axiosInstance } from '@/lib/axiosInstance';
 
 const NotificationDashboard = () => {
     const [activeTab, setActiveTab] = useState('all');
@@ -29,14 +29,18 @@ const NotificationDashboard = () => {
                 axiosInstance.get('/post-notification'),
                 axiosInstance.get('/expense-notification'),
                 axiosInstance.get('/calendar-notification'),
-                axiosInstance.get('/meeting-notification')
+                axiosInstance.get('http://localhost:4110/api/meeting-notification')
             ]);
+
+            console.log(meetingRes);
+
 
             setLeaveNotifications(leaveRes.data.notifications || []);
             setPostNotifications(postRes.data.notifications || []);
             setExpenseNotifications(expenseRes.data.notifications || []);
             setCalendarNotifications(calendarRes.data.notifications || []);
             setMeetingNotifications(meetingRes.data.notifications || []);
+
 
         } catch (err) {
             console.error('Error fetching notifications:', err);
@@ -48,6 +52,12 @@ const NotificationDashboard = () => {
 
     useEffect(() => {
         fetchData();
+        // Refresh meeting notifications every 30 seconds to update join button status
+        const interval = setInterval(() => {
+            fetchData();
+        }, 30000);
+
+        return () => clearInterval(interval);
     }, []);
 
     const getStatusIcon = (status) => {
@@ -60,13 +70,57 @@ const NotificationDashboard = () => {
     };
 
     const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
+        if (!dateString) return '';
+        
+        const date = new Date(dateString);
+        
+        // Check if the date is valid
+        if (isNaN(date.getTime())) return dateString;
+        
+        return date.toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
             day: 'numeric',
             hour: '2-digit',
-            minute: '2-digit'
+            minute: '2-digit',
+            hour12: false, // Use 24-hour format
+            timeZone: 'Asia/Kolkata' // Set to Indian timezone since you're in Mumbai
         });
+    };
+
+    const formatDuration = (duration) => {
+        if (typeof duration === 'number') {
+            const hours = Math.floor(duration / 60);
+            const minutes = duration % 60;
+            if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            }
+            return `${minutes}m`;
+        }
+        return duration;
+    };
+
+    // Check if join button should be active (2 minutes before meeting)
+    const isJoinButtonActive = (meetingDate) => {
+        if (!meetingDate) return false;
+        
+        const now = new Date();
+        const meeting = new Date(meetingDate);
+        
+        // Check if the date is valid
+        if (isNaN(meeting.getTime())) return false;
+        
+        const timeDiff = meeting.getTime() - now.getTime();
+        const minutesDiff = timeDiff / (1000 * 60);
+        
+        // Active 2 minutes before and during/after the meeting
+        return minutesDiff <= 2;
+    };
+
+    const handleJoinMeeting = (meetingLink) => {
+        if (meetingLink) {
+            window.open(meetingLink, '_blank');
+        }
     };
 
     const getAllNotifications = () => {
@@ -85,7 +139,7 @@ const NotificationDashboard = () => {
             case 'post': return <Bell className="w-5 h-5" />;
             case 'expense': return <DollarSign className="w-5 h-5" />;
             case 'calendar': return <Calendar className="w-5 h-5" />;
-            case 'meeting': return <Users className="w-5 h-5" />;
+            case 'meeting': return <Video className="w-5 h-5" />;
             default: return <Bell className="w-5 h-5" />;
         }
     };
@@ -107,68 +161,156 @@ const NotificationDashboard = () => {
         { id: 'post', label: 'Posts', count: postNotifications.length, icon: Bell },
         { id: 'expense', label: 'Expenses', count: expenseNotifications.length, icon: DollarSign },
         { id: 'calendar', label: 'Calendar', count: calendarNotifications.length, icon: Calendar },
-        { id: 'meeting', label: 'Meetings', count: meetingNotifications.length, icon: Users }
+        { id: 'meeting', label: 'Meetings', count: meetingNotifications.length, icon: Video }
     ];
 
-    const renderNotificationCard = (notification, type) => (
-        <div key={`${type}-${Math.random()}`} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200">
-            <div className="flex items-start gap-4">
-                <div className={`p-3 rounded-lg bg-gradient-to-r ${getNotificationTypeColor(type)} text-white flex-shrink-0`}>
-                    {getNotificationIcon(type)}
-                </div>
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                        <p className="text-gray-900 font-semibold text-base">{notification.message || notification.title}</p>
-                        {notification.status && (
-                            <div className="flex items-center gap-1">
-                                {getStatusIcon(notification.status)}
-                                <span className="text-sm font-medium text-gray-700">{notification.status}</span>
-                            </div>
-                        )}
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
-                        {notification.category && (
-                            <div className="flex justify-between">
-                                <span className="font-medium text-gray-700">Category:</span>
-                                <span>{notification.category}</span>
-                            </div>
-                        )}
-                        {notification.amount && (
-                            <div className="flex justify-between">
-                                <span className="font-medium text-gray-700">Amount:</span>
-                                <span className="font-semibold text-green-600">{notification.amount}</span>
-                            </div>
-                        )}
-                        {notification.type && notification.type !== type && (
-                            <div className="flex justify-between">
-                                <span className="font-medium text-gray-700">Type:</span>
-                                <span>{notification.type}</span>
-                            </div>
-                        )}
-                        {notification.date && (
-                            <div className="flex justify-between">
-                                <span className="font-medium text-gray-700">Date:</span>
-                                <span>{formatDate(notification.date)}</span>
-                            </div>
-                        )}
-                    </div>
-                    {notification.rejectionReason && (
-                        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                            <p className="text-red-700 text-sm">
-                                <span className="font-medium">Rejection Reason:</span> {notification.rejectionReason}
-                            </p>
+    const renderMeetingNotificationCard = (notification) => {
+        const isJoinActive = isJoinButtonActive(notification.meetingDate || notification.date);
+        
+        return (
+            <div key={`meeting-${Math.random()}`} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200">
+                <div className="flex items-start justify-between gap-4">
+                    {/* Left side - Meeting details */}
+                    <div className="flex items-start gap-4 flex-1">
+                        <div className={`p-3 rounded-lg bg-gradient-to-r ${getNotificationTypeColor('meeting')} text-white flex-shrink-0`}>
+                            <Video className="w-5 h-5" />
                         </div>
-                    )}
-                    <div className="mt-3 pt-3 border-t border-gray-100">
-                        <p className="text-xs text-gray-500 flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {formatDate(notification.updatedAt || notification.createdAt)}
-                        </p>
+                        <div className="flex-1 min-w-0">
+                            <div className="mb-3">
+                                <h3 className="text-gray-900 font-semibold text-lg mb-1">
+                                    {notification.title || notification.message || 'Video Call'}
+                                </h3>
+                                {notification.hostname && (
+                                    <p className="text-gray-600 text-sm flex items-center gap-1">
+                                        <Users className="w-4 h-4" />
+                                        Host: <span className="font-medium">{notification.hostname}</span>
+                                    </p>
+                                )}
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                {notification.duration && (
+                                    <div className="flex items-center gap-2">
+                                        <Clock className="w-4 h-4 text-gray-500" />
+                                        <span className="font-medium text-gray-700">Duration:</span>
+                                        <span className="text-gray-600">{formatDuration(notification.duration)}</span>
+                                    </div>
+                                )}
+                                
+                                {(notification.meetingDate || notification.date) && (
+                                    <div className="flex items-center gap-2">
+                                        <Calendar className="w-4 h-4 text-gray-500" />
+                                        <span className="font-medium text-gray-700">Date:</span>
+                                        <span className="text-gray-600">{formatDate(notification.meetingDate || notification.date)}{notification.time}</span>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            {notification.description && (
+                                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                                    <p className="text-gray-700 text-sm">{notification.description}</p>
+                                </div>
+                            )}
+                            
+                            <div className="mt-3 pt-3 border-t border-gray-100">
+                                <p className="text-xs text-gray-500 flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {formatDate(notification.updatedAt || notification.createdAt)}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Right side - Join button */}
+                    <div className="flex-shrink-0 ml-4">
+                        <button
+                            onClick={() => isJoinActive && handleJoinMeeting(notification.meetingLink || notification.link)}
+                            disabled={!isJoinActive}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                                isJoinActive
+                                    ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
+                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            }`}
+                        >
+                            <Phone className="w-4 h-4" />
+                            {isJoinActive ? 'Join Meeting' : 'Not Available'}
+                        </button>
+                        {!isJoinActive && (
+                            <p className="text-xs text-gray-500 mt-2 text-center">
+                                Available 2min before
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
+
+    const renderNotificationCard = (notification, type) => {
+        if (type === 'meeting') {
+            return renderMeetingNotificationCard(notification);
+        }
+
+        return (
+            <div key={`${type}-${Math.random()}`} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200">
+                <div className="flex items-start gap-4">
+                    <div className={`p-3 rounded-lg bg-gradient-to-r ${getNotificationTypeColor(type)} text-white flex-shrink-0`}>
+                        {getNotificationIcon(type)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                            <p className="text-gray-900 font-semibold text-base">{notification.message || notification.title}</p>
+                            {notification.status && (
+                                <div className="flex items-center gap-1">
+                                    {getStatusIcon(notification.status)}
+                                    <span className="text-sm font-medium text-gray-700">{notification.status}</span>
+                                </div>
+                            )}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                            {notification.category && (
+                                <div className="flex justify-between">
+                                    <span className="font-medium text-gray-700">Category:</span>
+                                    <span>{notification.category}</span>
+                                </div>
+                            )}
+                            {notification.amount && (
+                                <div className="flex justify-between">
+                                    <span className="font-medium text-gray-700">Amount:</span>
+                                    <span className="font-semibold text-green-600">{notification.amount}</span>
+                                </div>
+                            )}
+                            {notification.type && notification.type !== type && (
+                                <div className="flex justify-between">
+                                    <span className="font-medium text-gray-700">Type:</span>
+                                    <span>{notification.type}</span>
+                                </div>
+                            )}
+                            {notification.date && (
+                                <div className="flex justify-between">
+                                    <span className="font-medium text-gray-700">Date:</span>
+                                    <span>{formatDate(notification.date)}</span>
+                                </div>
+                            )}
+                        </div>
+                        {notification.rejectionReason && (
+                            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                <p className="text-red-700 text-sm">
+                                    <span className="font-medium">Rejection Reason:</span> {notification.rejectionReason}
+                                </p>
+                            </div>
+                        )}
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                            <p className="text-xs text-gray-500 flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {formatDate(notification.updatedAt || notification.createdAt)}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     const renderTabContent = () => {
         if (loading) {
