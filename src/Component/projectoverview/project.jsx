@@ -1,7 +1,7 @@
-"use client";
+"use Client";
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, User, Filter, ChevronDown, AlertCircle, CheckCircle, Play, Grid3X3, List, RefreshCw, Paperclip, Search, Plus } from 'lucide-react';
+import { Calendar, Clock, User, Filter, ChevronDown, AlertCircle, CheckCircle, Play, Grid3X3, List, RefreshCw, Paperclip, Search, Plus, Building, UserCheck } from 'lucide-react';
 
 const ProjectOverview = () => {
   const [tasks, setTasks] = useState([]);
@@ -10,10 +10,11 @@ const ProjectOverview = () => {
   const [selectedProject, setSelectedProject] = useState('all');
   const [timeFilter, setTimeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all'); // New category filter
   const [viewMode, setViewMode] = useState('grid');
   const [isMobile, setIsMobile] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
+  const [expandedMembers, setExpandedMembers] = useState({});
   // Check if mobile on mount and resize
   useEffect(() => {
     const checkIfMobile = () => {
@@ -34,6 +35,7 @@ const ProjectOverview = () => {
       const params = new URLSearchParams();
       if (timeFilter !== 'all') params.append('timeFilter', timeFilter);
       if (statusFilter !== 'all') params.append('status', statusFilter);
+      if (categoryFilter !== 'all') params.append('projectCategory', categoryFilter); // Add category filter
 
       const response = await fetch(`http://localhost:4110/api/tasks/getTasks?${params}`, {
         credentials: 'include',
@@ -54,10 +56,15 @@ const ProjectOverview = () => {
       setLoading(false);
     }
   };
-
+  const toggleMembersExpansion = (taskId) => {
+    setExpandedMembers(prev => ({
+      ...prev,
+      [taskId]: !prev[taskId]
+    }));
+  };
   useEffect(() => {
     fetchTasks();
-  }, [timeFilter, statusFilter]);
+  }, [timeFilter, statusFilter, categoryFilter]); // Add categoryFilter to dependencies
 
   // Filter tasks by selected project and search query
   const filteredTasks = tasks
@@ -110,6 +117,27 @@ const ProjectOverview = () => {
     }
   };
 
+  // New function to get category badge color and icon
+  const getCategoryInfo = (category) => {
+    switch (category?.toLowerCase()) {
+      case 'Client':
+        return {
+          color: 'bg-purple-50 text-purple-700 border-purple-200',
+          icon: <Building className="w-3.5 h-3.5" />
+        };
+      case 'Self':
+        return {
+          color: 'bg-teal-50 text-teal-700 border-teal-200',
+          icon: <UserCheck className="w-3.5 h-3.5" />
+        };
+      default:
+        return {
+          color: 'bg-gray-50 text-gray-700 border-gray-200',
+          icon: <User className="w-3.5 h-3.5" />
+        };
+    }
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -123,13 +151,15 @@ const ProjectOverview = () => {
     return new Date(deadline) < new Date();
   };
 
-  // Calculate statistics
+  // Calculate statistics with category breakdown
   const stats = {
     total: filteredTasks.length,
     open: filteredTasks.filter(t => t.status === 'Open').length,
     inProgress: filteredTasks.filter(t => t.status === 'In Progress').length,
     closed: filteredTasks.filter(t => t.status === 'Completed' || t.status === 'Closed').length,
-    overdue: filteredTasks.filter(t => isOverdue(t.deadline, t.status)).length
+    overdue: filteredTasks.filter(t => isOverdue(t.deadline, t.status)).length,
+    Client: filteredTasks.filter(t => t.projectCategory === 'Client').length,
+    Self: filteredTasks.filter(t => t.projectCategory === 'Self').length
   };
 
   if (loading) {
@@ -177,7 +207,7 @@ const ProjectOverview = () => {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 sm:gap-4 mb-6">
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
             <div className="text-xl sm:text-2xl font-bold text-gray-900">{stats.total}</div>
             <div className="text-xs sm:text-sm text-gray-500 mt-1">Total Tasks</div>
@@ -194,9 +224,17 @@ const ProjectOverview = () => {
             <div className="text-xl sm:text-2xl font-bold text-emerald-600">{stats.closed}</div>
             <div className="text-xs sm:text-sm text-gray-500 mt-1">Completed</div>
           </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 col-span-2 sm:col-span-1">
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
             <div className="text-xl sm:text-2xl font-bold text-red-600">{stats.overdue}</div>
             <div className="text-xs sm:text-sm text-gray-500 mt-1">Overdue</div>
+          </div>
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+            <div className="text-xl sm:text-2xl font-bold text-purple-600">{stats.Client}</div>
+            <div className="text-xs sm:text-sm text-gray-500 mt-1">Client Tasks</div>
+          </div>
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+            <div className="text-xl sm:text-2xl font-bold text-teal-600">{stats.Self}</div>
+            <div className="text-xs sm:text-sm text-gray-500 mt-1">Self Tasks</div>
           </div>
         </div>
 
@@ -220,6 +258,20 @@ const ProjectOverview = () => {
               {/* Left side - Filters */}
               <div className="flex flex-wrap gap-3 items-center w-full sm:w-auto">
                 <span className="text-sm font-medium text-gray-700 hidden sm:block">Filters:</span>
+
+                {/* Category Filter - New */}
+                <div className="relative min-w-0 flex-1 sm:flex-initial sm:min-w-[120px]">
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="w-full appearance-none bg-white border border-gray-200 rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">All Categories</option>
+                    <option value="Self">Self Tasks</option>
+                    <option value="Client">Client Tasks</option>
+                  </select>
+                  <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
 
                 {/* Project Filter */}
                 <div className="relative min-w-0 flex-1 sm:flex-initial sm:min-w-[140px]">
@@ -283,8 +335,8 @@ const ProjectOverview = () => {
                   <button
                     onClick={() => setViewMode('grid')}
                     className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'grid'
-                        ? 'bg-white text-blue-600 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-800'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800'
                       }`}
                   >
                     <Grid3X3 className="w-4 h-4 mr-1.5" />
@@ -294,8 +346,8 @@ const ProjectOverview = () => {
                     <button
                       onClick={() => setViewMode('list')}
                       className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'list'
-                          ? 'bg-white text-blue-600 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-800'
+                        ? 'bg-white text-blue-600 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-800'
                         }`}
                     >
                       <List className="w-4 h-4 mr-1.5" />
@@ -318,107 +370,136 @@ const ProjectOverview = () => {
         ) : viewMode === 'grid' || isMobile ? (
           /* Grid View */
           <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredTasks.map((task) => (
-              <div
-                key={task._id}
-                className={`bg-white rounded-xl shadow-sm border-l-4 ${getPriorityColor(task.priority)} hover:shadow-md transition-shadow border-r border-t border-b border-gray-100`}
-              >
-                <div className="p-4 sm:p-6">
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 text-sm sm:text-base">
-                        {task.bucketName}
-                      </h3>
-                      <div className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(task.status)}`}>
-                        {getStatusIcon(task.status)}
-                        <span>{getDisplayStatus(task.status)}</span>
+            {filteredTasks.map((task) => {
+              const categoryInfo = getCategoryInfo(task.projectCategory);
+              return (
+                <div
+                  key={task._id}
+                  className={`bg-white rounded-xl shadow-sm border-l-4 ${getPriorityColor(task.priority)} hover:shadow-md transition-shadow border-r border-t border-b border-gray-100`}
+                >
+                  <div className="p-4 sm:p-6">
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 text-sm sm:text-base">
+                          {task.bucketName}
+                        </h3>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          <div className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(task.status)}`}>
+                            {getStatusIcon(task.status)}
+                            <span>{getDisplayStatus(task.status)}</span>
+                          </div>
+                          {/* Category Badge */}
+                          {task.projectCategory && (
+                            <div className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${categoryInfo.color}`}>
+                              {categoryInfo.icon}
+                              <span>{task.projectCategory}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className={`px-2 py-1 rounded-full text-xs font-medium border ml-3 ${getPriorityBadgeColor(task.priority)}`}>
+                        {task.priority}
                       </div>
                     </div>
-                    <div className={`px-2 py-1 rounded-full text-xs font-medium border ml-3 ${getPriorityBadgeColor(task.priority)}`}>
-                      {task.priority}
+
+                    {/* Task Description */}
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                      {task.taskDescription}
+                    </p>
+
+                    {/* Assigned To */}
+                    <div className="flex items-center space-x-2 mb-4">
+                      <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <span className="text-sm text-gray-600 truncate">
+                        {task.assignedTo ? `${task.assignedTo.firstName} ${task.assignedTo.lastName}` : 'Unassigned'}
+                      </span>
                     </div>
-                  </div>
 
-                  {/* Task Description */}
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                    {task.taskDescription}
-                  </p>
-
-                  {/* Assigned To */}
-                  <div className="flex items-center space-x-2 mb-4">
-                    <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    <span className="text-sm text-gray-600 truncate">
-                      {task.assignedTo ? `${task.assignedTo.firstName} ${task.assignedTo.lastName}` : 'Unassigned'}
-                    </span>
-                  </div>
-
-                  {/* Dates */}
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center text-xs text-gray-500">
-                      <Calendar className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-                      <span>Assigned: {formatDate(task.assignDate)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center">
-                        <Clock className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-                        <span className={isOverdue(task.deadline, task.status) ? 'text-red-600 font-medium' : 'text-gray-500'}>
-                          Due: {formatDate(task.deadline)}
+                    {/* Client Info - Show if it's a Client task */}
+                    {task.ClientId && (
+                      <div className="flex items-center space-x-2 mb-4">
+                        <Building className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-sm text-gray-600 truncate">
+                          Client: {task.ClientId.name}
                         </span>
                       </div>
-                      {task.dueTime && (
-                        <span className="text-gray-500 text-xs">{task.dueTime}</span>
+                    )}
+
+                    {/* Dates */}
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center text-xs text-gray-500">
+                        <Calendar className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                        <span>Assigned: {formatDate(task.assignDate)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center">
+                          <Clock className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                          <span className={isOverdue(task.deadline, task.status) ? 'text-red-600 font-medium' : 'text-gray-500'}>
+                            Due: {formatDate(task.deadline)}
+                          </span>
+                        </div>
+                        {task.dueTime && (
+                          <span className="text-gray-500 text-xs">{task.dueTime}</span>
+                        )}
+                      </div>
+                      {isOverdue(task.deadline, task.status) && (
+                        <div className="inline-flex items-center px-2 py-1 bg-red-50 text-red-700 text-xs font-medium rounded-full">
+                          Overdue
+                        </div>
                       )}
                     </div>
-                    {isOverdue(task.deadline, task.status) && (
-                      <div className="inline-flex items-center px-2 py-1 bg-red-50 text-red-700 text-xs font-medium rounded-full">
-                        Overdue
+
+                    {/* Tagged Members */}
+                    {task.tagMembers && task.tagMembers.length > 0 && (
+                      <div className="pt-4 border-t border-gray-100">
+                        <div className="text-xs text-gray-500 mb-2">Tagged Members:</div>
+                        <div className="flex flex-wrap gap-1">
+                          {(expandedMembers[task._id] ? task.tagMembers : task.tagMembers.slice(0, 2)).map((member) => (
+                            <span
+                              key={member._id}
+                              className="inline-block bg-gray-50 text-gray-700 text-xs px-2 py-1 rounded-full border"
+                            >
+                              {member.firstName} {member.lastName}
+                            </span>
+                          ))}
+                          {task.tagMembers.length > 2 && (
+                            <button
+                              onClick={() => toggleMembersExpansion(task._id)}
+                              className="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"
+                            >
+                              {expandedMembers[task._id]
+                                ? 'Show less'
+                                : `+${task.tagMembers.length - 2} more`
+                              }
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Attachment Required */}
+                    {task.attachmentRequired && (
+                      <div className="pt-3 mt-3 border-t border-gray-100">
+                        <div className="inline-flex items-center text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-full border border-amber-200">
+                          <Paperclip className="w-3 h-3 mr-1" />
+                          Attachment Required
+                        </div>
                       </div>
                     )}
                   </div>
-
-                  {/* Tagged Members */}
-                  {task.tagMembers && task.tagMembers.length > 0 && (
-                    <div className="pt-4 border-t border-gray-100">
-                      <div className="text-xs text-gray-500 mb-2">Tagged Members:</div>
-                      <div className="flex flex-wrap gap-1">
-                        {task.tagMembers.slice(0, 2).map((member) => (
-                          <span
-                            key={member._id}
-                            className="inline-block bg-gray-50 text-gray-700 text-xs px-2 py-1 rounded-full border"
-                          >
-                            {member.firstName} {member.lastName}
-                          </span>
-                        ))}
-                        {task.tagMembers.length > 2 && (
-                          <span className="inline-block bg-gray-50 text-gray-700 text-xs px-2 py-1 rounded-full border">
-                            +{task.tagMembers.length - 2} more
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Attachment Required */}
-                  {task.attachmentRequired && (
-                    <div className="pt-3 mt-3 border-t border-gray-100">
-                      <div className="inline-flex items-center text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-full border border-amber-200">
-                        <Paperclip className="w-3 h-3 mr-1" />
-                        Attachment Required
-                      </div>
-                    </div>
-                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           /* List View - Desktop Only */
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             {/* Table Header */}
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-              <div className="grid grid-cols-12 gap-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <div className="grid grid-cols-13 gap-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 <div className="col-span-3">Task</div>
+                <div className="col-span-1">Category</div>
                 <div className="col-span-2">Status</div>
                 <div className="col-span-2">Assigned To</div>
                 <div className="col-span-2">Due Date</div>
@@ -429,90 +510,114 @@ const ProjectOverview = () => {
 
             {/* Table Body */}
             <div className="divide-y divide-gray-100">
-              {filteredTasks.map((task) => (
-                <div
-                  key={task._id}
-                  className={`px-6 py-4 border-l-4 ${getPriorityColor(task.priority)} hover:bg-gray-50 transition-colors`}
-                >
-                  <div className="grid grid-cols-12 gap-4 items-center">
-                    {/* Task Info */}
-                    <div className="col-span-3">
-                      <div className="font-medium text-gray-900 mb-1">{task.bucketName}</div>
-                      <div className="text-sm text-gray-500 line-clamp-2">{task.taskDescription}</div>
-                    </div>
-
-                    {/* Status */}
-                    <div className="col-span-2">
-                      <div className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(task.status)}`}>
-                        {getStatusIcon(task.status)}
-                        <span>{getDisplayStatus(task.status)}</span>
+              {filteredTasks.map((task) => {
+                const categoryInfo = getCategoryInfo(task.projectCategory);
+                return (
+                  <div
+                    key={task._id}
+                    className={`px-6 py-4 border-l-4 ${getPriorityColor(task.priority)} hover:bg-gray-50 transition-colors`}
+                  >
+                    <div className="grid grid-cols-13 gap-4 items-center">
+                      {/* Task Info */}
+                      <div className="col-span-3">
+                        <div className="font-medium text-gray-900 mb-1">{task.bucketName}</div>
+                        <div className="text-sm text-gray-500 line-clamp-2">{task.taskDescription}</div>
+                        {task.ClientId && (
+                          <div className="text-xs text-gray-400 mt-1">Client: {task.ClientId.name}</div>
+                        )}
                       </div>
-                    </div>
 
-                    {/* Assigned To */}
-                    <div className="col-span-2">
-                      <div className="flex items-center space-x-2">
-                        <User className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">
-                          {task.assignedTo ? `${task.assignedTo.firstName} ${task.assignedTo.lastName}` : 'Unassigned'}
+                      {/* Category */}
+                      <div className="col-span-1">
+                        {task.projectCategory ? (
+                          <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium border ${categoryInfo.color}`}>
+                            {categoryInfo.icon}
+                            <span>{task.projectCategory}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
+                      </div>
+
+                      {/* Status */}
+                      <div className="col-span-2">
+                        <div className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(task.status)}`}>
+                          {getStatusIcon(task.status)}
+                          <span>{getDisplayStatus(task.status)}</span>
+                        </div>
+                      </div>
+
+                      {/* Assigned To */}
+                      <div className="col-span-2">
+                        <div className="flex items-center space-x-2">
+                          <User className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm text-gray-600">
+                            {task.assignedTo ? `${task.assignedTo.firstName} ${task.assignedTo.lastName}` : 'Unassigned'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Due Date */}
+                      <div className="col-span-2">
+                        <div className="flex items-center space-x-1">
+                          <Clock className="w-3.5 h-3.5 text-gray-400" />
+                          <span className={`text-sm ${isOverdue(task.deadline, task.status) ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
+                            {formatDate(task.deadline)}
+                          </span>
+                        </div>
+                        {task.dueTime && (
+                          <div className="text-xs text-gray-500 mt-1">{task.dueTime}</div>
+                        )}
+                        {isOverdue(task.deadline, task.status) && (
+                          <div className="text-xs text-red-600 font-medium mt-1">Overdue</div>
+                        )}
+                      </div>
+
+                      {/* Priority */}
+                      <div className="col-span-1">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getPriorityBadgeColor(task.priority)}`}>
+                          {task.priority}
                         </span>
                       </div>
-                    </div>
 
-                    {/* Due Date */}
-                    <div className="col-span-2">
-                      <div className="flex items-center space-x-1">
-                        <Clock className="w-3.5 h-3.5 text-gray-400" />
-                        <span className={`text-sm ${isOverdue(task.deadline, task.status) ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
-                          {formatDate(task.deadline)}
-                        </span>
+                      {/* Tagged Members */}
+                      <div className="col-span-2">
+                        {task.tagMembers && task.tagMembers.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {(expandedMembers[task._id] ? task.tagMembers : task.tagMembers.slice(0, 2)).map((member) => (
+                              <span
+                                key={member._id}
+                                className="inline-block bg-gray-50 text-gray-700 text-xs px-2 py-1 rounded-full border"
+                              >
+                                {member.firstName} {member.lastName}
+                              </span>
+                            ))}
+                            {task.tagMembers.length > 2 && (
+                              <button
+                                onClick={() => toggleMembersExpansion(task._id)}
+                                className="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"
+                              >
+                                {expandedMembers[task._id]
+                                  ? 'Show less'
+                                  : `+${task.tagMembers.length - 2}`
+                                }
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">None</span>
+                        )}
+                        {task.attachmentRequired && (
+                          <div className="inline-flex items-center text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-full border border-amber-200 mt-1">
+                            <Paperclip className="w-3 h-3 mr-1" />
+                            Required
+                          </div>
+                        )}
                       </div>
-                      {task.dueTime && (
-                        <div className="text-xs text-gray-500 mt-1">{task.dueTime}</div>
-                      )}
-                      {isOverdue(task.deadline, task.status) && (
-                        <div className="text-xs text-red-600 font-medium mt-1">Overdue</div>
-                      )}
-                    </div>
-
-                    {/* Priority */}
-                    <div className="col-span-1">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getPriorityBadgeColor(task.priority)}`}>
-                        {task.priority}
-                      </span>
-                    </div>
-
-                    {/* Tagged Members */}
-                    <div className="col-span-2">
-                      {task.tagMembers && task.tagMembers.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {task.tagMembers.slice(0, 2).map((member) => (
-                            <span
-                              key={member._id}
-                              className="inline-block bg-gray-50 text-gray-700 text-xs px-2 py-1 rounded-full border"
-                            >
-                              {member.firstName} {member.lastName}
-                            </span>
-                          ))}
-                          {task.tagMembers.length > 2 && (
-                            <span className="inline-block bg-gray-50 text-gray-700 text-xs px-2 py-1 rounded-full border">
-                              +{task.tagMembers.length - 2}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-400">None</span>
-                      )}
-                      {task.attachmentRequired && (
-                        <div className="inline-flex items-center text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-full border border-amber-200 mt-1">
-                          <Paperclip className="w-3 h-3 mr-1" />
-                          Required
-                        </div>
-                      )}
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
