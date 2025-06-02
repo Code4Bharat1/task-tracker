@@ -1,14 +1,10 @@
 "use client";
 import React, { useState } from "react";
-import MobileAttendancePage from "@/Component/attendance/mobileattendance";
-import AttendancePage from "@/Component/attendance/myattendance";
 import NavBar from "@/Component/Navbar/navbar";
 import MobileNavbar from "@/Component/Navbar/mobilenavbar"; // Import your MobileNavbar
 import Sidebar from "@/Component/Usersidebar/usersidebar";
 import MobileSidebar from "@/Component/Usersidebar/mobilesidebar";
 import { Menu } from "lucide-react";
-import MobileEditTimeSheet from "@/Component/Timesheet/mobileedittimesheet";
-import EditTimeSheet from "@/Component/Timesheet/edittimesheet";
 import LeaveTable from "@/Component/Leave/leavetable";
 import MobileLeaveTable from "@/Component/Leave/mobileleavetable";
 

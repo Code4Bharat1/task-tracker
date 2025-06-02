@@ -4,7 +4,7 @@ import { useState } from "react";
 import AttendanceTable from "@/Component/attendancesheet/table";
 import Sidebar from "@/Component/Usersidebar/usersidebar";
 import NavBar from "@/Component/Navbar/navbar";
-
+import RouteGuard from "@/Component/RouteGuard";
 
 export default function Home() {
   const currentDate = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
@@ -25,10 +25,12 @@ export default function Home() {
 
       {/* Scrollable Content below Navbar */}
       <div className="mt-[60px] ml-[16.6667%] h-[calc(100vh-60px)] overflow-y-auto p-4 bg-white">
-        <AttendanceTable
-          selectedDate={dateFilter}
-          selectedRemark={remarkFilter}
-        />
+        <RouteGuard featureKey="viewattendance">
+          <AttendanceTable
+            selectedDate={dateFilter}
+            selectedRemark={remarkFilter}
+          />
+        </RouteGuard>
       </div>
     </div>
   );
