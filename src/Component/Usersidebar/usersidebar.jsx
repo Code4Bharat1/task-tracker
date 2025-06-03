@@ -18,6 +18,7 @@ import { IoMdListBox } from 'react-icons/io';
 import { BiMoney } from 'react-icons/bi';
 import { RiMoneyDollarCircleLine } from 'react-icons/ri';
 import { FaSignOutAlt, FaGamepad } from 'react-icons/fa';
+import { MdEmojiEvents } from "react-icons/md";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -74,24 +75,64 @@ export default function Sidebar() {
   };
 
   const menuItems = [
-    { label: 'Dashboard', icon: <RxDashboard />, href: '/dashboard' },
-    { label: 'Attendance', icon: <AiOutlineUserSwitch />, href: '/attendance' },
-    { label: 'Add TimeSheet', icon: <MdAccessTime />, href: '/timesheet' },
-    { label: 'Leave', icon: <IoMdListBox />, href: '/leavetable' },
-    { label: 'Salary', icon: <BiMoney />, href: '/salarypage' },
-    { label: 'Expense', icon: <RiMoneyDollarCircleLine />, href: '/expense' },
-    { label: 'Project Overview', icon: <AiOutlineProject />, href: '/projectoverview' },
-    { label: 'Games', icon: <FaGamepad />, href: '/games' },
+    { label: "Dashboard", icon: <RxDashboard />, href: "/dashboard" },
+    { label: "Attendance", icon: <AiOutlineUserSwitch />, href: "/attendance" },
+    { label: "Add TimeSheet", icon: <MdAccessTime />, href: "/timesheet" },
+    { label: "Leave", icon: <IoMdListBox />, href: "/leavetable" },
+    { label: "Salary", icon: <BiMoney />, href: "/salarypage" },
+    { label: "Expense", icon: <RiMoneyDollarCircleLine />, href: "/expense" },
+    {
+      label: "Project Overview",
+      icon: <AiOutlineProject />,
+      href: "/projectoverview",
+    },
+    { label: "Games", icon: <FaGamepad />, href: "/games" },
+    { label: "Events", icon: <MdEmojiEvents />, href: "/event" },
 
     // Feature-controlled items
-    { label: 'Leave Application', icon: <IoMdListBox />, href: '/viewleave', featureKey: 'viewleave' },
-    { label: 'View Expense', icon: <IoMdListBox />, href: '/expenseRequest', featureKey: 'viewexpense' },
-    { label: 'View Timesheet', icon: <IoMdListBox />, href: '/viewtimesheet', featureKey: 'viewtimesheet' },
-    { label: 'Upload Post', icon: <IoMdListBox />, href: '/postupload', featureKey: 'postUpload' },
-    { label: 'View Attendance', icon: <IoMdListBox />, href: '/viewattendance', featureKey: 'viewattendance' },
-    { label: 'Team Task', icon: <AiOutlineProject />, href: '/teamtask', featureKey: 'teamTasks' },
-    { label: 'Site Visit', icon: <Route />, href: '/site-visit', featureKey: 'site-visit' },
-    { label: 'Logout', icon: <FaSignOutAlt />, href: '/', isLogout: true },
+    {
+      label: "Leave Application",
+      icon: <IoMdListBox />,
+      href: "/viewleave",
+      featureKey: "viewleave",
+    },
+    {
+      label: "View Expense",
+      icon: <IoMdListBox />,
+      href: "/expenseRequest",
+      featureKey: "viewexpense",
+    },
+    {
+      label: "View Timesheet",
+      icon: <IoMdListBox />,
+      href: "/viewtimesheet",
+      featureKey: "viewtimesheet",
+    },
+    {
+      label: "Upload Post",
+      icon: <IoMdListBox />,
+      href: "/postupload",
+      featureKey: "postUpload",
+    },
+    {
+      label: "View Attendance",
+      icon: <IoMdListBox />,
+      href: "/viewattendance",
+      featureKey: "viewattendance",
+    },
+    {
+      label: "Team Task",
+      icon: <AiOutlineProject />,
+      href: "/teamtask",
+      featureKey: "teamTasks",
+    },
+    {
+      label: "Site Visit",
+      icon: <Route />,
+      href: "/site-visit",
+      featureKey: "site-visit",
+    },
+    { label: "Logout", icon: <FaSignOutAlt />, href: "/", isLogout: true },
   ];
 
   const handleLogout = async () => {
