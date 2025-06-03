@@ -1,37 +1,71 @@
 "use client";
-import { useState } from "react";
-
-import AttendanceTable from "@/Component/attendancesheet/table";
-import Sidebar from "@/Component/Usersidebar/usersidebar";
+import React, { useState } from "react";
 import NavBar from "@/Component/Navbar/navbar";
+import MobileNavbar from "@/Component/Navbar/mobilenavbar";
+import Sidebar from "@/Component/Usersidebar/usersidebar";
+import MobileSidebar from "@/Component/Usersidebar/mobilesidebar";
+import { Menu } from "lucide-react";
 import RouteGuard from "@/Component/RouteGuard";
+import AttendanceTable from "@/Component/attendance/attendancesheet/table.jsx";
 
-export default function Home() {
-  const currentDate = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-  const [dateFilter, setDateFilter] = useState(""); // Empty means show all for current month
+function Page() {
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [dateFilter, setDateFilter] = useState(null);
   const [remarkFilter, setRemarkFilter] = useState("");
 
   return (
-    <div className="h-screen overflow-hidden">
-      {/* Sidebar - Fixed */}
-      <div className="w-1/6 fixed top-0 bottom-0 left-0 bg-gray-100">
-        <Sidebar />
+    <div className="min-h-screen bg-white">
+      {/* Desktop View */}
+      <div className="hidden md:flex w-full">
+        <div className="md:w-1/6">
+          <Sidebar />
+        </div>
+        <div className="w-full md:w-5/6">
+          <NavBar />
+          <RouteGuard featureKey="viewattendance">
+            <AttendanceTable
+              selectedDate={dateFilter}
+              selectedRemark={remarkFilter}
+            />
+          </RouteGuard>
+        </div>
       </div>
 
-      {/* Navbar - Fixed */}
-      <div className="fixed top-0 right-0 w-5/6 ml-[16.6667%] z-10">
-        <NavBar />
-      </div>
+      {/* Mobile View */}
+      <div className="block md:hidden relative">
+        <div className="flex items-center">
+          <button
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="absolute left-4 top-4 z-50 text-white"
+          >
+            <Menu size={28} />
+          </button>
+          <MobileNavbar />
+        </div>
 
-      {/* Scrollable Content below Navbar */}
-      <div className="mt-[60px] ml-[16.6667%] h-[calc(100vh-60px)] overflow-y-auto p-4 bg-white">
-        <RouteGuard featureKey="viewattendance">
-          <AttendanceTable
-            selectedDate={dateFilter}
-            selectedRemark={remarkFilter}
+        {isMobileSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/30 z-35"
+            onClick={() => setIsMobileSidebarOpen(false)}
           />
-        </RouteGuard>
+        )}
+
+        <MobileSidebar
+          isOpen={isMobileSidebarOpen}
+          setIsOpen={setIsMobileSidebarOpen}
+        />
+
+        <div className="p-4">
+          <RouteGuard featureKey="viewattendance">
+            <AttendanceTable
+              selectedDate={dateFilter}
+              selectedRemark={remarkFilter}
+            />
+          </RouteGuard>
+        </div>
       </div>
     </div>
   );
 }
+
+export default Page;

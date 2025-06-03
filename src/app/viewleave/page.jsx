@@ -1,29 +1,66 @@
-
+"use client";
+import React, { useState } from "react";
 import LeaveTable from '@/Component/Leave/viewleave/leavehistory';
-import NavBar from '@/Component/Navbar/navbar';
 import RouteGuard from '@/Component/RouteGuard';
-import Sidebar from '@/Component/Usersidebar/usersidebar';
-import React from 'react'
+import NavBar from "@/Component/Navbar/navbar";
+import MobileNavbar from "@/Component/Navbar/mobilenavbar";
+import Sidebar from "@/Component/Usersidebar/usersidebar";
+import MobileSidebar from "@/Component/Usersidebar/mobilesidebar";
+import { Menu } from "lucide-react";
 
-export default function Home() {
-    return (
-        <div className="h-screen overflow-hidden"> {/* Prevent page scroll */}
-            {/* Sidebar - Fixed */}
-            <div className="w-1/6 fixed top-0 bottom-0 left-0 bg-gray-100">
-                <Sidebar/>
-            </div>
+function Home() {
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-            {/* Navbar - Fixed*/}
-            <div className="fixed top-0 right-0 w-5/6 ml-[16.6667%] z-10">
-                <NavBar />
-            </div>
-
-            {/* Scrollable Content below Navbar */}
-            <div className="mt-[60px] ml-[16.6667%] h-[calc(100vh-60px)] overflow-y-auto p-4 bg-white">
-                <RouteGuard featureKey="viewleave">
-                    <LeaveTable/>
-                </RouteGuard>
-            </div>
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Desktop View */}
+      <div className="hidden md:flex w-full">
+        {/* Sidebar */}
+        <div className="md:w-1/6">
+          <Sidebar />
         </div>
-    );
+
+        {/* Main Content */}
+        <div className="w-full md:w-5/6">
+          <NavBar />
+          <RouteGuard featureKey="viewleave">
+            <LeaveTable />
+          </RouteGuard>
+        </div>
+      </div>
+
+      {/* Mobile View */}
+      <div className="block md:hidden relative">
+        <div className="flex items-center">
+          <button
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="absolute left-4 top-4 z-50 text-white"
+          >
+            <Menu size={28} />
+          </button>
+          <MobileNavbar />
+        </div>
+
+        {isMobileSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity/30 z-35"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+        )}
+
+        <MobileSidebar
+          isOpen={isMobileSidebarOpen}
+          setIsOpen={setIsMobileSidebarOpen}
+        />
+
+        <div className="p-4">
+          <RouteGuard featureKey="viewleave">
+            <LeaveTable />
+          </RouteGuard>
+        </div>
+      </div>
+    </div>
+  );
 }
+
+export default Home;

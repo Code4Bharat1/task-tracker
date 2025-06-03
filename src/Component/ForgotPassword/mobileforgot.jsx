@@ -17,7 +17,6 @@ export default function MobileForgotPassword() {
 
   const handleChange = (e) => {
     const value = e.target.value;
-
     const isNumericOnly = /^\d*$/.test(value);
 
     if (isNumericOnly && value.length <= 10) {
@@ -54,29 +53,34 @@ export default function MobileForgotPassword() {
     setIsSubmitting(true);
 
     try {
-      // Use email for API call (adjust based on your backend API requirements)
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_API}/forgotpassword/generate-otp`,
-        {
-          email: input, // or adjust field name based on your API
-        }
+        { email: input }
       );
 
-      // Store email/phone in localStorage like desktop version
       localStorage.setItem("email", input);
 
       if (res.status === 200) {
+        // Set timer cookies
+        const expiryTimestamp = Date.now() + 60 * 1000;
+        Cookies.set("otp-timer-timestamp", expiryTimestamp.toString(), {
+          expires: 1 / 24, // expires in 1 hour (fallback)
+        });
+        Cookies.set("otp-email", input, { expires: 1 / 24 });
+
+        // Update UI state
+        setIsResendDisabled(true);
+        setTimer(60);
+
+        // Show success message
         if (inputType === "phone") {
-          toast.success(
-            `OTP sent to ${input.slice(0, 3)}***${input.slice(-3)}`
-          );
+          toast.success(`OTP sent to ${input.slice(0, 3)}***${input.slice(-3)}`);
         } else {
           const emailParts = input.split("@");
-          const maskedEmail = `${emailParts[0].slice(0, 2)}***@${
-            emailParts[1]
-          }`;
+          const maskedEmail = `${emailParts[0].slice(0, 2)}***@${emailParts[1]}`;
           toast.success(`OTP sent to ${maskedEmail}`);
         }
+
         router.push("/forgotpassword/verifyotp");
       } else {
         toast.error("Failed to send OTP. Please try again.");
@@ -84,8 +88,7 @@ export default function MobileForgotPassword() {
     } catch (error) {
       console.error("Error sending OTP:", error);
       toast.error(
-        error?.response?.data?.message ||
-          "Failed to send OTP. Please try again."
+        error?.response?.data?.message || "Failed to send OTP. Please try again."
       );
     } finally {
       setIsSubmitting(false);
@@ -103,33 +106,31 @@ export default function MobileForgotPassword() {
     try {
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_API}/forgotpassword/generate-otp`,
-        {
-          email: input, // or adjust field name based on your API
-        }
+        { email: input }
       );
 
       if (res.status === 200) {
-        if (inputType === "phone") {
-          toast.success(
-            `OTP resent to ${input.slice(0, 3)}***${input.slice(-3)}`
-          );
-        } else {
-          const emailParts = input.split("@");
-          const maskedEmail = `${emailParts[0].slice(0, 2)}***@${
-            emailParts[1]
-          }`;
-          toast.success(`OTP resent to ${maskedEmail}`);
-        }
-
-        router.push("/forgotpassword/verifyotp");
-        setIsResendDisabled(true);
-        setTimer(60);
-
+        // Update timer cookies
         const expiryTimestamp = Date.now() + 60 * 1000;
         Cookies.set("otp-timer-timestamp", expiryTimestamp.toString(), {
           expires: 1 / 24,
         });
         Cookies.set("otp-email", input, { expires: 1 / 24 });
+
+        // Update UI state
+        setIsResendDisabled(true);
+        setTimer(60);
+
+        // Show success message
+        if (inputType === "phone") {
+          toast.success(`OTP resent to ${input.slice(0, 3)}***${input.slice(-3)}`);
+        } else {
+          const emailParts = input.split("@");
+          const maskedEmail = `${emailParts[0].slice(0, 2)}***@${emailParts[1]}`;
+          toast.success(`OTP resent to ${maskedEmail}`);
+        }
+
+        router.push("/forgotpassword/verifyotp");
       } else {
         toast.error("Failed to resend OTP.");
       }
@@ -141,7 +142,7 @@ export default function MobileForgotPassword() {
     }
   };
 
-  // Timer logic from desktop version
+  // Initialize timer from cookies on component mount
   useEffect(() => {
     const savedTimestamp = Cookies.get("otp-timer-timestamp");
     const savedEmail = Cookies.get("otp-email");
@@ -156,18 +157,20 @@ export default function MobileForgotPassword() {
         setIsResendDisabled(true);
         setTimer(remaining);
       } else {
+        // Clean up expired timer
         Cookies.remove("otp-timer-timestamp");
         Cookies.remove("otp-email");
       }
     }
   }, []);
 
+  // Timer countdown effect
   useEffect(() => {
     let interval;
     if (isResendDisabled && timer > 0) {
       interval = setInterval(() => {
         setTimer((prev) => {
-          if (prev === 1) {
+          if (prev <= 1) {
             clearInterval(interval);
             setIsResendDisabled(false);
             Cookies.remove("otp-timer-timestamp");
@@ -252,7 +255,6 @@ export default function MobileForgotPassword() {
               </div>
             )}
 
-            {/* Resend OTP Button - positioned similar to desktop but adapted for mobile */}
             {input && (
               <button
                 type="button"

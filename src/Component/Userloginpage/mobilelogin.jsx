@@ -4,12 +4,14 @@ import { Toaster, toast } from "react-hot-toast";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { FaEye, FaEyeSlash } from "react-icons/fa"; // Import eye icons
 
 export default function MobileLogin() {
   const [formData, setFormData] = useState({
     identifier: "", // Email or Phone
     password: "",
   });
+  const [showPassword, setShowPassword] = useState(false); // State for password visibility
   const router = useRouter();
   const texts = [
     "Reduces time spent remembering or searching for Tasks",
@@ -143,7 +145,7 @@ export default function MobileLogin() {
       />
 
       <div className="bg-white/90 p-4 rounded-xl shadow-md w-full max-w-xs">
-        <Toaster position="top-right" />
+        
         <h2 className="text-3xl font-bold text-center font-Poppins text-[#018ABE] mb-4">
           User Login
         </h2>
@@ -168,7 +170,7 @@ export default function MobileLogin() {
                 required
               />
             </div>
-            <div>
+            <div className="relative">
               <label
                 htmlFor="password"
                 className="block text-gray-900 text-lg mb-1"
@@ -176,16 +178,23 @@ export default function MobileLogin() {
                 Password
               </label>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 id="password"
                 placeholder="Enter above 8 character secure password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full p-2 rounded-lg bg-white border border-gray-400 focus:outline-none text-lg"
+                className="w-full p-2 rounded-lg bg-white border border-gray-400 focus:outline-none text-lg pr-10"
                 required
                 minLength={8}
               />
+              <button
+                type="button"
+                className="absolute right-3 top-10 text-gray-600"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+              </button>
             </div>
             <p
               className="text-center text-lg text-[#018ABE] hover:underline cursor-pointer"
