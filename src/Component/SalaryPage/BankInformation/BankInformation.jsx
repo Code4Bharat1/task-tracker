@@ -1,11 +1,11 @@
+
 'use client'
 import { useState, useEffect } from 'react';
-import { Eye, EyeOff, Upload, AlertCircle, CheckCircle, Info, X, Save, Edit, FileText, ZoomIn, Download, ExternalLink } from 'lucide-react';
+import axios from 'axios';
+import { Eye, EyeOff, Upload, AlertCircle, CheckCircle, Info, X, Save, Edit } from 'lucide-react';
 
 export default function BankInformation() {
   const [file, setFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState('');
-  const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     accountNumber: '',
@@ -31,23 +31,12 @@ export default function BankInformation() {
   const fetchUserInfo = async () => {
     try {
       setLoading(true);
-      // Simulated API call - replace with your actual API
-      const res = {
-        data: {
-          user: {
-            bankDetails: [{
-              accountHolderName: '',
-              accountNumber: '',
-              branchName: '',
-              bankName: '',
-              ifscCode: '',
-              documentType: 'Pass Book'
-            }]
-          }
-        }
-      };
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_API}/user/bank/getPersonalInfo`, {
+        withCredentials: true
+      });
 
       if (res.data && res.data.user) {
+        // Extract first bank detail if exists
         const bankDetail = res.data.user.bankDetails && res.data.user.bankDetails.length > 0
           ? res.data.user.bankDetails[0]
           : {};
@@ -74,10 +63,12 @@ export default function BankInformation() {
   const handleChange = (e) => {
     const { id, value } = e.target;
     
+    // Special handling for account number - only allow digits
     if ((id === 'accountNumber' || id === 'confirmAccountNumber') && !/^\d*$/.test(value)) {
       return;
     }
 
+    // Special handling for IFSC code - uppercase and alphanumeric only
     if (id === 'ifscCode') {
       const upperValue = value.toUpperCase();
       if (!/^[A-Z0-9]*$/.test(upperValue)) {
@@ -97,10 +88,12 @@ export default function BankInformation() {
     }
   };
 
+  // Handle document type change
   const handleDocumentTypeChange = (e) => {
     setFormData({ ...formData, documentType: e.target.value });
   };
 
+  // Validate account numbers match
   const validateAccountNumbers = (field, value) => {
     const newErrors = { ...errors };
 
@@ -125,12 +118,14 @@ export default function BankInformation() {
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
+      // Validate file type (PDF or images only)
       const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
       if (!validTypes.includes(selectedFile.type)) {
         showError('Please upload only PDF or image files (JPEG, PNG)');
         return;
       }
       
+      // Validate file size (max 5MB)
       if (selectedFile.size > 5 * 1024 * 1024) {
         showError('File size should not exceed 5MB');
         return;
@@ -138,12 +133,6 @@ export default function BankInformation() {
       
       setFile(selectedFile);
       setErrors({ ...errors, file: null });
-      
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setPreviewUrl(event.target.result);
-      };
-      reader.readAsDataURL(selectedFile);
     }
   };
 
@@ -151,51 +140,7 @@ export default function BankInformation() {
     document.getElementById('fileUpload').click();
   };
 
-  // Document viewing functions
-  const openDocumentModal = () => {
-    setShowDocumentModal(true);
-  };
-
-  const closeDocumentModal = () => {
-    setShowDocumentModal(false);
-  };
-
-  const downloadDocument = () => {
-    if (file && previewUrl) {
-      const link = document.createElement('a');
-      link.href = previewUrl;
-      link.download = file.name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  };
-
-  const openInNewTab = () => {
-    if (previewUrl) {
-      const newWindow = window.open();
-      if (file.type === 'application/pdf') {
-        newWindow.document.write(`
-          <html>
-            <head><title>Document Viewer</title></head>
-            <body style="margin:0;padding:0;">
-              <embed src="${previewUrl}" width="100%" height="100%" type="application/pdf">
-            </body>
-          </html>
-        `);
-      } else {
-        newWindow.document.write(`
-          <html>
-            <head><title>Document Viewer</title></head>
-            <body style="margin:0;padding:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f0f0f0;">
-              <img src="${previewUrl}" style="max-width:100%;max-height:100%;object-fit:contain;">
-            </body>
-          </html>
-        `);
-      }
-    }
-  };
-
+  // Show success message
   const showSuccess = (message) => {
     setSuccessMessage(message);
     setTimeout(() => {
@@ -203,6 +148,7 @@ export default function BankInformation() {
     }, 5000);
   };
 
+  // Show error message
   const showError = (message) => {
     setErrorMessage(message);
     setTimeout(() => {
@@ -210,33 +156,40 @@ export default function BankInformation() {
     }, 5000);
   };
 
+  // Validate all fields
   const validateForm = () => {
     const newErrors = {};
     
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Full name is required';
     }
+    
     if (!formData.accountNumber) {
       newErrors.accountNumber = 'Account number is required';
     } else if (formData.accountNumber.length < 9 || formData.accountNumber.length > 18) {
       newErrors.accountNumber = 'Account number should be between 9 and 18 digits';
     }
+    
     if (!formData.confirmAccountNumber) {
       newErrors.confirmAccountNumber = 'Please confirm your account number';
     } else if (formData.accountNumber !== formData.confirmAccountNumber) {
       newErrors.confirmAccountNumber = "Account numbers don't match";
     }
+    
     if (!formData.branchName.trim()) {
       newErrors.branchName = 'Branch name is required';
     }
+    
     if (!formData.bankName.trim()) {
       newErrors.bankName = 'Bank name is required';
     }
+    
     if (!formData.ifscCode.trim()) {
       newErrors.ifscCode = 'IFSC code is required';
     } else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifscCode)) {
       newErrors.ifscCode = 'Invalid IFSC code format (e.g., SBIN0123456)';
     }
+    
     if (!file && !isEditing) {
       newErrors.file = 'Please upload a bank document';
     }
@@ -245,8 +198,10 @@ export default function BankInformation() {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Toggle between edit and save
   const handleEditSave = async () => {
     if (isEditing) {
+      // On Save: Validate & send data to backend
       if (!validateForm()) {
         showError("Please fix all errors before saving.");
         return;
@@ -254,27 +209,60 @@ export default function BankInformation() {
 
       try {
         setLoading(true);
-        // Simulated API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Prepare form payload
+        const payload = new FormData();
+        payload.append('accountHolderName', formData.fullName);
+        payload.append('accountNumber', formData.accountNumber);
+        payload.append('branchName', formData.branchName);
+        payload.append('bankName', formData.bankName);
+        payload.append('ifscCode', formData.ifscCode);
+        payload.append('documentType', formData.documentType);
+        
+        if (file) {
+          payload.append('document', file);
+        }
+
+        await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_API}/user/bank/updateUserInfo`, payload, {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
         showSuccess('Bank information saved successfully!');
+        
         setIsEditing(false);
-        fetchUserInfo();
+        fetchUserInfo(); // Refresh data
       } catch (error) {
         console.error('Error saving user info:', error);
-        showError('Failed to save bank information. Please try again later.');
+        
+        if (error.response) {
+          // Handle specific error responses from backend
+          if (error.response.status === 400) {
+            showError(error.response.data.message || 'Invalid input data. Please check your information.');
+          } else if (error.response.status === 401) {
+            showError('Session expired. Please login again.');
+          } else {
+            showError('Failed to save bank information. Please try again later.');
+          }
+        } else {
+          showError('Network error. Please check your internet connection.');
+        }
       } finally {
         setLoading(false);
       }
     } else {
+      // On Edit: enable editing
       setIsEditing(true);
     }
   };
 
   const handleCancel = () => {
+    // Reset form to original values
     fetchUserInfo();
     setIsEditing(false);
     setFile(null);
-    setPreviewUrl('');
     setErrors({});
   };
 
@@ -515,7 +503,7 @@ export default function BankInformation() {
               </select>
             </div>
 
-            <div className="flex-1">
+            <div>
               <button
                 type="button"
                 onClick={triggerFileUpload}
@@ -536,78 +524,12 @@ export default function BankInformation() {
                 accept=".pdf,.jpg,.jpeg,.png"
               />
               <p className="mt-1 text-xs text-gray-500">Accepted formats: PDF, JPEG, PNG (Max: 5MB)</p>
-              
-              {(file || previewUrl) && (
-                <div className="mt-3 flex items-start gap-4">
-                  {/* Preview Section */}
-                  <div className="border rounded-md p-2 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors" onClick={openDocumentModal}>
-                    {file && file.type === 'application/pdf' ? (
-                      <div className="w-32 h-32 flex flex-col items-center justify-center text-red-500">
-                        <FileText size={48} />
-                        <span className="text-xs mt-2 text-gray-700">PDF Document</span>
-                        <span className="text-xs text-blue-600 mt-1">Click to view</span>
-                      </div>
-                    ) : previewUrl ? (
-                      <div className="relative">
-                        <img 
-                          src={previewUrl} 
-                          alt="Document preview" 
-                          className="w-32 h-32 object-contain"
-                        />
-                        <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 flex items-center justify-center transition-all">
-                          <ZoomIn className="text-white opacity-0 hover:opacity-100" size={24} />
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                  
-                  {/* File Info Section */}
-                  <div className="flex-1">
-                    <div className="text-sm flex items-center text-green-700">
-                      <CheckCircle size={16} className="mr-1" />
-                      {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
-                    </div>
-                    
-                    {/* Action Buttons */}
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={openDocumentModal}
-                        className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-50"
-                      >
-                        <Eye size={14} /> View
-                      </button>
-                      <button
-                        type="button"
-                        onClick={downloadDocument}
-                        className="text-sm text-green-600 hover:text-green-800 flex items-center gap-1 px-2 py-1 rounded hover:bg-green-50"
-                      >
-                        <Download size={14} /> Download
-                      </button>
-                      <button
-                        type="button"
-                        onClick={openInNewTab}
-                        className="text-sm text-purple-600 hover:text-purple-800 flex items-center gap-1 px-2 py-1 rounded hover:bg-purple-50"
-                      >
-                        <ExternalLink size={14} /> Open in New Tab
-                      </button>
-                      {isEditing && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFile(null);
-                            setPreviewUrl('');
-                          }}
-                          className="text-sm text-red-600 hover:text-red-800 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50"
-                        >
-                          <X size={14} /> Remove
-                        </button>
-                      )}
-                    </div>
-                  </div>
+              {file && (
+                <div className="mt-2 text-sm flex items-center text-green-700">
+                  <CheckCircle size={16} className="mr-1" />
+                  {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
                 </div>
               )}
-              
               {errors.file && (
                 <p className="mt-1 text-sm text-red-600 flex items-center">
                   <AlertCircle size={14} className="mr-1" /> {errors.file}
@@ -652,58 +574,6 @@ export default function BankInformation() {
           )}
         </div>
       </div>
-
-      {/* Document Modal */}
-      {showDocumentModal && previewUrl && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] w-full overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold">Document Viewer</h3>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={downloadDocument}
-                  className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded"
-                  title="Download"
-                >
-                  <Download size={20} />
-                </button>
-                <button
-                  onClick={openInNewTab}
-                  className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded"
-                  title="Open in New Tab"
-                >
-                  <ExternalLink size={20} />
-                </button>
-                <button
-                  onClick={closeDocumentModal}
-                  className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
-            <div className="p-4 max-h-[calc(90vh-120px)] overflow-auto">
-              {file && file.type === 'application/pdf' ? (
-                <div className="w-full h-96">
-                  <embed 
-                    src={previewUrl} 
-                    type="application/pdf" 
-                    className="w-full h-full"
-                  />
-                </div>
-              ) : (
-                <div className="text-center">
-                  <img 
-                    src={previewUrl} 
-                    alt="Document" 
-                    className="max-w-full max-h-full object-contain mx-auto"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

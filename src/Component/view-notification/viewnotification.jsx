@@ -29,7 +29,7 @@ const NotificationDashboard = () => {
                 axiosInstance.get('/post-notification'),
                 axiosInstance.get('/expense-notification'),
                 axiosInstance.get('/calendar-notification'),
-                axiosInstance.get('http://localhost:4110/api/meeting-notification')
+                axiosInstance.get('/meeting-notification')
             ]);
 
             console.log(meetingRes);

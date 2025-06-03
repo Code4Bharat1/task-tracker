@@ -429,6 +429,17 @@ export default function NavBar() {
                     <div className="text-6xl mb-4">🔔</div>
                     <h4 className="text-lg font-medium text-gray-600 mb-2">No new notifications</h4>
                     <p className="text-sm text-gray-500">You're all caught up!</p>
+                    <div className="p-3 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+                    <button
+                      onClick={() => {
+                        router.push('/view-notification');
+                        setShowNotifications(false);
+                      }}
+                      className="w-full cursor-pointer text-center text-[#018ABE] hover:text-[#016a96] font-medium text-sm transition-colors"
+                    >
+                      View All Notifications →
+                    </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="p-4 overflow-y-auto flex-1 space-y-1">
