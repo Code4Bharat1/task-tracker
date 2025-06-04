@@ -14,7 +14,6 @@ const UserEvents = () => {
       .get("http://localhost:4110/api/event/all", { withCredentials: true })
       .then((res) => {
         const allEvents = res.data.events || [];
-        // Filter out events with date less than today
         const formatDate = (date) => new Date(date).toISOString().split("T")[0];
         const today = formatDate(new Date());
         const filteredEvents = allEvents.filter(
@@ -62,33 +61,39 @@ const UserEvents = () => {
     <div className="p-4 sm:p-6">
       <h2 className="text-xl sm:text-2xl font-bold mb-4">Your Events</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {events.map((event) => {
-          const label = getLabel(event.date);
-          return (
-            <div
-              key={event._id}
-              className="bg-white shadow-md rounded-2xl p-4 border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer relative"
-              onClick={() => handleCardClick(event)}
-            >
-              {label && (
-                <span
-                  className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-semibold ${getLabelClass(
-                    label
-                  )}`}
-                >
-                  {label}
-                </span>
-              )}
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">
-                {event.title}
-              </h3>
-              <p className="text-sm text-gray-600 mb-1">
-                📅 Date: {event.date}
-              </p>
-              <p className="text-gray-700 text-sm">{event.description}</p>
-            </div>
-          );
-        })}
+        {events.length === 0 ? (
+          <div className="col-span-full text-center text-gray-500 text-lg font-semibold py-8">
+            No events occurs
+          </div>
+        ) : (
+          events.map((event) => {
+            const label = getLabel(event.date);
+            return (
+              <div
+                key={event._id}
+                className="bg-white shadow-md rounded-2xl p-4 border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer relative"
+                onClick={() => handleCardClick(event)}
+              >
+                {label && (
+                  <span
+                    className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-semibold ${getLabelClass(
+                      label
+                    )}`}
+                  >
+                    {label}
+                  </span>
+                )}
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">
+                  {event.title}
+                </h3>
+                <p className="text-sm text-gray-600 mb-1">
+                  📅 Date: {event.date}
+                </p>
+                <p className="text-gray-700 text-sm">{event.description}</p>
+              </div>
+            );
+          })
+        )}
       </div>
 
       {showModal && (
