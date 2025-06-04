@@ -1,4 +1,3 @@
-LOGIN;
 import MobileLogin from "@/Component/Userloginpage/mobilelogin";
 import Userloginpage from "@/Component/Userloginpage/userloginpage";
 
