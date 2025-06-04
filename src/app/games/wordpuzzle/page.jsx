@@ -5,7 +5,8 @@ import MobileNavbar from "@/Component/Navbar/mobilenavbar"; // Import your Mobil
 import Sidebar from "@/Component/Usersidebar/usersidebar";
 import MobileSidebar from "@/Component/Usersidebar/mobilesidebar";
 import { Menu } from "lucide-react";
-import RockPaperScissorsGame from "@/Component/games/rockpaperscissors";
+import WordPuzzleGame from "@/Component/games/wordpuzzle";
+
 
 function Page() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -22,7 +23,7 @@ function Page() {
         {/* Main Content */}
         <div className="w-full md:w-5/6">
           <NavBar />
-          <RockPaperScissorsGame />
+          <WordPuzzleGame />
         </div>
       </div>
 
@@ -58,7 +59,7 @@ function Page() {
 
         {/* Mobile Attendance Page */}
         <div className="p-4">
-          <RockPaperScissorsGame />
+          <WordPuzzleGame />
         </div>
       </div>
     </div>

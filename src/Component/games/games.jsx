@@ -15,7 +15,7 @@ export default function Games() {
         { name: 'itquiz', displayName: 'IT Quiz', icon: '💻' },
         { name: 'ludo', displayName: 'Ludo', icon: '🎲' },
         { name: 'tictactoe', displayName: 'Tic Tac Toe', icon: '⭕' },
-        { name: 'triStrike', displayName: 'Word Search Puzzle', icon: '🧩' },
+        { name: 'wordpuzzle', displayName: 'Word Search Puzzle', icon: '🧩' },
         { name: 'typing', displayName: 'Typing Speed Test', icon: '⌨️' }
     ];
 

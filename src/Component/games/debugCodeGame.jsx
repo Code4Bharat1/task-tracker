@@ -414,6 +414,427 @@ print(student.get("major", "Not specified"))`,
             "Change dictionary to list"
         ],
         correctAnswer: "Use student.get('major', 'Not specified')"
+    },
+    {
+        id: 16,
+        title: "String Comparison",
+        language: "JavaScript",
+        difficulty: "Easy",
+        buggyCode: `const password = "secret123";
+const userInput = "Secret123";
+
+if (password === userInput) {
+    console.log("Access granted");
+} else {
+    console.log("Access denied");
+}`,
+        correctCode: `const password = "secret123";
+const userInput = "Secret123";
+
+if (password.toLowerCase() === userInput.toLowerCase()) {
+    console.log("Access granted");
+} else {
+    console.log("Access denied");
+}`,
+        bug: "Case-sensitive comparison when case shouldn't matter",
+        explanation: "The comparison is case-sensitive. For case-insensitive comparison, convert both strings to the same case.",
+        options: [
+            "Add .toLowerCase() to both strings",
+            "Change === to ==",
+            "Remove the else clause",
+            "Use length comparison instead"
+        ],
+        correctAnswer: "Add .toLowerCase() to both strings"
+    },
+    {
+        id: 17,
+        title: "Array Filter",
+        language: "JavaScript",
+        difficulty: "Medium",
+        buggyCode: `const numbers = [1, 2, 3, 4, 5];
+const evenNumbers = numbers.filter(num => {
+    num % 2 === 0;
+});
+console.log(evenNumbers);`,
+        correctCode: `const numbers = [1, 2, 3, 4, 5];
+const evenNumbers = numbers.filter(num => {
+    return num % 2 === 0;
+});
+console.log(evenNumbers);`,
+        bug: "Missing return statement in filter callback",
+        explanation: "The filter callback needs an explicit return statement when using curly braces.",
+        options: [
+            "Add return before num % 2 === 0",
+            "Remove curly braces",
+            "Change filter to map",
+            "Add semicolon after condition"
+        ],
+        correctAnswer: "Add return before num % 2 === 0"
+    },
+    {
+        id: 18,
+        title: "Object Method",
+        language: "JavaScript",
+        difficulty: "Medium",
+        buggyCode: `const calculator = {
+    value: 0,
+    add: function(num) {
+        this.value += num;
+    },
+    subtract: function(num) {
+        this.value -= num;
+    },
+    show: () => {
+        console.log(this.value);
+    }
+};
+
+calculator.add(5);
+calculator.show();`,
+        correctCode: `const calculator = {
+    value: 0,
+    add: function(num) {
+        this.value += num;
+    },
+    subtract: function(num) {
+        this.value -= num;
+    },
+    show: function() {
+        console.log(this.value);
+    }
+};
+
+calculator.add(5);
+calculator.show();`,
+        bug: "Arrow function doesn't bind 'this' to the object",
+        explanation: "Arrow functions don't have their own 'this' context. Use regular function syntax for object methods.",
+        options: [
+            "Change arrow function to regular function",
+            "Move value outside object",
+            "Add bind(this) to arrow function",
+            "Change this to calculator"
+        ],
+        correctAnswer: "Change arrow function to regular function"
+    },
+    {
+        id: 19,
+        title: "Event Listener",
+        language: "JavaScript",
+        difficulty: "Medium",
+        buggyCode: `document.querySelector('button').addEventListener('click', handleClick());
+
+function handleClick() {
+    console.log('Button clicked');
+}`,
+        correctCode: `document.querySelector('button').addEventListener('click', handleClick);
+
+function handleClick() {
+    console.log('Button clicked');
+}`,
+        bug: "Calling handleClick immediately instead of passing as callback",
+        explanation: "The function is being called immediately (with parentheses) instead of being passed as a callback.",
+        options: [
+            "Remove parentheses after handleClick",
+            "Change 'click' to 'onclick'",
+            "Add return to handleClick",
+            "Move function declaration before event listener"
+        ],
+        correctAnswer: "Remove parentheses after handleClick"
+    },
+    {
+        id: 20,
+        title: "Template Literal",
+        language: "JavaScript",
+        difficulty: "Easy",
+        buggyCode: `const name = "Alice";
+const age = 25;
+console.log("Name: " + name + ", Age: " + age);`,
+        correctCode: `const name = "Alice";
+const age = 25;
+console.log(\`Name: \${name}, Age: \${age}\`);`,
+        bug: "Using concatenation instead of template literals",
+        explanation: "Template literals (backticks) provide cleaner string interpolation than concatenation.",
+        options: [
+            "Use template literals with ${}",
+            "Change + to comma",
+            "Remove all quotes",
+            "Use join() instead"
+        ],
+        correctAnswer: "Use template literals with ${}"
+    },
+    {
+        id: 21,
+        title: "Async/Await",
+        language: "JavaScript",
+        difficulty: "Hard",
+        buggyCode: `async function fetchData() {
+    const response = fetch('https://api.example.com/data');
+    const data = await response.json();
+    return data;
+}`,
+        correctCode: `async function fetchData() {
+    const response = await fetch('https://api.example.com/data');
+    const data = await response.json();
+    return data;
+}`,
+        bug: "Missing await for fetch call",
+        explanation: "The fetch call returns a promise and needs to be awaited before calling .json() on the response.",
+        options: [
+            "Add await before fetch",
+            "Remove async from function",
+            "Change .json() to .text()",
+            "Add try/catch block"
+        ],
+        correctAnswer: "Add await before fetch"
+    },
+    {
+        id: 22,
+        title: "CSS Units",
+        language: "CSS",
+        difficulty: "Easy",
+        buggyCode: `.container {
+    width: 100%;
+    padding: 20;
+    margin: 10px;
+}`,
+        correctCode: `.container {
+    width: 100%;
+    padding: 20px;
+    margin: 10px;
+}`,
+        bug: "Missing unit for padding value",
+        explanation: "CSS length values require units (px, em, rem, etc.) unless the value is 0.",
+        options: [
+            "Add px unit to padding",
+            "Remove padding property",
+            "Change width to 100vw",
+            "Add quotes around 20"
+        ],
+        correctAnswer: "Add px unit to padding"
+    },
+    {
+        id: 23,
+        title: "HTML Form",
+        language: "HTML",
+        difficulty: "Easy",
+        buggyCode: `<form>
+    <input type="text" name="username">
+    <button>Submit</button>
+</form>`,
+        correctCode: `<form>
+    <input type="text" name="username" required>
+    <button type="submit">Submit</button>
+</form>`,
+        bug: "Missing form validation and submit type",
+        explanation: "For better form handling, add required attribute and specify button type.",
+        options: [
+            "Add required and type='submit'",
+            "Change form to div",
+            "Remove name attribute",
+            "Add method='POST'"
+        ],
+        correctAnswer: "Add required and type='submit'"
+    },
+    {
+        id: 24,
+        title: "Python Loop",
+        language: "Python",
+        difficulty: "Easy",
+        buggyCode: `fruits = ['apple', 'banana', 'orange']
+for i in range(fruits):
+    print(fruits[i])`,
+        correctCode: `fruits = ['apple', 'banana', 'orange']
+for fruit in fruits:
+    print(fruit)`,
+        bug: "Incorrect loop syntax for iterating through list",
+        explanation: "Python allows direct iteration over list elements without using range and index.",
+        options: [
+            "Use for fruit in fruits syntax",
+            "Change range to len(fruits)",
+            "Add enumerate() function",
+            "Remove square brackets"
+        ],
+        correctAnswer: "Use for fruit in fruits syntax"
+    },
+    {
+        id: 25,
+        title: "Python String Format",
+        language: "Python",
+        difficulty: "Medium",
+        buggyCode: `name = "Bob"
+age = 30
+print("Name: %s, Age: %d" % name % age)`,
+        correctCode: `name = "Bob"
+age = 30
+print("Name: %s, Age: %d" % (name, age))`,
+        bug: "Incorrect string formatting syntax",
+        explanation: "When using % formatting with multiple values, they must be in a tuple.",
+        options: [
+            "Put variables in tuple (name, age)",
+            "Use f-string instead",
+            "Remove % symbols",
+            "Add commas between variables"
+        ],
+        correctAnswer: "Put variables in tuple (name, age)"
+    },
+    {
+        id: 26,
+        title: "React Component",
+        language: "JavaScript",
+        difficulty: "Hard",
+        buggyCode: `function Greeting() {
+    return (
+        <div>
+            <h1>Hello World</h1>
+            <p>Welcome to our site</p>
+        </div>
+        <div>
+            <button>Click me</button>
+        </div>
+    );
+}`,
+        correctCode: `function Greeting() {
+    return (
+        <div>
+            <h1>Hello World</h1>
+            <p>Welcome to our site</p>
+            <button>Click me</button>
+        </div>
+    );
+}`,
+        bug: "Multiple root elements in React component return",
+        explanation: "React components must return a single root element (can be a Fragment <> </>).",
+        options: [
+            "Combine into single root div",
+            "Add React.Fragment wrapper",
+            "Remove one div",
+            "Change to class component"
+        ],
+        correctAnswer: "Combine into single root div"
+    },
+    {
+        id: 27,
+        title: "React State",
+        language: "JavaScript",
+        difficulty: "Medium",
+        buggyCode: `function Counter() {
+    let count = 0;
+    
+    return (
+        <div>
+            <p>Count: {count}</p>
+            <button onClick={() => count++}>
+                Increment
+            </button>
+        </div>
+    );
+}`,
+        correctCode: `function Counter() {
+    const [count, setCount] = useState(0);
+    
+    return (
+        <div>
+            <p>Count: {count}</p>
+            <button onClick={() => setCount(count + 1)}>
+                Increment
+            </button>
+        </div>
+    );
+}`,
+        bug: "Using regular variable instead of state",
+        explanation: "React won't re-render when regular variables change. Must use useState hook for state management.",
+        options: [
+            "Use useState hook",
+            "Add forceUpdate() call",
+            "Change to class component",
+            "Add this.state"
+        ],
+        correctAnswer: "Use useState hook"
+    },
+    {
+        id: 28,
+        title: "CSS Flexbox",
+        language: "CSS",
+        difficulty: "Medium",
+        buggyCode: `.container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.item {
+    flex: 1;
+    margin: 0 10px;
+}`,
+        correctCode: `.container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.item {
+    flex: 1;
+}`,
+        bug: "Using margins for flex item spacing",
+        explanation: "The gap property is now widely supported and provides better spacing control in flex containers.",
+        options: [
+            "Replace margins with gap on container",
+            "Remove flex properties",
+            "Add padding instead",
+            "Use grid instead"
+        ],
+        correctAnswer: "Replace margins with gap on container"
+    },
+    {
+        id: 29,
+        title: "HTML Semantic",
+        language: "HTML",
+        difficulty: "Easy",
+        buggyCode: `<div id="header">
+    <div class="nav">
+        <div>Home</div>
+        <div>About</div>
+    </div>
+</div>`,
+        correctCode: `<header>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/about">About</a>
+    </nav>
+</header>`,
+        bug: "Using divs instead of semantic elements",
+        explanation: "HTML5 semantic elements (header, nav, etc.) improve accessibility and SEO.",
+        options: [
+            "Use semantic elements and anchor tags",
+            "Add role attributes",
+            "Change divs to spans",
+            "Add onclick handlers"
+        ],
+        correctAnswer: "Use semantic elements and anchor tags"
+    },
+    {
+        id: 30,
+        title: "Python Import",
+        language: "Python",
+        difficulty: "Easy",
+        buggyCode: `import math
+
+print(math.sqrt(9))
+print(math.PI)`,
+        correctCode: `import math
+
+print(math.sqrt(9))
+print(math.pi)`,
+        bug: "Incorrect case for math.pi constant",
+        explanation: "Python is case-sensitive. The math module constant is 'pi' (lowercase), not 'PI'.",
+        options: [
+            "Change PI to pi",
+            "Add quotes around PI",
+            "Use math.pi()",
+            "Import pi directly"
+        ],
+        correctAnswer: "Change PI to pi"
     }
 ];
 
