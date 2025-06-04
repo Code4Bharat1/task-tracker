@@ -14,11 +14,12 @@ export default function EditTimeSheet() {
     const [date, setDate] = useState("");
     const [projectName, setProjectName] = useState("");
     const [selectedManagers, setSelectedManagers] = useState([]);
-    const [availableManagers, setAvailableManagers] = useState(["Awab Fakih", "Ayaan Raje", "Prashant Patil"]);
+    const [availableManagers, setAvailableManagers] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [todayHours, setTodayHours] = useState([]);
     const [totalTime, setTotalTime] = useState("00:00");
     const [isLoading, setIsLoading] = useState(false);
+    const [loadingManagers, setLoadingManagers] = useState(false);
 
     const underlineRef = useRef(null);
     const rowRefs = useRef([]);
@@ -27,16 +28,49 @@ export default function EditTimeSheet() {
         const today = new Date();
         const formattedDate = today.toISOString().split('T')[0];
         setDate(formattedDate);
+        fetchApprovers();
     }, []);
 
-    // Fetch timesheet data when date changes
+    const fetchApprovers = async () => {
+        setLoadingManagers(true);
+        try {
+            const response = await axiosInstance.get('/timesheet/user/approvers');
+            if (response.status === 200 && response.data.success) {
+                setAvailableManagers(response.data.data);
+            } else {
+                toast.error("Failed to load managers");
+                // Fallback to default managers if API fails
+                setAvailableManagers([
+                    { id: 1, name: "Awab Fakih", role: "admin" },
+                    { id: 2, name: "Ayaan Raje", role: "admin" },
+                    { id: 3, name: "Prashant Patil", role: "admin" }
+                ]);
+            }
+        } catch (error) {
+            console.error("Error fetching approvers:", error);
+            toast.error("Failed to load managers");
+            // Fallback to default managers if API fails
+            setAvailableManagers([
+                { id: 1, name: "Awab Fakih", role: "admin" },
+                { id: 2, name: "Ayaan Raje", role: "admin" },
+                { id: 3, name: "Prashant Patil", role: "admin" }
+            ]);
+        } finally {
+            setLoadingManagers(false);
+        }
+    };
+
+    // Initialize managers on component mount
+    useEffect(() => {
+        fetchApprovers();
+    }, []);
+
     useEffect(() => {
         if (date) {
             fetchTimesheetData(date);
         }
     }, [date]);
 
-    // Animation for underline
     useGSAP(() => {
         gsap.fromTo(
             underlineRef.current,
@@ -44,8 +78,7 @@ export default function EditTimeSheet() {
             { width: "100%", duration: 1, ease: "power2.out" }
         );
     }, []);
-   
-    // Fetch timesheet data from the backend
+
     const fetchTimesheetData = async (selectedDate) => {
         setIsLoading(true);
         try {
@@ -53,11 +86,18 @@ export default function EditTimeSheet() {
             if (response.status === 200 && response.data.message === 'Timesheet found') {
                 const timesheetData = response.data.timesheet;
 
-                // Set project name and managers
-                setProjectName(timesheetData.projectName || "");
-                setSelectedManagers(timesheetData.notifiedManagers || []);
+                let managers = [];
+                if (timesheetData.notifiedManagers && timesheetData.notifiedManagers.length > 0) {
+                    if (typeof timesheetData.notifiedManagers[0] === 'string') {
+                        managers = timesheetData.notifiedManagers;
+                    } else {
+                        managers = timesheetData.notifiedManagers.map(m => m.name || m);
+                    }
+                }
 
-                // Format items for our component
+                setProjectName(timesheetData.projectName || "");
+                setSelectedManagers(managers);
+
                 const formattedItems = timesheetData.items.map(item => ({
                     bucket: item.bucket || item.type,
                     task: item.task || "",
@@ -67,7 +107,6 @@ export default function EditTimeSheet() {
 
                 setItems(formattedItems);
 
-                // Calculate and set total hours
                 const durations = formattedItems.map(item => {
                     const [hours, minutes] = item.duration.split(":").map(Number);
                     return `${String(hours).padStart(2, "0")}${String(minutes).padStart(2, "0")}`;
@@ -94,7 +133,6 @@ export default function EditTimeSheet() {
         }
     };
 
-    // Reset form to empty state
     const resetForm = () => {
         setProjectName("");
         setSelectedManagers([]);
@@ -103,7 +141,6 @@ export default function EditTimeSheet() {
         setTotalTime("00:00");
     };
 
-    // Calculate total time from an array of time strings in format "HHMM"
     const calculateTotalTime = (timeArray) => {
         let totalMinutes = 0;
 
@@ -130,15 +167,15 @@ export default function EditTimeSheet() {
         });
 
     const formatDuration = (duration) => {
-        let numericValue = duration.replace(/\D/g, "").slice(0, 4); // Get numeric part and limit to 4 digits
+        let numericValue = duration.replace(/\D/g, "").slice(0, 4);
         if (numericValue.length === 4) {
-            return `${numericValue.slice(0, 2)}:${numericValue.slice(2, 4)}`;  // Format as hh:mm
+            return `${numericValue.slice(0, 2)}:${numericValue.slice(2, 4)}`;
         }
-        return "00:00"; // Default fallback
+        return "00:00";
     };
 
     const getNextTimeRange = () => {
-        if (items.length === 0) return "09:00 AM - 10:00 AM"; // Default if no items
+        if (items.length === 0) return "09:00 AM - 10:00 AM";
         const lastTime = items[items.length - 1].timeRange?.split(" - ")[1] ||
             items[items.length - 1].time?.split(" to ")[1] || "6:00 PM";
         const [time, period] = lastTime.split(" ");
@@ -147,9 +184,8 @@ export default function EditTimeSheet() {
         if (period === "PM" && hour !== 12) hour += 12;
         if (period === "AM" && hour === 12) hour = 0;
 
-        // Increment the time by 1 hour (60 minutes)
         const start = new Date(0, 0, 0, hour, minute);
-        const end = new Date(start.getTime() + 60 * 60000); // 60 minutes later
+        const end = new Date(start.getTime() + 60 * 60000);
 
         return `${formatTime(start)} - ${formatTime(end)}`;
     };
@@ -164,21 +200,17 @@ export default function EditTimeSheet() {
             bucket: type,
         };
 
-        // Update items state with the new item
         setItems((prev) => [...prev, newItem]);
 
-        // Update todayHours state with the new duration in numeric format
-        const newDuration = "0100"; // Represents 01:00 in numeric format
+        const newDuration = "0100";
         setTodayHours((prev) => {
             const updatedHours = [...prev, newDuration];
-            // Update total time after adding new item
             setTimeout(() => {
                 setTotalTime(calculateTotalTime(updatedHours));
             }, 0);
             return updatedHours;
         });
 
-        // Animation effect for the new row
         setTimeout(() => {
             const newIndex = items.length;
             const lastRow = rowRefs.current[newIndex];
@@ -199,20 +231,15 @@ export default function EditTimeSheet() {
     };
 
     const handleDurationChange = (index, value) => {
-        // Format the duration for display
         let formattedDuration = formatDuration(value);
-
-        // Update the item's duration display
         updateItem(index, "duration", formattedDuration);
 
-        // Update the numeric duration values array
-        const numericValue = value.replace(/\D/g, "").slice(0, 4).padStart(4, '0'); // Ensuring only numeric values and proper format
+        const numericValue = value.replace(/\D/g, "").slice(0, 4).padStart(4, '0');
 
         setTodayHours(prev => {
             const updated = [...prev];
             updated[index] = numericValue;
 
-            // Recalculate total time after changing a duration
             setTimeout(() => {
                 setTotalTime(calculateTotalTime(updated));
             }, 0);
@@ -232,7 +259,6 @@ export default function EditTimeSheet() {
             const updated = [...prev];
             updated.splice(index, 1);
 
-            // Recalculate total time after removing an item
             setTimeout(() => {
                 setTotalTime(calculateTotalTime(updated));
             }, 0);
@@ -242,7 +268,6 @@ export default function EditTimeSheet() {
     };
 
     const handleSubmit = async () => {
-        // Validate inputs
         if (!date) {
             toast.error("Please select a date");
             return;
@@ -263,14 +288,12 @@ export default function EditTimeSheet() {
             return;
         }
 
-        // Check for empty tasks
         const emptyTaskIndex = items.findIndex(item => !item.task || !item.task.trim());
         if (emptyTaskIndex !== -1) {
             toast.error(`Please fill in the task description for entry #${emptyTaskIndex + 1}`);
             return;
         }
 
-        // Prepare payload for API
         const payload = {
             date,
             projectName,
@@ -291,7 +314,6 @@ export default function EditTimeSheet() {
 
             if (response.status === 200) {
                 toast.success("Timeline updated successfully!");
-                // Optionally refresh data after update
                 fetchTimesheetData(date);
             }
         } catch (error) {
@@ -360,40 +382,51 @@ export default function EditTimeSheet() {
                     />
                 </div>
 
-              
-
                 <div className="flex flex-col w-[260px] relative">
                     <label className="mb-1 font-medium text-gray-700">Select Manager</label>
                     <button
-                        onClick={() => setShowDropdown(!showDropdown)}
-                        className={`border border-gray-300 rounded-md px-4 py-2 shadow-[0px_2px_0px_rgba(0,0,0,0.2)] flex items-center justify-between ${isLoading ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                        disabled={isLoading}
+                        onClick={() => !isLoading && setShowDropdown(!showDropdown)}
+                        className={`border border-gray-300 rounded-md px-4 py-2 shadow-[0px_2px_0px_rgba(0,0,0,0.2)] flex items-center justify-between ${isLoading || loadingManagers ? 'bg-gray-100 cursor-not-allowed' : ''
+                            }`}
+                        disabled={isLoading || loadingManagers}
                     >
-                        <span className="text-sm text-gray-800">{`Selected (${selectedManagers.length})`}</span>
+                        <span className="text-sm text-gray-800">
+                            {loadingManagers
+                                ? 'Loading...'
+                                : `Selected (${selectedManagers.length})`
+                            }
+                        </span>
                         <FiChevronDown className="text-gray-600 text-lg" />
                     </button>
-                    {showDropdown && (
-                        <div className="absolute top-full mt-1 bg-white border border-gray-200 shadow-[0px_2px_0px_rgba(0,0,0,0.2)] rounded-md w-full z-10">
-                            {availableManagers.map((managerName) => (
-                                <label
-                                    key={managerName}
-                                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                                >
-                                    <input
-                                        className="w-5 h-5 text-blue-600"
-                                        type="checkbox"
-                                        checked={selectedManagers.includes(managerName)}
-                                        onChange={() =>
-                                            setSelectedManagers((prev) =>
-                                                prev.includes(managerName)
-                                                    ? prev.filter((m) => m !== managerName)
-                                                    : [...prev, managerName]
-                                            )
-                                        }
-                                    />
-                                    {managerName}
-                                </label>
-                            ))}
+                    {showDropdown && !isLoading && !loadingManagers && (
+                        <div className="absolute top-full mt-1 bg-white border border-gray-200 shadow-[0px_2px_0px_rgba(0,0,0,0.2)] rounded-md w-full z-10 max-h-48 overflow-y-auto">
+                            {availableManagers.length > 0 ? (
+                                availableManagers.map((manager) => (
+                                    <label
+                                        key={manager.id}
+                                        className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                    >
+                                        <input
+                                            className="w-5 h-5 text-blue-600"
+                                            type="checkbox"
+                                            checked={selectedManagers.includes(manager.name)}
+                                            onChange={() => {
+                                                setSelectedManagers(prev =>
+                                                    prev.includes(manager.name)
+                                                        ? prev.filter(name => name !== manager.name)
+                                                        : [...prev, manager.name]
+                                                );
+                                            }}
+                                        />
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-medium">{manager.name}</span>
+                                            <span className="text-xs text-gray-500 capitalize">{manager.role}</span>
+                                        </div>
+                                    </label>
+                                ))
+                            ) : (
+                                <div className="px-4 py-2 text-gray-500 text-sm">No managers available</div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -416,17 +449,16 @@ export default function EditTimeSheet() {
                 </div>
             </div>
             <div className="flex flex-row  relative items-center mb-8 mt-4">
-  <label className="mr-2 font-medium text-gray-700 whitespace-nowrap">Project Name</label>
-  <input
-    type="text"
-    value={projectName}
-    onChange={(e) => setProjectName(e.target.value)}
-    className="rounded-md p-1.5 border w-[500px] border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-[0px_2px_0px_rgba(0,0,0,0.2)]"
-    disabled={isLoading}
-  />
-</div>
+                <label className="mr-2 font-medium text-gray-700 whitespace-nowrap">Project Name</label>
+                <input
+                    type="text"
+                    value={projectName}
+                    onChange={(e) => setProjectName(e.target.value)}
+                    className="rounded-md p-1.5 border w-[500px] border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-[0px_2px_0px_rgba(0,0,0,0.2)]"
+                    disabled={isLoading}
+                />
+            </div>
 
-            {/* Timeline Display */}
             <div className="rounded-lg shadow-[0px_2px_0px_rgba(0,0,0,0.2)] border-t-2 border-[#018ABE] overflow-hidden">
                 <table className="w-full border-collapse">
                     <thead>
