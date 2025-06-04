@@ -427,6 +427,17 @@ export default function DebugCodeGame() {
     const [timeRemaining, setTimeRemaining] = useState(60);
     const [problems, setProblems] = useState([]);
     const [gameComplete, setGameComplete] = useState(false);
+    const [shuffledOptions, setShuffledOptions] = useState([]);
+
+    // Shuffle function
+    const shuffleArray = (array) => {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    };
 
     useEffect(() => {
         if (gameStarted && !gameComplete && timeRemaining > 0 && !showExplanation) {
@@ -443,6 +454,7 @@ export default function DebugCodeGame() {
         const shuffled = [...codeProblems].sort(() => 0.5 - Math.random()).slice(0, 10);
         setProblems(shuffled);
         setCurrentProblem(shuffled[0]);
+        setShuffledOptions(shuffleArray(shuffled[0].options));
         setGameStarted(true);
         setCurrentIndex(0);
         setScore(0);
@@ -458,11 +470,16 @@ export default function DebugCodeGame() {
 
         if (answer === currentProblem.correctAnswer) {
             setScore(prev => prev + 1);
+            // Correct answer - move to next after 3 seconds
+            setTimeout(() => {
+                moveToNext();
+            }, 3000);
+        } else {
+            // Wrong answer - wait 6 seconds to give more time to read
+            setTimeout(() => {
+                moveToNext();
+            }, 6000);
         }
-
-        setTimeout(() => {
-            moveToNext();
-        }, 3000);
     };
 
     const handleTimeUp = () => {
@@ -471,7 +488,7 @@ export default function DebugCodeGame() {
 
         setTimeout(() => {
             moveToNext();
-        }, 3000);
+        }, 6000); // Give 6 seconds to read explanation when time runs out
     };
 
     const moveToNext = () => {
@@ -479,6 +496,7 @@ export default function DebugCodeGame() {
         if (nextIndex < problems.length) {
             setCurrentIndex(nextIndex);
             setCurrentProblem(problems[nextIndex]);
+            setShuffledOptions(shuffleArray(problems[nextIndex].options));
             setSelectedAnswer(null);
             setShowExplanation(false);
             setTimeRemaining(60);
@@ -497,6 +515,7 @@ export default function DebugCodeGame() {
         setTimeRemaining(60);
         setProblems([]);
         setGameComplete(false);
+        setShuffledOptions([]);
     };
 
     const getDifficultyColor = (difficulty) => {
@@ -699,7 +718,7 @@ export default function DebugCodeGame() {
                         <h3 className="text-xl font-bold text-gray-800 mb-6">What's the bug in this code?</h3>
 
                         <div className="space-y-3">
-                            {currentProblem.options.map((option, index) => {
+                            {shuffledOptions.map((option, index) => {
                                 let buttonClass = "w-full p-4 text-left rounded-xl border-2 transition-all duration-200 font-medium ";
 
                                 if (showExplanation) {
@@ -708,10 +727,14 @@ export default function DebugCodeGame() {
                                     } else if (option === selectedAnswer && option !== currentProblem.correctAnswer) {
                                         buttonClass += "bg-red-50 border-red-500 text-red-700";
                                     } else {
-                                        buttonClass += "bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed";
+                                        buttonClass += "bg-gray-50 border-gray-200 text-gray-600 cursor-not-allowed";
                                     }
                                 } else {
-                                    buttonClass += "bg-gray-50 border-gray-200 text-gray-700 hover:bg-red-50 hover:border-red-300 hover:scale-105 cursor-pointer";
+                                    if (selectedAnswer === option) {
+                                        buttonClass += "bg-[#018ABE] text-white border-[#018ABE] transform scale-105";
+                                    } else {
+                                        buttonClass += "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300";
+                                    }
                                 }
 
                                 return (
@@ -722,12 +745,16 @@ export default function DebugCodeGame() {
                                         className={buttonClass}
                                     >
                                         <div className="flex items-center justify-between">
-                                            <span className="flex-1">{option}</span>
-                                            {showExplanation && option === currentProblem.correctAnswer && (
-                                                <CheckCircle className="w-5 h-5 text-green-600" />
-                                            )}
-                                            {showExplanation && option === selectedAnswer && option !== currentProblem.correctAnswer && (
-                                                <XCircle className="w-5 h-5 text-red-600" />
+                                            <span>{option}</span>
+                                            {showExplanation && (
+                                                <div>
+                                                    {option === currentProblem.correctAnswer && (
+                                                        <CheckCircle className="w-5 h-5 text-green-600" />
+                                                    )}
+                                                    {option === selectedAnswer && option !== currentProblem.correctAnswer && (
+                                                        <XCircle className="w-5 h-5 text-red-600" />
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
                                     </button>
@@ -735,45 +762,44 @@ export default function DebugCodeGame() {
                             })}
                         </div>
 
-                        {showExplanation && (
+                        {!showExplanation && (
                             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                <div className="flex items-center gap-2 text-blue-800">
-                                    <Lightbulb className="w-5 h-5" />
-                                    <span className="font-semibold">
-                                        {selectedAnswer === currentProblem.correctAnswer ? 'Correct!' :
-                                            selectedAnswer ? 'Incorrect!' : 'Time\'s up!'}
-                                    </span>
-                                </div>
-                                <p className="text-blue-700 text-sm mt-2">
-                                    {selectedAnswer === currentProblem.correctAnswer
-                                        ? 'Great job! You found the bug!'
-                                        : `The correct answer was: ${currentProblem.correctAnswer}`}
+                                <p className="text-blue-700 text-sm">
+                                    💡 <strong>Tip:</strong> Look carefully at the code structure, syntax, and logic. Common bugs include missing semicolons, incorrect operators, and undefined variables.
                                 </p>
                             </div>
                         )}
 
-                        {!showExplanation && (
-                            <div className="mt-6 text-center text-gray-500 text-sm">
-                                Choose the option that identifies the bug in the code above
+                        {showExplanation && (
+                            <div className="mt-6 text-center">
+                                {selectedAnswer === currentProblem.correctAnswer ? (
+                                    <div className="text-green-600">
+                                        <CheckCircle className="w-8 h-8 mx-auto mb-2" />
+                                        <p className="font-semibold">Correct! +1 point</p>
+                                    </div>
+                                ) : selectedAnswer ? (
+                                    <div className="text-red-600">
+                                        <XCircle className="w-8 h-8 mx-auto mb-2" />
+                                        <p className="font-semibold">Incorrect. Try again next time!</p>
+                                    </div>
+                                ) : (
+                                    <div className="text-orange-600">
+                                        <Clock className="w-8 h-8 mx-auto mb-2" />
+                                        <p className="font-semibold">Time's up!</p>
+                                    </div>
+                                )}
+                                <p className="text-sm text-gray-600 mt-2">
+                                    Moving to next problem...
+                                </p>
                             </div>
                         )}
                     </div>
                 </div>
 
-                <div className="mt-6 bg-white rounded-2xl shadow-lg p-4 border border-gray-100">
-                    <div className="flex items-center justify-center gap-8">
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-red-600">{score}</div>
-                            <div className="text-xs text-gray-600">Bugs Fixed</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-orange-600">{problems.length - currentIndex - 1}</div>
-                            <div className="text-xs text-gray-600">Remaining</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-gray-600">{Math.round((score / (currentIndex + 1)) * 100) || 0}%</div>
-                            <div className="text-xs text-gray-600">Accuracy</div>
-                        </div>
+                <div className="fixed bottom-4 right-4 bg-white rounded-full shadow-lg p-4 border border-gray-200">
+                    <div className="text-center">
+                        <div className="text-2xl font-bold text-[#018ABE]">{score}</div>
+                        <div className="text-xs text-gray-600">Score</div>
                     </div>
                 </div>
             </div>

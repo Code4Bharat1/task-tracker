@@ -207,17 +207,12 @@ export default function EnhancedTypingTest() {
       
       if (i < userInput.length) {
         if (userInput[i] === char) {
-          className = 'text-white bg-gray-700';
+          className = 'text-yellow-400';
         } else {
           className = 'text-red-400 bg-red-900/30';
         }
       } else if (i === userInput.length) {
         className = 'text-white bg-yellow-500/50 animate-pulse';
-      }
-
-      // Special handling for spaces
-      if (char === ' ') {
-        className += ' !text-gray-300'; // Light gray color for spaces
       }
 
       return (

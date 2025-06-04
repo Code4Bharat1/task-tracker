@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Bot, RotateCcw, Play, Trophy, X, Circle, User } from 'lucide-react';
+import { Users, Bot, RotateCcw, Play, Trophy, X, Circle } from 'lucide-react';
 
 const TicTacToeGame = () => {
-    const [gameMode, setGameMode] = useState('pvp'); // 'pvp', 'pvc', 'tournament'
+    const [gameMode, setGameMode] = useState('pvp');
     const [gameStarted, setGameStarted] = useState(false);
     const [board, setBoard] = useState(Array(9).fill(null));
     const [currentPlayer, setCurrentPlayer] = useState('X');
@@ -12,18 +12,16 @@ const TicTacToeGame = () => {
     const [scores, setScores] = useState({ X: 0, O: 0, draws: 0 });
     const [isComputerThinking, setIsComputerThinking] = useState(false);
     const [winningLine, setWinningLine] = useState([]);
-    const [difficulty, setDifficulty] = useState('medium'); // 'easy', 'medium', 'hard'
+    const [difficulty, setDifficulty] = useState('medium');
     const [tournamentRound, setTournamentRound] = useState(1);
     const [bestOfGames, setBestOfGames] = useState(3);
 
-    // Winning combinations
     const winningCombinations = [
-        [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
-        [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
-        [0, 4, 8], [2, 4, 6] // diagonals
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],
+        [0, 4, 8], [2, 4, 6]
     ];
 
-    // Check for winner
     const checkWinner = (boardState) => {
         for (let combination of winningCombinations) {
             const [a, b, c] = combination;
@@ -34,22 +32,18 @@ const TicTacToeGame = () => {
         return null;
     };
 
-    // Check for draw
     const checkDraw = (boardState) => {
         return boardState.every(cell => cell !== null);
     };
 
-    // Computer AI move
     const getComputerMove = (boardState) => {
         const availableMoves = boardState.map((cell, index) => cell === null ? index : null).filter(val => val !== null);
 
         if (difficulty === 'easy') {
-            // Random move
             return availableMoves[Math.floor(Math.random() * availableMoves.length)];
         }
 
         if (difficulty === 'medium') {
-            // 70% optimal, 30% random
             if (Math.random() < 0.7) {
                 return getBestMove(boardState);
             } else {
@@ -57,14 +51,12 @@ const TicTacToeGame = () => {
             }
         }
 
-        // Hard difficulty - always optimal
         return getBestMove(boardState);
     };
 
-    // Minimax algorithm for best move
     const getBestMove = (boardState) => {
         let bestScore = -Infinity;
-        let bestMove = 0;
+        let bestMove = null;
 
         for (let i = 0; i < 9; i++) {
             if (boardState[i] === null) {
@@ -80,7 +72,6 @@ const TicTacToeGame = () => {
         return bestMove;
     };
 
-    // Minimax function
     const minimax = (boardState, depth, isMaximizing) => {
         const result = checkWinner(boardState);
         if (result) {
@@ -115,7 +106,6 @@ const TicTacToeGame = () => {
         }
     };
 
-    // Make move
     const makeMove = (index) => {
         if (board[index] || gameOver || isComputerThinking) return;
 
@@ -144,7 +134,6 @@ const TicTacToeGame = () => {
         }
     };
 
-    // Computer move effect
     useEffect(() => {
         if (gameMode === 'pvc' && currentPlayer === 'O' && !gameOver && gameStarted) {
             setIsComputerThinking(true);
@@ -157,7 +146,6 @@ const TicTacToeGame = () => {
         }
     }, [currentPlayer, gameMode, board, gameOver, gameStarted]);
 
-    // Start new game
     const startNewGame = () => {
         setBoard(Array(9).fill(null));
         setCurrentPlayer('X');
@@ -168,7 +156,6 @@ const TicTacToeGame = () => {
         setIsComputerThinking(false);
     };
 
-    // Start game
     const startGame = () => {
         setGameStarted(true);
         startNewGame();
@@ -176,7 +163,6 @@ const TicTacToeGame = () => {
         setTournamentRound(1);
     };
 
-    // Reset everything
     const resetGame = () => {
         setGameStarted(false);
         startNewGame();
@@ -184,29 +170,23 @@ const TicTacToeGame = () => {
         setTournamentRound(1);
     };
 
-    // Next game in tournament
     const nextGame = () => {
         if (gameMode === 'tournament') {
             const maxScore = Math.max(scores.X, scores.O);
             const gamesNeeded = Math.ceil(bestOfGames / 2);
 
-            if (maxScore >= gamesNeeded) {
-                // Tournament over
-                return;
-            }
+            if (maxScore >= gamesNeeded) return;
             setTournamentRound(prev => prev + 1);
         }
         startNewGame();
     };
 
-    // Get tournament winner
     const getTournamentWinner = () => {
         if (scores.X > scores.O) return 'X';
         if (scores.O > scores.X) return 'O';
         return null;
     };
 
-    // Check if tournament is over
     const isTournamentOver = () => {
         if (gameMode !== 'tournament') return false;
         const maxScore = Math.max(scores.X, scores.O);
@@ -214,7 +194,6 @@ const TicTacToeGame = () => {
         return maxScore >= gamesNeeded;
     };
 
-    // Cell component
     const Cell = ({ index, value }) => {
         const isWinningCell = winningLine.includes(index);
 
@@ -222,12 +201,20 @@ const TicTacToeGame = () => {
             <button
                 onClick={() => makeMove(index)}
                 disabled={value !== null || gameOver || isComputerThinking}
-                className={`w-20 h-20 md:w-24 md:h-24 border-2 border-gray-400 bg-white flex items-center justify-center text-3xl md:text-4xl font-bold transition-all duration-200 hover:bg-gray-50 ${isWinningCell ? 'bg-green-100 border-green-500' : ''
-                    } ${value === null && !gameOver && !isComputerThinking ? 'cursor-pointer' : 'cursor-not-allowed'
-                    }`}
+                className={`
+                    w-20 h-20 md:w-24 md:h-24 
+                    flex items-center justify-center 
+                    text-3xl md:text-4xl font-bold 
+                    transition-all duration-200
+                    ${index % 3 !== 2 ? 'border-r-2 border-gray-300' : ''}
+                    ${index < 6 ? 'border-b-2 border-gray-300' : ''}
+                    ${isWinningCell ? 'bg-green-100' : ''}
+                    ${value === null && !gameOver && !isComputerThinking ? 
+                        'cursor-pointer hover:bg-gray-50' : 'cursor-not-allowed'}
+                `}
             >
-                {value === 'X' && <X size={32} className={`${isWinningCell ? 'text-green-600' : 'text-red-500'}`} />}
-                {value === 'O' && <Circle size={32} className={`${isWinningCell ? 'text-green-600' : 'text-blue-500'}`} />}
+                {value === 'X' && <X size={32} className={isWinningCell ? "text-green-600" : "text-red-500"} />}
+                {value === 'O' && <Circle size={32} className={isWinningCell ? "text-green-600" : "text-blue-500"} />}
             </button>
         );
     };
@@ -244,36 +231,37 @@ const TicTacToeGame = () => {
 
                     <div className="space-y-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-3">
-                                Game Mode
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-3">Game Mode</label>
                             <div className="space-y-2">
                                 <button
                                     onClick={() => setGameMode('pvp')}
-                                    className={`w-full p-3 rounded-lg border-2 font-medium transition-colors flex items-center justify-center space-x-2 ${gameMode === 'pvp'
+                                    className={`w-full p-3 rounded-lg border-2 font-medium transition-colors flex items-center justify-center space-x-2 ${
+                                        gameMode === 'pvp'
                                             ? 'border-blue-500 bg-blue-50 text-blue-700'
                                             : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-                                        }`}
+                                    }`}
                                 >
                                     <Users size={20} />
                                     <span>Player vs Player</span>
                                 </button>
                                 <button
                                     onClick={() => setGameMode('pvc')}
-                                    className={`w-full p-3 rounded-lg border-2 font-medium transition-colors flex items-center justify-center space-x-2 ${gameMode === 'pvc'
+                                    className={`w-full p-3 rounded-lg border-2 font-medium transition-colors flex items-center justify-center space-x-2 ${
+                                        gameMode === 'pvc'
                                             ? 'border-blue-500 bg-blue-50 text-blue-700'
                                             : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-                                        }`}
+                                    }`}
                                 >
                                     <Bot size={20} />
                                     <span>Player vs Computer</span>
                                 </button>
                                 <button
                                     onClick={() => setGameMode('tournament')}
-                                    className={`w-full p-3 rounded-lg border-2 font-medium transition-colors flex items-center justify-center space-x-2 ${gameMode === 'tournament'
+                                    className={`w-full p-3 rounded-lg border-2 font-medium transition-colors flex items-center justify-center space-x-2 ${
+                                        gameMode === 'tournament'
                                             ? 'border-blue-500 bg-blue-50 text-blue-700'
                                             : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-                                        }`}
+                                    }`}
                                 >
                                     <Trophy size={20} />
                                     <span>Tournament Mode</span>
@@ -283,18 +271,17 @@ const TicTacToeGame = () => {
 
                         {gameMode === 'pvc' && (
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-3">
-                                    Difficulty Level
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700 mb-3">Difficulty Level</label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {['easy', 'medium', 'hard'].map((level) => (
                                         <button
                                             key={level}
                                             onClick={() => setDifficulty(level)}
-                                            className={`p-2 rounded-lg border-2 font-medium transition-colors capitalize ${difficulty === level
+                                            className={`p-2 rounded-lg border-2 font-medium transition-colors capitalize ${
+                                                difficulty === level
                                                     ? 'border-blue-500 bg-blue-50 text-blue-700'
                                                     : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-                                                }`}
+                                            }`}
                                         >
                                             {level}
                                         </button>
@@ -305,18 +292,17 @@ const TicTacToeGame = () => {
 
                         {gameMode === 'tournament' && (
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-3">
-                                    Best of Games
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700 mb-3">Best of Games</label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {[3, 5, 7].map((games) => (
                                         <button
                                             key={games}
                                             onClick={() => setBestOfGames(games)}
-                                            className={`p-2 rounded-lg border-2 font-medium transition-colors ${bestOfGames === games
+                                            className={`p-2 rounded-lg border-2 font-medium transition-colors ${
+                                                bestOfGames === games
                                                     ? 'border-blue-500 bg-blue-50 text-blue-700'
                                                     : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-                                                }`}
+                                            }`}
                                         >
                                             Best of {games}
                                         </button>
@@ -344,13 +330,16 @@ const TicTacToeGame = () => {
     return (
         <div className="min-h-screen bg-gray-100 p-4">
             <div className="max-w-4xl mx-auto">
-                {/* Header */}
                 <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-3xl font-bold text-gray-800">Tic-Tac-Toe</h1>
                             <div className="flex items-center space-x-4 mt-2">
-                                <span className="text-gray-600 capitalize">{gameMode.replace('pv', 'Player vs ').replace('c', 'Computer')}</span>
+                                <span className="text-gray-600">
+                                    {gameMode === 'pvp' ? 'Player vs Player' : 
+                                     gameMode === 'pvc' ? 'Player vs Computer' : 
+                                     'Tournament Mode'}
+                                </span>
                                 {gameMode === 'pvc' && <span className="text-gray-600">• {difficulty} difficulty</span>}
                                 {gameMode === 'tournament' && <span className="text-gray-600">• Round {tournamentRound}</span>}
                             </div>
@@ -366,18 +355,16 @@ const TicTacToeGame = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Game Board */}
                     <div className="lg:col-span-2">
                         <div className="bg-white rounded-xl shadow-lg p-6">
                             <div className="flex justify-center">
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-3 border-2 border-gray-300 rounded-lg overflow-hidden">
                                     {board.map((cell, index) => (
                                         <Cell key={index} index={index} value={cell} />
                                     ))}
                                 </div>
                             </div>
 
-                            {/* Game Status */}
                             <div className="mt-6 text-center">
                                 {isComputerThinking && (
                                     <div className="text-blue-600 font-medium">
@@ -432,9 +419,7 @@ const TicTacToeGame = () => {
                         </div>
                     </div>
 
-                    {/* Sidebar */}
                     <div className="space-y-6">
-                        {/* Score */}
                         <div className="bg-white rounded-xl shadow-lg p-6">
                             <h3 className="text-lg font-semibold text-gray-800 mb-4">Score</h3>
                             <div className="space-y-3">
@@ -464,7 +449,6 @@ const TicTacToeGame = () => {
                             </div>
                         </div>
 
-                        {/* Tournament Status */}
                         {gameMode === 'tournament' && (
                             <div className="bg-white rounded-xl shadow-lg p-6">
                                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Tournament</h3>
@@ -494,16 +478,13 @@ const TicTacToeGame = () => {
                             </div>
                         )}
 
-                        {/* Game Rules */}
                         <div className="bg-white rounded-xl shadow-lg p-6">
                             <h3 className="text-lg font-semibold text-gray-800 mb-4">How to Play</h3>
                             <div className="text-sm text-gray-600 space-y-2">
                                 <p>• Players take turns placing X's and O's</p>
                                 <p>• Get 3 in a row (horizontal, vertical, or diagonal) to win</p>
                                 <p>• If all 9 squares are filled with no winner, it's a draw</p>
-                                {gameMode === 'pvc' && (
-                                    <p>• You are X, Computer is O</p>
-                                )}
+                                {gameMode === 'pvc' && <p>• You are X, Computer is O</p>}
                             </div>
                         </div>
                     </div>

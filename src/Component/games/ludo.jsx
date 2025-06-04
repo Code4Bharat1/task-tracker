@@ -11,15 +11,18 @@ const LudoGame = () => {
     const [selectedPiece, setSelectedPiece] = useState(null);
     const [winner, setWinner] = useState(null);
 
-    // Color schemes for different player counts
+    // Color schemes for players
     const playerColors = {
         2: ['bg-red-500', 'bg-blue-500'],
-        4: ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500'],
-        6: ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-orange-500'],
-        8: ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500', 'bg-indigo-500']
+        4: ['bg-red-500', 'bg-green-500', 'bg-yellow-500', 'bg-blue-500']
     };
 
-    const playerNames = ['Red', 'Blue', 'Green', 'Yellow', 'Purple', 'Orange', 'Pink', 'Indigo'];
+    const playerBorders = {
+        2: ['border-red-600', 'border-blue-600'],
+        4: ['border-red-600', 'border-green-600', 'border-yellow-600', 'border-blue-600']
+    };
+
+    const playerNames = ['Red', 'Green', 'Yellow', 'Blue'];
 
     // Initialize game state
     const initializeGame = () => {
@@ -94,19 +97,34 @@ const LudoGame = () => {
         const piece = newGameState[playerId].pieces[pieceId];
 
         if (piece.position === 'home' && diceValue === 6) {
-            // Move piece out of home
-            piece.position = 0;
+            // Move piece out of home to starting position
+            piece.position = playerId * 13; // Each player starts at different positions
             piece.homeIndex = -1;
         } else if (piece.position !== 'home' && piece.position !== 'finished') {
             // Move piece forward
-            const newPosition = piece.position + diceValue;
-            if (newPosition >= 57) {
-                piece.position = 'finished';
-                newGameState[playerId].finishedPieces++;
+            let newPosition = piece.position + diceValue;
+            
+            // Handle going around the board (52 positions on the outer track)
+            if (newPosition >= 52) {
+                newPosition = newPosition - 52;
+            }
+            
+            // Check if piece is entering home stretch
+            const homeStretchStart = (playerId * 13 + 51) % 52;
+            if (piece.position < homeStretchStart && newPosition >= homeStretchStart) {
+                // Entering home stretch
+                const homeStretchPosition = newPosition - homeStretchStart + 52;
+                if (homeStretchPosition >= 58) {
+                    // Reached finish
+                    piece.position = 'finished';
+                    newGameState[playerId].finishedPieces++;
 
-                // Check for winner
-                if (newGameState[playerId].finishedPieces === 4) {
-                    setWinner(playerId);
+                    // Check for winner
+                    if (newGameState[playerId].finishedPieces === 4) {
+                        setWinner(playerId);
+                    }
+                } else {
+                    piece.position = homeStretchPosition;
                 }
             } else {
                 piece.position = newPosition;
@@ -136,113 +154,241 @@ const LudoGame = () => {
         );
     };
 
+    // Get position coordinates for pieces on the board
+    const getPositionCoords = (position, playerId) => {
+        if (position === 'home' || position === 'finished') return null;
+
+        // Board is 15x15 grid
+        const boardSize = 15;
+        const cellSize = 100 / boardSize;
+
+        // Outer track positions (52 positions)
+        if (position < 52) {
+            const outerTrack = [
+                // Bottom row (left to right)
+                [6, 14], [5, 14], [4, 14], [3, 14], [2, 14], [1, 14],
+                // Left column (bottom to top)
+                [0, 14], [0, 13], [0, 12], [0, 11], [0, 10], [0, 9],
+                [0, 8], [0, 7], [0, 6],
+                // Top-left to center-left
+                [1, 6], [2, 6], [3, 6], [4, 6], [5, 6], [6, 6],
+                // Top row (left to right)
+                [6, 5], [6, 4], [6, 3], [6, 2], [6, 1], [6, 0],
+                // Top column (left to right)
+                [7, 0], [8, 0],
+                // Right side top
+                [8, 1], [8, 2], [8, 3], [8, 4], [8, 5], [8, 6],
+                // Top-right to center-right
+                [9, 6], [10, 6], [11, 6], [12, 6], [13, 6], [14, 6],
+                // Right column (top to bottom)
+                [14, 7], [14, 8],
+                // Right side bottom
+                [14, 8], [14, 9], [14, 10], [14, 11], [14, 12], [14, 13], [14, 14],
+                // Bottom-right to center-right
+                [13, 8], [12, 8], [11, 8], [10, 8], [9, 8], [8, 8],
+                // Bottom row (right to left)
+                [8, 9], [8, 10], [8, 11], [8, 12], [8, 13], [8, 14],
+                // Return to start
+                [7, 14], [7, 13], [7, 12], [7, 11], [7, 10], [7, 9], [7, 8]
+            ];
+
+            if (outerTrack[position]) {
+                const [x, y] = outerTrack[position];
+                return {
+                    left: `${x * cellSize + cellSize/2}%`,
+                    top: `${y * cellSize + cellSize/2}%`
+                };
+            }
+        }
+        
+        // Home stretch positions (52-57)
+        if (position >= 52 && position < 58) {
+            const homeStretchPos = position - 52;
+            const homeStretches = [
+                // Red home stretch (bottom to center)
+                [[7, 13], [7, 12], [7, 11], [7, 10], [7, 9], [7, 8]],
+                // Green home stretch (left to center)
+                [[1, 7], [2, 7], [3, 7], [4, 7], [5, 7], [6, 7]],
+                // Yellow home stretch (top to center)
+                [[7, 1], [7, 2], [7, 3], [7, 4], [7, 5], [7, 6]],
+                // Blue home stretch (right to center)
+                [[13, 7], [12, 7], [11, 7], [10, 7], [9, 7], [8, 7]]
+            ];
+
+            if (homeStretches[playerId] && homeStretches[playerId][homeStretchPos]) {
+                const [x, y] = homeStretches[playerId][homeStretchPos];
+                return {
+                    left: `${x * cellSize + cellSize/2}%`,
+                    top: `${y * cellSize + cellSize/2}%`
+                };
+            }
+        }
+
+        return null;
+    };
+
     // Game board component
     const GameBoard = () => {
-        const getBoardSize = () => {
-            switch (playerCount) {
-                case 2: return 'w-96 h-96';
-                case 4: return 'w-[500px] h-[500px]';
-                case 6: return 'w-[600px] h-[600px]';
-                case 8: return 'w-[700px] h-[700px]';
-                default: return 'w-[500px] h-[500px]';
-            }
-        };
-
         return (
-            <div className={`${getBoardSize()} border-4 border-gray-800 bg-white relative mx-auto`}>
-                {/* Home areas */}
-                {Array.from({ length: playerCount }).map((_, playerIndex) => {
-                    const angle = (360 / playerCount) * playerIndex;
-                    const homePositions = {
-                        2: [
-                            { top: '10%', left: '10%' },
-                            { bottom: '10%', right: '10%' }
-                        ],
-                        4: [
-                            { top: '10%', left: '10%' },
-                            { top: '10%', right: '10%' },
-                            { bottom: '10%', right: '10%' },
-                            { bottom: '10%', left: '10%' }
-                        ],
-                        6: [
-                            { top: '5%', left: '20%' },
-                            { top: '5%', right: '20%' },
-                            { top: '40%', right: '5%' },
-                            { bottom: '5%', right: '20%' },
-                            { bottom: '5%', left: '20%' },
-                            { top: '40%', left: '5%' }
-                        ],
-                        8: [
-                            { top: '5%', left: '25%' },
-                            { top: '5%', right: '25%' },
-                            { top: '25%', right: '5%' },
-                            { bottom: '25%', right: '5%' },
-                            { bottom: '5%', right: '25%' },
-                            { bottom: '5%', left: '25%' },
-                            { bottom: '25%', left: '5%' },
-                            { top: '25%', left: '5%' }
-                        ]
-                    };
+            <div className="w-[600px] h-[600px] bg-white border-4 border-gray-800 relative mx-auto">
+                {/* Create the classic Ludo board grid */}
+                <div className="absolute inset-0 grid grid-cols-15 grid-rows-15">
+                    {Array.from({ length: 225 }).map((_, i) => {
+                        const row = Math.floor(i / 15);
+                        const col = i % 15;
+                        
+                        // Determine cell color and type
+                        let cellClass = "border border-gray-300 ";
+                        
+                        // Home areas
+                        if ((row >= 1 && row <= 5 && col >= 1 && col <= 5)) {
+                            cellClass += "bg-red-200"; // Red home
+                        } else if ((row >= 1 && row <= 5 && col >= 9 && col <= 13)) {
+                            cellClass += "bg-green-200"; // Green home
+                        } else if ((row >= 9 && row <= 13 && col >= 1 && col <= 5)) {
+                            cellClass += "bg-yellow-200"; // Yellow home
+                        } else if ((row >= 9 && row <= 13 && col >= 9 && col <= 13)) {
+                            cellClass += "bg-blue-200"; // Blue home
+                        }
+                        // Safe spots (star positions)
+                        else if ((row === 6 && col === 2) || (row === 2 && col === 6) || 
+                                (row === 6 && col === 12) || (row === 12 && col === 6) ||
+                                (row === 8 && col === 2) || (row === 2 && col === 8) ||
+                                (row === 8 && col === 12) || (row === 12 && col === 8)) {
+                            cellClass += "bg-gray-200"; // Safe spots
+                        }
+                        // Home stretches
+                        else if (row === 7 && col >= 1 && col <= 6) {
+                            cellClass += "bg-green-100"; // Green home stretch
+                        } else if (row === 7 && col >= 8 && col <= 13) {
+                            cellClass += "bg-blue-100"; // Blue home stretch
+                        } else if (col === 7 && row >= 1 && row <= 6) {
+                            cellClass += "bg-yellow-100"; // Yellow home stretch
+                        } else if (col === 7 && row >= 8 && row <= 13) {
+                            cellClass += "bg-red-100"; // Red home stretch
+                        }
+                        // Center finish area
+                        else if (row === 7 && col === 7) {
+                            cellClass += "bg-gray-300"; // Center
+                        }
+                        // Main track
+                        else if ((row >= 6 && row <= 8) || (col >= 6 && col <= 8)) {
+                            cellClass += "bg-white"; // Main track
+                        }
+                        // Outside areas
+                        else {
+                            cellClass += "bg-gray-100";
+                        }
 
-                    const position = homePositions[playerCount][playerIndex];
+                        return <div key={i} className={cellClass}></div>;
+                    })}
+                </div>
 
-                    return (
-                        <div
-                            key={playerIndex}
-                            className={`absolute w-20 h-20 ${playerColors[playerCount][playerIndex]} border-2 border-gray-800 rounded-lg`}
-                            style={position}
-                        >
-                            <div className="grid grid-cols-2 gap-1 p-2 h-full">
-                                {gameState[playerIndex]?.pieces.map((piece, pieceIndex) => (
-                                    piece.position === 'home' && (
-                                        <div
-                                            key={pieceIndex}
-                                            className="w-6 h-6 bg-white border border-gray-600 rounded-full cursor-pointer hover:scale-110 transition-transform flex items-center justify-center"
-                                            onClick={() => movePiece(playerIndex, pieceIndex)}
-                                        >
-                                            <div className={`w-4 h-4 ${playerColors[playerCount][playerIndex]} rounded-full`}></div>
-                                        </div>
-                                    )
+                {/* Home areas with pieces */}
+                {playerCount === 4 && (
+                    <>
+                        {/* Red home (bottom-left) */}
+                        <div className="absolute" style={{ left: '6.67%', top: '66.67%', width: '26.67%', height: '26.67%' }}>
+                            <div className="w-full h-full bg-red-300 border-2 border-red-600 rounded-lg grid grid-cols-2 gap-2 p-4">
+                                {gameState[0]?.pieces.filter(p => p.position === 'home').map((piece, i) => (
+                                    <div
+                                        key={i}
+                                        className="w-8 h-8 bg-red-500 border-2 border-red-700 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                                        onClick={() => movePiece(0, piece.id)}
+                                    ></div>
                                 ))}
                             </div>
                         </div>
-                    );
-                })}
+
+                        {/* Green home (top-left) */}
+                        <div className="absolute" style={{ left: '6.67%', top: '6.67%', width: '26.67%', height: '26.67%' }}>
+                            <div className="w-full h-full bg-green-300 border-2 border-green-600 rounded-lg grid grid-cols-2 gap-2 p-4">
+                                {gameState[1]?.pieces.filter(p => p.position === 'home').map((piece, i) => (
+                                    <div
+                                        key={i}
+                                        className="w-8 h-8 bg-green-500 border-2 border-green-700 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                                        onClick={() => movePiece(1, piece.id)}
+                                    ></div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Yellow home (top-right) */}
+                        <div className="absolute" style={{ left: '66.67%', top: '6.67%', width: '26.67%', height: '26.67%' }}>
+                            <div className="w-full h-full bg-yellow-300 border-2 border-yellow-600 rounded-lg grid grid-cols-2 gap-2 p-4">
+                                {gameState[2]?.pieces.filter(p => p.position === 'home').map((piece, i) => (
+                                    <div
+                                        key={i}
+                                        className="w-8 h-8 bg-yellow-500 border-2 border-yellow-600 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                                        onClick={() => movePiece(2, piece.id)}
+                                    ></div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Blue home (bottom-right) */}
+                        <div className="absolute" style={{ left: '66.67%', top: '66.67%', width: '26.67%', height: '26.67%' }}>
+                            <div className="w-full h-full bg-blue-300 border-2 border-blue-600 rounded-lg grid grid-cols-2 gap-2 p-4">
+                                {gameState[3]?.pieces.filter(p => p.position === 'home').map((piece, i) => (
+                                    <div
+                                        key={i}
+                                        className="w-8 h-8 bg-blue-500 border-2 border-blue-700 rounded-full cursor-pointer hover:scale-110 transition-transform"
+                                        onClick={() => movePiece(3, piece.id)}
+                                    ></div>
+                                ))}
+                            </div>
+                        </div>
+                    </>
+                )}
 
                 {/* Center finish area */}
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-gray-200 border-2 border-gray-800 rounded-full flex items-center justify-center">
-                    <div className="text-sm font-bold text-gray-800">FINISH</div>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-yellow-400 border-2 border-gray-800 rounded-full flex items-center justify-center">
+                    <div className="text-xs font-bold text-gray-800 text-center">FINISH</div>
                 </div>
 
-                {/* Track pieces */}
+                {/* Pieces on track */}
                 {Object.entries(gameState).map(([playerId, player]) =>
                     player.pieces.map((piece, pieceIndex) => {
                         if (piece.position !== 'home' && piece.position !== 'finished') {
-                            // Calculate position on track (simplified)
-                            const trackPosition = piece.position % 56;
-                            const angle = (trackPosition / 56) * 360;
-                            const radius = 180;
-                            const x = Math.cos((angle * Math.PI) / 180) * radius + 50;
-                            const y = Math.sin((angle * Math.PI) / 180) * radius + 50;
+                            const coords = getPositionCoords(piece.position, parseInt(playerId));
+                            if (!coords) return null;
 
                             return (
                                 <div
                                     key={`${playerId}-${pieceIndex}`}
-                                    className="absolute w-6 h-6 bg-white border border-gray-600 rounded-full cursor-pointer hover:scale-110 transition-transform flex items-center justify-center"
+                                    className="absolute w-6 h-6 rounded-full cursor-pointer hover:scale-110 transition-transform border-2"
                                     style={{
-                                        left: `${x}%`,
-                                        top: `${y}%`,
+                                        left: coords.left,
+                                        top: coords.top,
                                         transform: 'translate(-50%, -50%)'
                                     }}
                                     onClick={() => movePiece(parseInt(playerId), pieceIndex)}
                                 >
-                                    <div className={`w-4 h-4 ${playerColors[playerCount][parseInt(playerId)]} rounded-full`}></div>
+                                    <div className={`w-full h-full ${playerColors[playerCount] ? playerColors[playerCount][parseInt(playerId)] : 'bg-gray-500'} ${playerBorders[playerCount] ? playerBorders[playerCount][parseInt(playerId)] : 'border-gray-600'} rounded-full border-2`}></div>
                                 </div>
                             );
                         }
                         return null;
                     })
                 )}
+
+                {/* Finished pieces display */}
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 pointer-events-none">
+                    {Object.entries(gameState).map(([playerId, player]) => {
+                        const finishedPieces = player.pieces.filter(p => p.position === 'finished');
+                        return finishedPieces.map((piece, i) => (
+                            <div
+                                key={`finished-${playerId}-${i}`}
+                                className={`absolute w-3 h-3 ${playerColors[playerCount] ? playerColors[playerCount][parseInt(playerId)] : 'bg-gray-500'} rounded-full`}
+                                style={{
+                                    left: `${25 + (i % 2) * 50}%`,
+                                    top: `${25 + Math.floor(i / 2) * 50}%`,
+                                    transform: 'translate(-50%, -50%)'
+                                }}
+                            ></div>
+                        ));
+                    })}
+                </div>
             </div>
         );
     };
@@ -261,8 +407,8 @@ const LudoGame = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-3">
                                 Select Number of Players
                             </label>
-                            <div className="grid grid-cols-4 gap-2">
-                                {[2, 4, 6, 8].map((count) => (
+                            <div className="grid grid-cols-2 gap-2">
+                                {[2, 4].map((count) => (
                                     <button
                                         key={count}
                                         onClick={() => setPlayerCount(count)}
@@ -271,7 +417,7 @@ const LudoGame = () => {
                                                 : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
                                             }`}
                                     >
-                                        {count}P
+                                        {count} Players
                                     </button>
                                 ))}
                             </div>
@@ -333,7 +479,7 @@ const LudoGame = () => {
                         <div className="bg-white rounded-xl shadow-lg p-6">
                             <h3 className="text-lg font-semibold text-gray-800 mb-4">Current Turn</h3>
                             <div className="flex items-center space-x-3">
-                                <div className={`w-8 h-8 ${playerColors[playerCount][currentPlayer]} rounded-full`}></div>
+                                <div className={`w-8 h-8 ${playerColors[playerCount][currentPlayer]} rounded-full border-2 ${playerBorders[playerCount][currentPlayer]}`}></div>
                                 <span className="text-xl font-medium text-gray-800">
                                     {playerNames[currentPlayer]}
                                 </span>
@@ -362,7 +508,7 @@ const LudoGame = () => {
                                 {Array.from({ length: playerCount }).map((_, i) => (
                                     <div key={i} className="flex items-center justify-between">
                                         <div className="flex items-center space-x-2">
-                                            <div className={`w-4 h-4 ${playerColors[playerCount][i]} rounded-full`}></div>
+                                            <div className={`w-4 h-4 ${playerColors[playerCount][i]} rounded-full border ${playerBorders[playerCount][i]}`}></div>
                                             <span className="text-sm font-medium">{playerNames[i]}</span>
                                         </div>
                                         <span className="text-sm text-gray-600">
@@ -378,7 +524,7 @@ const LudoGame = () => {
                             <div className="bg-green-100 border border-green-400 rounded-xl p-6">
                                 <h3 className="text-lg font-semibold text-green-800 mb-2">🎉 Winner!</h3>
                                 <div className="flex items-center space-x-2">
-                                    <div className={`w-6 h-6 ${playerColors[playerCount][winner]} rounded-full`}></div>
+                                    <div className={`w-6 h-6 ${playerColors[playerCount][winner]} rounded-full border-2 ${playerBorders[playerCount][winner]}`}></div>
                                     <span className="text-green-800 font-medium">{playerNames[winner]} wins!</span>
                                 </div>
                             </div>

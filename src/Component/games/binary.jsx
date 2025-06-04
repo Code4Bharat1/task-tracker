@@ -45,6 +45,17 @@ export default function BinaryChallenge() {
         setIsCorrect(null);
     };
 
+    const resetGame = () => {
+        setGameStarted(false);
+        setGameOver(false);
+        setScore(0);
+        setStreak(0);
+        setTimeLeft(30);
+        setUserInput('');
+        setFeedback('');
+        setIsCorrect(null);
+    };
+
     const checkAnswer = () => {
         const correctBinary = currentNumber.toString(2);
         const userBinary = userInput.trim();
@@ -82,8 +93,8 @@ export default function BinaryChallenge() {
     };
 
     return (
-        <div className="bg-white flex items-center justify-center p-4">
-            <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 max-w-md w-full shadow-2xl border border-white/20">
+        <div className="bg-white min-h-screen flex items-center justify-center p-4">
+            <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 max-w-lg w-full shadow-2xl border border-white/20">
                 <div className="text-center mb-8">
                     <h1 className="text-4xl font-bold text-[#018ABE] mb-2 flex items-center justify-center gap-2">
                         🔢 Binary Challenge
@@ -174,6 +185,13 @@ export default function BinaryChallenge() {
                                 className="w-full bg-[#018ABE] text-white py-3 rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#0170a0] transition-all duration-200 flex items-center justify-center gap-2"
                             >
                                 ✓ Submit Answer
+                            </button>
+
+                            <button
+                                onClick={resetGame}
+                                className="w-full bg-gray-500 text-white py-3 rounded-xl font-bold hover:bg-gray-600 transition-all duration-200 flex items-center justify-center gap-2"
+                            >
+                                🔄 Reset
                             </button>
                         </div>
 
