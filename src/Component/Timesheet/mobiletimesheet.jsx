@@ -11,7 +11,6 @@ import {
 } from "react-icons/fi";
 import { axiosInstance } from "@/lib/axiosInstance";
 
-// Toast Component
 const Toast = ({ message, type, onClose, isVisible }) => {
   useEffect(() => {
     if (isVisible) {
@@ -27,11 +26,10 @@ const Toast = ({ message, type, onClose, isVisible }) => {
   return (
     <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
       <div
-        className={`flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg ${
-          type === "success"
+        className={`flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg ${type === "success"
             ? "bg-green-500 text-white"
             : "bg-blue-500 text-white"
-        }`}
+          }`}
       >
         {type === "success" ? <FiCheck /> : <FiCheck />}
         <span className="text-sm font-medium">{message}</span>
@@ -64,24 +62,56 @@ export default function MobileTimeline() {
     type: "success",
   });
   const [isFilledTimesheet, setIsFilledTimesheet] = useState(false);
+  const [availableManagers, setAvailableManagers] = useState([]);
+  const [loadingManagers, setLoadingManagers] = useState(true);
 
   const bucketOptions = ["Project", "Meeting", "Miscellaneous"];
-  const managers = ["Awab Fakih", "Ayaan Raje", "Prashant Patil"];
 
   const inputRefs = useRef({
     projectName: null,
     items: [],
   });
 
+  const fetchApprovers = async () => {
+    setLoadingManagers(true);
+    try {
+      const response = await axiosInstance.get('/timesheet/user/approvers');
+      if (response.status === 200 && response.data.success) {
+        setAvailableManagers(response.data.data);
+      } else {
+        setAvailableManagers([
+          { id: 1, name: "Awab Fakih", role: "admin" },
+          { id: 2, name: "Ayaan Raje", role: "admin" },
+          { id: 3, name: "Prashant Patil", role: "admin" }
+        ]);
+      }
+    } catch (error) {
+      setAvailableManagers([
+        { id: 1, name: "Awab Fakih", role: "admin" },
+        { id: 2, name: "Ayaan Raje", role: "admin" },
+        { id: 3, name: "Prashant Patil", role: "admin" }
+      ]);
+    } finally {
+      setLoadingManagers(false);
+    }
+  };
+
   const checkFilledOrNotTimesheet = async (date) => {
     try {
       const response = await axiosInstance.get(`/timesheet/${date}`);
       if (response.status === 200 && response.data.message === 'Timesheet found') {
         setIsFilledTimesheet(true);
-        
+
         const timesheetData = response.data.timesheet;
         setProjectName(timesheetData.projectName || "");
-        setSelectedManagers(timesheetData.notifiedManagers || []);
+
+        const managerNames = timesheetData.notifiedManagers || [];
+        const mappedManagers = managerNames.map(name => {
+          const manager = availableManagers.find(m => m.name === name);
+          return manager || { id: Date.now() + Math.random(), name };
+        });
+        setSelectedManagers(mappedManagers);
+
         setItems(timesheetData.items || []);
 
         const durations = timesheetData.items.map(item => {
@@ -101,8 +131,6 @@ export default function MobileTimeline() {
         resetForm();
         setIsFilledTimesheet(false);
       } else {
-        console.error("Error checking timesheet:", error);
-        showToast("Error loading timesheet data", "error");
         resetForm();
         setIsFilledTimesheet(false);
       }
@@ -134,10 +162,14 @@ export default function MobileTimeline() {
   };
 
   useEffect(() => {
-    if (date) {
+    fetchApprovers();
+  }, []);
+
+  useEffect(() => {
+    if (date && availableManagers.length > 0) {
       checkFilledOrNotTimesheet(date);
     }
-  }, [date]);
+  }, [date, availableManagers]);
 
   const showToast = (message, type = "success") => {
     setToast({ show: true, message, type });
@@ -296,18 +328,17 @@ export default function MobileTimeline() {
     setValidationErrors((prev) => {
       const newErrors = { ...prev };
       delete newErrors[`task-${index}`];
-      
-      // Adjust error keys for items after the deleted one
+
       Object.keys(newErrors).forEach(key => {
         if (key.startsWith('task-')) {
           const itemIndex = parseInt(key.split('-')[1]);
           if (itemIndex > index) {
-            newErrors[`task-${itemIndex-1}`] = newErrors[key];
+            newErrors[`task-${itemIndex - 1}`] = newErrors[key];
             delete newErrors[key];
           }
         }
       });
-      
+
       return newErrors;
     });
 
@@ -350,28 +381,23 @@ export default function MobileTimeline() {
         duration: item.duration,
         bucket: item.bucket,
       })),
-      notifiedManagers: selectedManagers,
+      notifiedManagers: selectedManagers.map(manager => manager.id),
     };
 
     try {
       const response = await axiosInstance.post("/timesheet/store", payload);
       showToast("Timesheet submitted successfully!");
 
-      // Switch to current date after submission
       const today = new Date();
       const todayDate = today.toISOString().split("T")[0];
       setDate(todayDate);
-
-      // Check if there's a timesheet for the current date
       await checkFilledOrNotTimesheet(todayDate);
 
     } catch (error) {
-      console.error("Error submitting timesheet:", error);
       showToast(error.response?.data?.message || "Failed to submit timesheet.", "error");
     }
   };
 
-  // Navigation functions using Next.js router
   const navigateToEditTimesheet = () => {
     router.push("/timesheet/edittimesheet");
   };
@@ -380,7 +406,6 @@ export default function MobileTimeline() {
     router.push("/task");
   };
 
-  // Calendar functions
   const formatDisplayDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -445,7 +470,6 @@ export default function MobileTimeline() {
         onClose={hideToast}
       />
 
-      {/* Header */}
       <div className="bg-white rounded-lg p-4 mb-4 shadow-sm">
         <h2 className="text-xl font-bold mb-1 text-gray-800">
           <span className="relative">
@@ -471,9 +495,7 @@ export default function MobileTimeline() {
         </div>
       </div>
 
-      {/* Form Controls */}
       <div className="bg-white rounded-lg p-4 mb-4 shadow-sm space-y-4">
-        {/* Date Input */}
         <div className="relative">
           <label className="block mb-2 font-medium text-gray-700 text-sm">
             Date
@@ -526,13 +548,12 @@ export default function MobileTimeline() {
                     {day && (
                       <button
                         onClick={() => handleDateSelect(day)}
-                        className={`w-full h-full rounded-md text-sm font-medium transition-colors ${
-                          isSelectedDate(day)
+                        className={`w-full h-full rounded-md text-sm font-medium transition-colors ${isSelectedDate(day)
                             ? "bg-[#018ABE] text-white"
                             : isToday(day)
-                            ? "bg-blue-100 text-[#018ABE]"
-                            : "hover:bg-gray-100 text-gray-700"
-                        }`}
+                              ? "bg-blue-100 text-[#018ABE]"
+                              : "hover:bg-gray-100 text-gray-700"
+                          }`}
                       >
                         {day.getDate()}
                       </button>
@@ -551,18 +572,15 @@ export default function MobileTimeline() {
           )}
         </div>
 
-        {/* Manager Selection */}
         <div className="relative">
           <label className="block mb-2 font-medium text-gray-700 text-sm">
             Select Manager
           </label>
           <button
             onClick={() => !isFilledTimesheet && setShowDropdown(!showDropdown)}
-            className={`w-full border ${
-              validationErrors.managers ? "border-red-500" : "border-gray-300"
-            } rounded-md px-4 py-3 flex items-center justify-between text-sm ${
-              isFilledTimesheet ? "bg-gray-100" : ""
-            }`}
+            className={`w-full border ${validationErrors.managers ? "border-red-500" : "border-gray-300"
+              } rounded-md px-4 py-3 flex items-center justify-between text-sm ${isFilledTimesheet ? "bg-gray-100" : ""
+              }`}
             disabled={isFilledTimesheet}
           >
             <span className="text-gray-800">
@@ -580,40 +598,52 @@ export default function MobileTimeline() {
 
           {showDropdown && !isFilledTimesheet && (
             <div className="absolute top-full mt-1 bg-white border border-gray-200 rounded-md w-full z-10 shadow-lg">
-              {managers.map((managerName) => (
-                <label
-                  key={managerName}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 cursor-pointer text-sm"
-                >
-                  <input
-                    className="w-4 h-4 text-blue-600"
-                    type="checkbox"
-                    checked={selectedManagers.includes(managerName)}
-                    onChange={() =>
-                      setSelectedManagers((prev) => {
-                        const updated = prev.includes(managerName)
-                          ? prev.filter((m) => m !== managerName)
-                          : [...prev, managerName];
-                        if (updated.length > 0) {
-                          setValidationErrors((prev) => {
-                            const newErrors = { ...prev };
-                            delete newErrors.managers;
-                            return newErrors;
-                          });
-                        }
-                        return updated;
-                      })
-                    }
-                    disabled={isFilledTimesheet}
-                  />
-                  {managerName}
-                </label>
-              ))}
+              {loadingManagers ? (
+                <div className="px-4 py-3 text-sm text-center text-gray-500">
+                  Loading managers...
+                </div>
+              ) : availableManagers.length > 0 ? (
+                availableManagers.map((manager) => (
+                  <label
+                    key={manager.id}
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 cursor-pointer text-sm"
+                  >
+                    <input
+                      className="w-4 h-4 text-blue-600"
+                      type="checkbox"
+                      checked={selectedManagers.some(m => m.id === manager.id)}
+                      onChange={() =>
+                        setSelectedManagers((prev) => {
+                          const isSelected = prev.some(m => m.id === manager.id);
+                          const updated = isSelected
+                            ? prev.filter(m => m.id !== manager.id)
+                            : [...prev, manager];
+
+                          if (updated.length > 0) {
+                            setValidationErrors((prev) => {
+                              const newErrors = { ...prev };
+                              delete newErrors.managers;
+                              return newErrors;
+                            });
+                          }
+                          return updated;
+                        })
+                      }
+                      disabled={isFilledTimesheet}
+                    />
+                    {manager.name}
+                    <span className="text-xs text-gray-500">({manager.role})</span>
+                  </label>
+                ))
+              ) : (
+                <div className="px-4 py-3 text-sm text-center text-gray-500">
+                  No managers available
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Project Name */}
         <div>
           <label className="block mb-2 font-medium text-gray-700 text-sm">
             Project Name
@@ -635,13 +665,11 @@ export default function MobileTimeline() {
               }
             }}
             ref={(el) => (inputRefs.current.projectName = el)}
-            className={`w-full border ${
-              validationErrors.projectName
+            className={`w-full border ${validationErrors.projectName
                 ? "border-red-500"
                 : "border-gray-300"
-            } rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#018ABE] text-sm ${
-              isFilledTimesheet ? "bg-gray-100" : ""
-            }`}
+              } rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#018ABE] text-sm ${isFilledTimesheet ? "bg-gray-100" : ""
+              }`}
             readOnly={isFilledTimesheet}
           />
           {validationErrors.projectName && (
@@ -651,19 +679,16 @@ export default function MobileTimeline() {
           )}
         </div>
 
-        {/* Add Row Button */}
         <button
           onClick={addTimelineItem}
-          className={`w-full py-3 rounded-lg text-sm font-medium ${
-            isFilledTimesheet ? "bg-gray-400" : "bg-[#018ABE] text-white"
-          }`}
+          className={`w-full py-3 rounded-lg text-sm font-medium ${isFilledTimesheet ? "bg-gray-400" : "bg-[#018ABE] text-white"
+            }`}
           disabled={isFilledTimesheet}
         >
           Add Row
         </button>
       </div>
 
-      {/* Task Cards */}
       <div className="space-y-3 mb-4">
         {items.map((item, index) => (
           <div
@@ -676,9 +701,8 @@ export default function MobileTimeline() {
               </span>
               <button
                 onClick={() => deleteItem(index)}
-                className={`p-2 rounded-full hover:bg-red-50 ${
-                  isFilledTimesheet ? "opacity-50" : ""
-                }`}
+                className={`p-2 rounded-full hover:bg-red-50 ${isFilledTimesheet ? "opacity-50" : ""
+                  }`}
                 disabled={isFilledTimesheet}
               >
                 <AiFillDelete className="text-lg text-red-600" />
@@ -690,9 +714,8 @@ export default function MobileTimeline() {
                 Bucket
               </label>
               <select
-                className={`w-full border border-gray-300 rounded-md p-2 text-sm ${
-                  isFilledTimesheet ? "bg-gray-100" : ""
-                }`}
+                className={`w-full border border-gray-300 rounded-md p-2 text-sm ${isFilledTimesheet ? "bg-gray-100" : ""
+                  }`}
                 value={item.bucket}
                 onChange={(e) => updateItem(index, "bucket", e.target.value)}
                 disabled={isFilledTimesheet}
@@ -710,13 +733,11 @@ export default function MobileTimeline() {
                 Task Description
               </label>
               <textarea
-                className={`w-full border ${
-                  validationErrors[`task-${index}`]
+                className={`w-full border ${validationErrors[`task-${index}`]
                     ? "border-red-500"
                     : "border-gray-300"
-                } rounded-md p-2 text-sm resize-none ${
-                  isFilledTimesheet ? "bg-gray-100" : ""
-                }`}
+                  } rounded-md p-2 text-sm resize-none ${isFilledTimesheet ? "bg-gray-100" : ""
+                  }`}
                 rows="3"
                 value={item.task}
                 onChange={(e) => updateItem(index, "task", e.target.value)}
@@ -750,9 +771,8 @@ export default function MobileTimeline() {
                   type="text"
                   value={item.duration}
                   onChange={(e) => handleDurationChange(index, e.target.value)}
-                  className={`w-full border border-gray-300 rounded-md p-2 text-sm text-center ${
-                    isFilledTimesheet ? "bg-gray-100" : ""
-                  }`}
+                  className={`w-full border border-gray-300 rounded-md p-2 text-sm text-center ${isFilledTimesheet ? "bg-gray-100" : ""
+                    }`}
                   readOnly={isFilledTimesheet}
                 />
               </div>
@@ -761,29 +781,25 @@ export default function MobileTimeline() {
         ))}
       </div>
 
-      {/* Total Hours */}
       <div className="bg-white rounded-lg p-4 shadow-sm mb-4">
         <div className="flex justify-between items-center">
           <span className="font-semibold text-gray-800">Total Hours</span>
           <span
-            className={`px-3 py-1 rounded-full text-sm font-medium ${
-              isLessThanEightHours
+            className={`px-3 py-1 rounded-full text-sm font-medium ${isLessThanEightHours
                 ? "bg-red-100 text-red-800"
                 : "bg-green-100 text-green-800"
-            }`}
+              }`}
           >
             {totalTime}
           </span>
         </div>
       </div>
 
-      {/* Submit Button */}
       <div className="bottom-4">
         <button
           onClick={handleSubmit}
-          className={`w-full py-4 rounded-lg font-semibold text-lg ${
-            isFilledTimesheet ? "bg-gray-400" : "bg-[#018ABE] text-white"
-          } shadow-lg`}
+          className={`w-full py-4 rounded-lg font-semibold text-lg ${isFilledTimesheet ? "bg-gray-400" : "bg-[#018ABE] text-white"
+            } shadow-lg`}
           disabled={isFilledTimesheet}
         >
           Submit Timesheet
