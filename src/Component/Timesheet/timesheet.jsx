@@ -7,8 +7,6 @@ import { AiFillDelete } from "react-icons/ai";
 import toast, { Toaster } from "react-hot-toast";
 import { FiChevronDown } from "react-icons/fi";
 import { axiosInstance } from "@/lib/axiosInstance";
-import axios from "axios";
-
 
 export default function Timeline() {
     const [isFilledTimesheet, setIsFilledTimesheet] = useState(false);
@@ -19,11 +17,13 @@ export default function Timeline() {
     });
     const [projectName, setProjectName] = useState("");
     const [selectedManagers, setSelectedManagers] = useState([]);
+    const [availableManagers, setAvailableManagers] = useState([]); // New state for dynamic managers
     const [showDropdown, setShowDropdown] = useState(false);
     const [todayHours, setTodayHours] = useState([]);
     const [totalTime, setTotalTime] = useState("00:00");
     const [validationErrors, setValidationErrors] = useState({});
-    const [approvers, setApprovers] = useState([]);
+    const [loadingManagers, setLoadingManagers] = useState(false); // Loading state for managers
+    
     // Define bucket options for dropdown
     const bucketOptions = ["Project", "Meeting", "Miscellaneous"];
 
@@ -36,6 +36,41 @@ export default function Timeline() {
         items: []
     });
 
+    // Fetch approvers/managers from API
+    const fetchApprovers = async () => {
+        setLoadingManagers(true);
+        try {
+            const response = await axiosInstance.get('/timesheet/user/approvers');
+            if (response.status === 200 && response.data.success) {
+                setAvailableManagers(response.data.data);
+            } else {
+                toast.error("Failed to load managers");
+                // Fallback to default managers if API fails
+                setAvailableManagers([
+                    { id: 1, name: "Awab Fakih", role: "admin" },
+                    { id: 2, name: "Ayaan Raje", role: "admin" },
+                    { id: 3, name: "Prashant Patil", role: "admin" }
+                ]);
+            }
+        } catch (error) {
+            console.error("Error fetching approvers:", error);
+            toast.error("Failed to load managers");
+            // Fallback to default managers if API fails
+            setAvailableManagers([
+                { id: 1, name: "Awab Fakih", role: "admin" },
+                { id: 2, name: "Ayaan Raje", role: "admin" },
+                { id: 3, name: "Prashant Patil", role: "admin" }
+            ]);
+        } finally {
+            setLoadingManagers(false);
+        }
+    };
+
+    // Initialize managers on component mount
+    useEffect(() => {
+        fetchApprovers();
+    }, []);
+
     const checkFilledOrNotTimesheet = async (date) => {
         try {
             const response = await axiosInstance.get(`/timesheet/${date}`);
@@ -45,7 +80,20 @@ export default function Timeline() {
                 // Populate form with timesheet data
                 const timesheetData = response.data.timesheet;
                 setProjectName(timesheetData.projectName || "");
-                setSelectedManagers(timesheetData.notifiedManagers || []);
+                
+                // Handle manager selection - match by name for backward compatibility
+                if (timesheetData.notifiedManagers && timesheetData.notifiedManagers.length > 0) {
+                    // If the stored managers are names, keep them as is
+                    if (typeof timesheetData.notifiedManagers[0] === 'string') {
+                        setSelectedManagers(timesheetData.notifiedManagers);
+                    } else {
+                        // If they're objects with names, extract the names
+                        setSelectedManagers(timesheetData.notifiedManagers.map(m => m.name || m));
+                    }
+                } else {
+                    setSelectedManagers([]);
+                }
+                
                 setItems(timesheetData.items || []);
 
                 // Calculate and set total hours
@@ -76,22 +124,6 @@ export default function Timeline() {
             }
         }
     };
-
-    useEffect(() => {
-        const fetchApprovers = async () => {
-            try {
-                const res = await axiosInstance.get(
-                    `${process.env.NEXT_PUBLIC_BACKEND_API}/timesheet/user/approvers`,
-                    { withCredentials: true }
-                );
-                setSelectedManagers(res.data.data || []);
-               // console.log(selectedManagers)
-            } catch (error) {
-                console.error("Failed to load approvers", error);
-            }
-        };
-        fetchApprovers();
-    }, []);
 
     const resetForm = () => {
         const defaultTimes = Array.from({ length: 8 }, (_, i) => {
@@ -301,45 +333,45 @@ export default function Timeline() {
         // Update validation errors after deleting an item
         setValidationErrors(prev => {
             const newErrors = { ...prev };
-
+            
             // Remove the error for the deleted item
             delete newErrors[`task-${index}`];
-
+            
             // Adjust error keys for items after the deleted one
             Object.keys(newErrors).forEach(key => {
                 if (key.startsWith('task-')) {
                     const itemIndex = parseInt(key.split('-')[1]);
                     if (itemIndex > index) {
-                        newErrors[`task-${itemIndex - 1}`] = newErrors[key];
+                        newErrors[`task-${itemIndex-1}`] = newErrors[key];
                         delete newErrors[key];
                     }
                 }
             });
-
+            
             return newErrors;
         });
     };
 
     const validateForm = () => {
         const errors = {};
-
+        
         // Validate project name
         if (!projectName.trim()) {
             errors.projectName = "Project name is required";
         }
-
+        
         // Validate managers selection
         if (selectedManagers.length === 0) {
             errors.managers = "At least one manager must be selected";
         }
-
+        
         // Validate each task entry
         items.forEach((item, index) => {
             if (!item.task || !item.task.trim()) {
                 errors[`task-${index}`] = "Task description is required";
             }
         });
-
+        
         setValidationErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -363,7 +395,7 @@ export default function Timeline() {
                     }
                 }
             }
-
+            
             toast.error("Please fill all required fields");
             return;
         }
@@ -407,7 +439,7 @@ export default function Timeline() {
     const handleKeyDown = (e, type, index, field) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault(); // Prevent form submission or newline in textarea
-
+            
             // Determine the next input to focus
             if (type === 'projectName') {
                 // If project name, focus on the first task input
@@ -430,7 +462,6 @@ export default function Timeline() {
             }
         }
     };
-    const approverMap = Object.fromEntries(approvers.map((a) => [a.id, a.name]));
 
     const handleEditTimesheet = () => router.push("/timesheet/edittimesheet");
     const handleAddTask = () => router.push("/task");
@@ -475,50 +506,56 @@ export default function Timeline() {
                     <button
                         onClick={() => !isFilledTimesheet && setShowDropdown(!showDropdown)}
                         className={`border ${validationErrors.managers ? 'border-red-500' : 'border-gray-300'} cursor-pointer rounded-md px-4 py-2 flex items-center justify-between ${isFilledTimesheet ? 'bg-gray-100 cursor-not-allowed' : 'cursor-pointer'}`}
-                        disabled={isFilledTimesheet}
+                        disabled={isFilledTimesheet || loadingManagers}
                     >
-                        <span className="text-sm text-gray-800">{`All Selected (${selectedManagers.length})`}</span>
+                        <span className="text-sm text-gray-800">
+                            {loadingManagers ? 'Loading...' : `${selectedManagers.length > 0 ? 'Selected' : 'Select'} (${selectedManagers.length})`}
+                        </span>
                         <FiChevronDown className="text-gray-600 text-lg" />
                     </button>
                     {validationErrors.managers && (
                         <p className="text-red-500 text-sm mt-1">{validationErrors.managers}</p>
                     )}
-                    {showDropdown && !isFilledTimesheet && (
+                    {showDropdown && !isFilledTimesheet && !loadingManagers && (
                         <div
-                            className="absolute top-full mt-1 bg-white border border-gray-200 rounded-md w-full z-10"
+                            className="absolute top-full mt-1 bg-white border border-gray-200 rounded-md w-full z-10 max-h-48 overflow-y-auto"
                             onMouseLeave={() => setShowDropdown(false)} // Close dropdown when mouse leaves
                         >
-                            {approvers.map((approver) => (
-                                <label
-                                    key={approver.id}
-                                    className=""
-                                >
-                                    <input
-                                        className="w-5 h-5 text-blue-600"
-                                        type="checkbox"
-                                        checked={selectedManagers.includes(approver.id)}
-                                        onChange={() =>
-                                            setSelectedManagers((prev) => {
-                                                const updated = prev.includes(approver.id)
-                                                    ? prev.filter((id) => id !== approver.id)
-                                                    : [...prev, approver.id];
-
-                                                // Clear validation error if managers are selected
-                                                if (updated.length > 0) {
-                                                    setValidationErrors((prev) => {
-                                                        const newErrors = { ...prev };
-                                                        delete newErrors.managers;
-                                                        return newErrors;
-                                                    });
-                                                }
-
-                                                return updated;
-                                            })
-                                        }
-                                    />
-                                    {approver.name}
-                                </label>
-                            ))}
+                            {availableManagers.length > 0 ? (
+                                availableManagers.map((manager) => (
+                                    <label key={manager.id} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                                        <input
+                                            className="w-5 h-5 text-blue-600"
+                                            type="checkbox"
+                                            checked={selectedManagers.includes(manager.name)}
+                                            onChange={() =>
+                                                setSelectedManagers((prev) => {
+                                                    const updated = prev.includes(manager.name)
+                                                        ? prev.filter((m) => m !== manager.name)
+                                                        : [...prev, manager.name];
+                                                        
+                                                    // Clear validation error if managers are selected
+                                                    if (updated.length > 0) {
+                                                        setValidationErrors(prev => {
+                                                            const newErrors = { ...prev };
+                                                            delete newErrors.managers;
+                                                            return newErrors;
+                                                        });
+                                                    }
+                                                    
+                                                    return updated;
+                                                })
+                                            }
+                                        />
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-medium">{manager.name}</span>
+                                            <span className="text-xs text-gray-500 capitalize">{manager.role}</span>
+                                        </div>
+                                    </label>
+                                ))
+                            ) : (
+                                <div className="px-4 py-2 text-gray-500 text-sm">No managers available</div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -544,7 +581,7 @@ export default function Timeline() {
                         onChange={(e) => {
                             if (!isFilledTimesheet) {
                                 setProjectName(e.target.value);
-
+                                
                                 // Clear validation error if field is filled
                                 if (e.target.value.trim() !== '') {
                                     setValidationErrors(prev => {
@@ -581,7 +618,7 @@ export default function Timeline() {
                         {items.map((item, index) => (
                             <tr key={index} ref={(el) => (rowRefs.current[index] = el)} className="hover:bg-gray-100">
                                 <td className="relative px-4 py-2 border-4 border-white">
-                                    <select
+                                    <select 
                                         className={`w-full h-10 border text-center border-gray-500 rounded p-1 ${isFilledTimesheet ? 'bg-gray-100 cursor-not-allowed' : 'cursor-pointer'}`}
                                         value={item.bucket}
                                         onChange={(e) => updateItem(index, "bucket", e.target.value)}
@@ -667,6 +704,7 @@ export default function Timeline() {
                 </table>
             </div>
 
+
             <div className="flex justify-center items-center gap-4 mb-6">
                 <button
                     id="submit-button"
@@ -679,4 +717,4 @@ export default function Timeline() {
             </div>
         </div>
     );
-}
+};
