@@ -500,7 +500,6 @@ export default function Expense() {
                       </span>
                       <input
                         type="file"
-                        accept="image/*"
                         id={`file-input-${expense.id}`}
                         className="hidden"
                         onChange={(e) => handleFileChange(expense.id, e)}
