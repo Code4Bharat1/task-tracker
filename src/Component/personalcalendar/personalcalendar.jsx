@@ -27,6 +27,7 @@ import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import EventForm from "./EventForm";
 import TaskForm from "./TaskForm";
 import MeetingForm from "./MettingForm";
+import ToDoList from "./TodoList";
 
 const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -327,14 +328,14 @@ export default function PersonalCalendar() {
     setActiveTab("Event");
   };
 
-  const handleDayClick = (day) => {
-    setSelectedDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-    );
-    if (hasEvents(day)) {
-      setClickedDay(day);
-    }
-  };
+    const handleDayClick = (day) => {
+      setSelectedDate(
+        new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+      );
+      if (hasEvents(day)) {
+        setClickedDay(day);
+      }
+    };
 
   const handleMonthChange = (direction) => {
     setCurrentDate(
@@ -722,6 +723,7 @@ export default function PersonalCalendar() {
             </div>
           </div>
         )}
+        <ToDoList selectedDate={selectedDate} /> 
 
         {/* Modal */}
         {modalOpen && (
