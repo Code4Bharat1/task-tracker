@@ -38,7 +38,7 @@ export default function SalarySlipPage() {
 
             // API call using your provided endpoint
             const response = await fetch(
-                `http://localhost:4110/api/salary/getSalaryDetails?month=${month}&year=${year}`,
+                `${process.env.NEXT_PUBLIC_BACKEND_API}/salary/getSalaryDetails?month=${month}&year=${year}`,
                 {
                     method: 'GET',
                     headers: {

@@ -111,7 +111,7 @@ export default function AddTeamMember() {
       try {
         setLoading(true);
 
-        const response = await fetch('http://localhost:4110/api/tasks/getTasks', {
+        const response = await fetch('${process.env.NEXT_PUBLIC_BACKEND_API}/tasks/getTasks', {
           credentials: 'include',
           method: 'GET',
           headers: {
@@ -150,7 +150,7 @@ export default function AddTeamMember() {
         setLoading(true);
 
         const response = await fetch(
-          `http://localhost:4110/api/tasks/getUnassignedUsers?bucketName=${encodeURIComponent(formData.projectName)}`,
+          `${process.env.NEXT_PUBLIC_BACKEND_API}/tasks/getUnassignedUsers?bucketName=${encodeURIComponent(formData.projectName)}`,
           {
             credentials: 'include',
             method: 'GET',
@@ -235,7 +235,7 @@ export default function AddTeamMember() {
 
     try {
       const response = await fetch(
-        `http://localhost:4110/api/tasks/updateTagMembers/${selectedTask._id}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_API}/tasks/updateTagMembers/${selectedTask._id}`,
         {
           method: 'PATCH',
           credentials: 'include',

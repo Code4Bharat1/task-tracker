@@ -46,7 +46,7 @@ const MobilePosts = () => {
     const fetchPosts = async () => {
       try {
         const response = await fetch(
-          "http://localhost:4110/api/admin/getUserPosts",
+          `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/getUserPosts`,
           {
             credentials: "include",
           }
@@ -112,7 +112,7 @@ const MobilePosts = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:4110/api/admin/proxyDownload",
+        `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/proxyDownload`,
         {
           method: "POST",
           headers: {

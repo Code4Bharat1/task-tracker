@@ -14,7 +14,7 @@ const HREvents = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:4110/api/event/all")
+      .get(`${process.env.NEXT_PUBLIC_BACKEND_API}/event/all`)
       .then((res) => setEvents(res.data.events || []))
       .catch(() => setEvents([]));
   }, []);
@@ -34,7 +34,7 @@ const HREvents = () => {
     if (!eventToDelete) return;
     try {
       await axios.delete(
-        `http://localhost:4110/api/event/${eventToDelete._id}`
+        `${process.env.NEXT_PUBLIC_BACKEND_API}/event/${eventToDelete._id}`
       );
       setEvents((prev) => prev.filter((e) => e._id !== eventToDelete._id));
       setShowDeleteModal(false);

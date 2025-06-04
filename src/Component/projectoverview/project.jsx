@@ -37,7 +37,7 @@ const ProjectOverview = () => {
       if (statusFilter !== 'all') params.append('status', statusFilter);
       if (categoryFilter !== 'all') params.append('projectCategory', categoryFilter); // Add category filter
 
-      const response = await fetch(`http://localhost:4110/api/tasks/getTasks?${params}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/tasks/getTasks?${params}`, {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',

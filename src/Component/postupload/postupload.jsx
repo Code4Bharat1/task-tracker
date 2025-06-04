@@ -25,7 +25,7 @@ import {
 import { useRouter } from 'next/navigation';
 
 // API Base URL - adjust according to your setup
-const API_BASE_URL = 'http://localhost:4110/api';
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_BACKEND_API}`;
 
 // Utility function for API calls
 const apiCall = async (endpoint, options = {}) => {

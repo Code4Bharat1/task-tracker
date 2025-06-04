@@ -28,7 +28,7 @@ const ViewTeamMember = () => {
     const fetchTasks = async () => {
         try {
             setLoading(true);
-            const response = await fetch('http://localhost:4110/api/tasks/getTasks', {
+            const response = await fetch('${process.env.NEXT_PUBLIC_BACKEND_API}/tasks/getTasks', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -66,7 +66,7 @@ const ViewTeamMember = () => {
             setRemoving(true);
 
             // API call to remove member from task
-            const response = await fetch(`http://localhost:4110/api/tasks/${selectedTask._id}/removeMember`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/tasks/${selectedTask._id}/removeMember`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

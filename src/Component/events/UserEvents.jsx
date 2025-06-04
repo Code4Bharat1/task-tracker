@@ -11,7 +11,7 @@ const UserEvents = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:4110/api/event/all", { withCredentials: true })
+      .get(`${process.env.NEXT_PUBLIC_BACKEND_API}/event/all`, { withCredentials: true })
       .then((res) => {
         const allEvents = res.data.events || [];
         const formatDate = (date) => new Date(date).toISOString().split("T")[0];

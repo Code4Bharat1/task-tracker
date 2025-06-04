@@ -14,7 +14,7 @@ export default function VideoCall() {
   const [meetingDetails, setMeetingDetails] = useState(null);
   const [otherParticipants, setOtherParticipants] = useState([]);
 
-  const API_URL = "http://localhost:4110/api/meeting/participant";
+  const API_URL = `${process.env.NEXT_PUBLIC_BACKEND_API}/meeting/participant`;
 
   const handleJoinCall = async () => {
     if (!userName.trim()) {

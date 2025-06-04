@@ -39,7 +39,7 @@ const Posts = () => {
     useEffect(() => {
         const fetchPosts = async () => {
             try {
-                const response = await fetch('http://localhost:4110/api/admin/getUserPosts', {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/admin/getUserPosts`, {
                     credentials: 'include'
                 });
                 const data = await response.json();
@@ -87,7 +87,7 @@ const Posts = () => {
         setDownloadingFiles(prev => new Set([...prev, fileKey]));
 
         try {
-            const response = await fetch('http://localhost:4110/api/admin/proxyDownload', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/admin/proxyDownload`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

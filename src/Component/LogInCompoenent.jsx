@@ -4,7 +4,7 @@ import { Eye, EyeOff, Mail, Lock, User, AlertCircle } from 'lucide-react';
 
 const LoginComponent = ({ 
   onLogin, 
-  loginRoute = 'http://localhost:4110/api/user/login',
+  loginRoute = `${process.env.NEXT_PUBLIC_BACKEND_API}/api/user/login`,
   redirectUrl = '/chat',
   title = 'Welcome Back',
   subtitle = 'Sign in to your account to continue'

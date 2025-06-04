@@ -38,7 +38,7 @@ export default function GameModal({ onSubmit, eventDate, editingEvent }) {
     try {
       if (editingEvent) {
         // Update
-        await axios.put(`http://localhost:4110/api/event/${editingEvent._id}`, {
+        await axios.put(`${process.env.NEXT_PUBLIC_BACKEND_API}/event/${editingEvent._id}`, {
           title: eventName,
           date: eventDate,
           games: selectedGames,
@@ -46,7 +46,7 @@ export default function GameModal({ onSubmit, eventDate, editingEvent }) {
         toast.success("Event updated successfully!");
       } else {
         // Create
-        await axios.post("http://localhost:4110/api/event/create", {
+        await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_API}/event/create`, {
           title: eventName,
           date: eventDate,
           games: selectedGames,

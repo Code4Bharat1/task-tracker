@@ -15,7 +15,7 @@ const Page = () => {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
-    axios.get('http://localhost:4110/api/profile/getProfile', {
+    axios.get(`${process.env.NEXT_PUBLIC_BACKEND_API}/profile/getProfile`, {
       withCredentials: true,
       headers: {
         'Content-Type': 'application/json',

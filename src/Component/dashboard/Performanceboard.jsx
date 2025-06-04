@@ -26,7 +26,7 @@ const PerformanceBoard = () => {
         ...(filters.date && { date: filters.date })
       });
 
-      const response = await fetch(`http://localhost:4110/api/performance/getPerformanceScore?${queryParams}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API}/performance/getPerformanceScore?${queryParams}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

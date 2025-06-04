@@ -42,7 +42,7 @@ const MobilePerformanceBoard = () => {
       });
 
       const response = await fetch(
-        `http://localhost:4110/api/performance/getPerformanceScore?${queryParams}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_API}/performance/getPerformanceScore?${queryParams}`,
         {
           method: "GET",
           headers: {
