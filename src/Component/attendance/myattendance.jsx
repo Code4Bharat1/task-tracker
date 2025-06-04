@@ -10,6 +10,24 @@ import { axiosInstance } from '@/lib/axiosInstance';
 import toast from 'react-hot-toast';
 import { useGSAP } from '@gsap/react';
 
+const uploadImageToCloudinary = async (imageDataUrl) => {
+  try {
+    const response = await fetch(imageDataUrl);
+    const blob = await response.blob();
+    const formData = new FormData();
+    formData.append('file', blob, `attendance-selfie-${Date.now()}.jpg`);
+    const uploadResponse = await axiosInstance.post('/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return uploadResponse.data;
+  } catch (error) {
+    console.error('Error uploading image to Cloudinary:', error);
+    throw error;
+  }
+};
+
 export default function AttendancePage() {
   const [currentDate, setCurrentDate] = useState('');
   const [inTime, setInTime] = useState('');
@@ -26,6 +44,8 @@ export default function AttendancePage() {
   const [showCameraModal, setShowCameraModal] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
   const [captureAction, setCaptureAction] = useState(null);
+  const [punchInPhoto, setPunchInPhoto] = useState('');
+  const [punchOutPhoto, setPunchOutPhoto] = useState('');
   const underlineRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -41,30 +61,38 @@ export default function AttendancePage() {
     }
   }, []);
 
-  useEffect(() => {
-    const checkTodayAttendance = async () => {
-      try {
-        const res = await axiosInstance.get('/attendance/today');
-        const data = res.data;
-        if (data.punchedIn) {
-          const punchInDate = new Date(data.punchInTime);
-          setHasPunchedIn(true);
-          setInTime(formatTime(punchInDate));
-          setInLocation(data.punchInLocation || 'Unknown');
-        }
-        if (data.punchedOut) {
-          setHasPunchedOut(true);
-          const punchOutDate = new Date(data.punchOutTime);
-          setOutTime(formatTime(punchOutDate));
-          setOutLocation(data.punchOutLocation || 'Unknown');
-        }
-      } catch (error) {
-        console.error('Failed to fetch today’s attendance:', error);
+  const checkTodayAttendance = async () => {
+    try {
+      const res = await axiosInstance.get('/attendance/today');
+      const data = res.data;
+      if (data.punchedIn) {
+        const punchInDate = new Date(data.punchInTime);
+        setHasPunchedIn(true);
+        setInTime(formatTime(punchInDate));
+        setInLocation(data.punchInLocation || 'Unknown');
+        setPunchInPhoto(data.punchInPhoto || '');
       }
-    };
+      if (data.punchedOut) {
+        setHasPunchedOut(true);
+        const punchOutDate = new Date(data.punchOutTime);
+        setOutTime(formatTime(punchOutDate));
+        setOutLocation(data.punchOutLocation || 'Unknown');
+        setPunchOutPhoto(data.punchOutPhoto || '');
+      }
+    } catch (error) {
+      console.error(`Failed to fetch today's attendance: , ${error}`);
+    }
+  };
+  useEffect(() => {
     checkTodayAttendance();
   }, []);
 
+  useEffect(() => {
+    checkTodayAttendance()
+  }, [hasPunchedIn])
+  useEffect(() => {
+    checkTodayAttendance()
+  }, [hasPunchedOut])
   useEffect(() => {
     const dateStr = new Date().toLocaleDateString('en-GB');
     setCurrentDate(dateStr);
@@ -153,7 +181,6 @@ export default function AttendancePage() {
     }
   };
 
-
   const handlePunchIn = () => {
     if (hasPunchedIn || isPunchingIn) return;
     setCaptureAction('in');
@@ -163,18 +190,24 @@ export default function AttendancePage() {
   const handlePunchInAfterCapture = async (selfieImage) => {
     if (!navigator.geolocation) return alert('Geolocation not supported');
     setIsPunchingIn(true);
+
     navigator.geolocation.getCurrentPosition(async (pos) => {
-      const { latitude, longitude } = pos.coords;
-      const location = await fetchLocation(latitude, longitude);
-      const now = new Date();
-      setInTime(formatTime(now));
-      setInLocation(location);
-      setHasPunchedIn(true);
       try {
+        const { latitude, longitude } = pos.coords;
+        const location = await fetchLocation(latitude, longitude);
+        const now = new Date();
+        toast.loading('Uploading selfie...');
+        const cloudinaryResult = await uploadImageToCloudinary(selfieImage);
+        toast.dismiss();
+        setInTime(formatTime(now));
+        setInLocation(location);
+        setHasPunchedIn(true);
+        setPunchInPhoto(cloudinaryResult.fileUrl);
         await axiosInstance.post("/attendance/punch-in", {
           punchInTime: now.toISOString(),
           punchInLocation: location,
-          selfieImage,
+          selfieImage: cloudinaryResult.fileUrl,
+          selfiePublicId: cloudinaryResult.publicId,
           userLocation: {
             latitude,
             longitude
@@ -199,35 +232,39 @@ export default function AttendancePage() {
   const handlePunchOutAfterCapture = async (selfieImage) => {
     if (!navigator.geolocation) return alert('Geolocation not supported');
     setIsPunchingOut(true);
+
     navigator.geolocation.getCurrentPosition(async (pos) => {
-      const { latitude, longitude } = pos.coords;
-      const location = await fetchLocation(latitude, longitude);
-      const now = new Date();
-      const punchInDate = new Date();
-      const elapsed = (now - punchInDate) / 1000;
-      if (elapsed < 270) {
-        setPendingPunchOutData({
+      try {
+        const { latitude, longitude } = pos.coords;
+        const location = await fetchLocation(latitude, longitude);
+        const now = new Date();
+        const punchInDate = new Date();
+        const elapsed = (now - punchInDate) / 1000;
+        toast.loading('Uploading selfie...');
+        const cloudinaryResult = await uploadImageToCloudinary(selfieImage);
+        toast.dismiss();
+        const punchOutData = {
           punchOutTime: now.toISOString(),
           punchOutLocation: location,
-          selfieImage,
+          selfieImage: cloudinaryResult.fileUrl,
+          selfiePublicId: cloudinaryResult.publicId,
           userLocation: {
             latitude,
             longitude
           }
-        });
-        setShowModal(true);
-        setIsPunchingOut(false);
-        return;
-      }
-      try {
-        await axiosInstance.post("/attendance/punch-out", {
-          ...pendingPunchOutData,
-          emergencyReason: trimmedReason,
-        });
-
+        };
+        if (elapsed < 270) {
+          setCapturedImage(selfieImage);
+          setPendingPunchOutData(punchOutData);
+          setShowModal(true);
+          setIsPunchingOut(false);
+          return;
+        }
+        await axiosInstance.post("/attendance/punch-out", punchOutData);
         setOutTime(formatTime(now));
         setOutLocation(location);
         setHasPunchedOut(true);
+        setPunchOutPhoto(cloudinaryResult.fileUrl);
         toast.success('Punched out successfully!');
       } catch (error) {
         console.error('Punch out failed:', error);
@@ -255,6 +292,7 @@ export default function AttendancePage() {
       setOutTime(formatTime(time));
       setOutLocation(pendingPunchOutData.punchOutLocation);
       setHasPunchedOut(true);
+      setPunchOutPhoto(capturedImage);
       toast.success('Emergency punch out recorded!');
     } catch (error) {
       console.error('Punch out failed:', error);
@@ -268,50 +306,67 @@ export default function AttendancePage() {
 
   return (
     <>
-      <div className="flex items-center justify-center mt-15 bg-white p-4">
-        <div className="bg-white rounded-xl shadow-md w-full max-w-3xl p-6 border-2 border-gray-300 relative">
-          <div className="flex flex-col mx-4 space-y-4">
-            <button className="bg-[#F4F5FD] px-4 w-30 py-2 text-md rounded-xl shadow-md font-semibold">
-              {currentDate}
-            </button>
+      <div className="flex items-center justify-center min-h-screen bg-white p-4 sm:p-6 md:p-8">
+        <div className="bg-white rounded-xl shadow-md w-full max-w-[90%] sm:max-w-3xl p-4 sm:p-6 border-2 border-gray-300 relative">
+          <div className="flex flex-col sm:flex-row justify-between items-center mx-2 sm:mx-4 my-4 space-y-4 sm:space-y-0 sm:space-x-4">
             <button
               onClick={() => router.push('/attendance/punchhistory')}
-              className="bg-[#058CBF] text-white w-30 whitespace-nowrap px-2 py-2 rounded cursor-pointer hover:bg-[#69b0c9]"
+              className="bg-[#058CBF] text-white px-4 py-2 rounded shadow-md font-semibold hover:bg-[#69b0c9] w-full sm:w-auto"
             >
               Punch History
             </button>
+
+            <h2 className="text-xl sm:text-2xl font-medium font-roboto text-gray-700 relative text-center">
+              ATTENDANCE
+              <span
+                ref={underlineRef}
+                className="absolute left-0 bottom-[-6px] h-[3px] bg-[#058CBF] w-full scale-x-0"
+              ></span>
+            </h2>
+
+            <button className="bg-[#F4F5FD] px-4 py-2 rounded shadow-md font-semibold w-full sm:w-auto">
+              {currentDate}
+            </button>
           </div>
-          <div className="relative -mt-20 mb-8 w-max mx-auto">
-            <h2 className="text-3xl font-medium font-roboto text-gray-700">ATTENDANCE</h2>
-            <span
-              ref={underlineRef}
-              className="absolute left-0 bottom-[-6px] h-[3px] bg-[#058CBF] w-full scale-x-0"
-            ></span>
-          </div>
-          <div className="flex justify-end -ml-20 -mt-25 mb-10 items-start w-full h-full pt-4">
-            <div className="w-[70px] h-[70px] rounded-full overflow-hidden flex justify-center items-center">
-              <Image src="/profile.png" alt="avatar" width={70} height={70} />
-            </div>
-          </div>
+
           <hr className="h-0.5 bg-gray-400 border-0" />
           <div className="mt-4 space-y-3">
-            <div className="flex items-center gap-2 mb-2">
-              <strong className="w-40">Punch in Time:</strong>
-              <div className="bg-[#F4F5FD] p-2 rounded-md shadow-md min-w-[80px]">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2">
+              <strong className="w-full sm:w-40 text-sm sm:text-base">Punch in Time:</strong>
+              <div className="bg-[#F4F5FD] p-2 rounded-md shadow-md w-full sm:min-w-[80px] text-sm">
                 {inTime || '--:--:--'}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <strong className="w-40">Punch in Location:</strong>
-              <div className="bg-[#F4F5FD] p-2 rounded-md shadow-md text-sm min-w-[200px]">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <strong className="w-full sm:w-40 text-sm sm:text-base">Punch in Location:</strong>
+              <div className="bg-[#F4F5FD] p-2 rounded-md shadow-md text-xs sm:text-sm w-full sm:min-w-[200px]">
                 {inLocation || 'Not punched in yet'}
               </div>
             </div>
-            <div className="flex justify-center gap-x-10 mt-8 mb-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2">
+              <strong className="w-full sm:w-40 text-sm sm:text-base">Punch In Photo:</strong>
+              <div className="p-2 rounded-md w-full sm:min-w-[100px] min-h-[80px] flex items-center justify-start">
+                {punchInPhoto ? (
+                  <img
+                    src={punchInPhoto}
+                    alt="Punch In Selfie"
+                    className="w-16 sm:w-20 h-16 sm:h-20 object-cover rounded-md cursor-pointer"
+                    onClick={() => window.open(punchInPhoto, '_blank')}
+                  />
+                ) : (
+                  <img
+                    src="/profile.png"
+                    alt="No photo"
+                    className="w-16 sm:w-20 h-16 sm:h-20 object-cover rounded-md opacity-50"
+                  />
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-x-10 mt-8 mb-8">
               <button
                 onClick={handlePunchIn}
                 disabled={hasPunchedIn || isPunchingIn}
-                className="flex items-center bg-[#058CBF] ml-2 text-lg text-white px-6 py-2 rounded hover:bg-cyan-600 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
+                className="flex items-center justify-center bg-[#058CBF] text-sm sm:text-lg text-white px-4 sm:px-6 py-2 rounded hover:bg-cyan-600 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer w-full sm:w-auto"
               >
                 <LuAlarmClock className="mr-2" />
                 {isPunchingIn ? 'Punching In...' : 'Punch In'}
@@ -320,23 +375,42 @@ export default function AttendancePage() {
               <button
                 onClick={handlePunchOut}
                 disabled={!hasPunchedIn || hasPunchedOut || isPunchingOut}
-                className="flex items-center bg-[#058CBF] text-lg text-white px-6 py-2 rounded hover:bg-cyan-600 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
+                className="flex items-center justify-center bg-[#058CBF] text-sm sm:text-lg text-white px-4 sm:px-6 py-2 rounded hover:bg-cyan-600 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer w-full sm:w-auto"
               >
                 <LuAlarmClock className="mr-2" />
                 {isPunchingOut ? 'Punching Out...' : 'Punch Out'}
                 <TbDoorExit className="ml-2" />
               </button>
             </div>
-            <div className="flex items-center gap-2 mb-2">
-              <strong className="w-40">Punch Out Time:</strong>
-              <div className="bg-[#F4F5FD] p-2 rounded-md shadow-md min-w-[80px]">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2">
+              <strong className="w-full sm:w-40 text-sm sm:text-base">Punch Out Time:</strong>
+              <div className="bg-[#F4F5FD] p-2 rounded-md shadow-md w-full sm:min-w-[80px] text-sm">
                 {outTime || '--:--:--'}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <strong className="w-40">Punch Out Location:</strong>
-              <div className="bg-[#F4F5FD] p-2 rounded-md shadow-md text-sm min-w-[200px]">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <strong className="w-full sm:w-40 text-sm sm:text-base">Punch Out Location:</strong>
+              <div className="bg-[#F4F5FD] p-2 rounded-md shadow-md text-xs sm:text-sm w-full sm:min-w-[200px]">
                 {outLocation || 'Not punched out yet'}
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <strong className="w-full sm:w-40 text-sm sm:text-base">Punch Out Photo:</strong>
+              <div className="p-2 rounded-md w-full sm:min-w-[100px] min-h-[80px] flex items-center justify-start">
+                {punchOutPhoto ? (
+                  <img
+                    src={punchOutPhoto}
+                    alt="Punch Out Selfie"
+                    className="w-16 sm:w-20 h-16 sm:h-20 object-cover rounded-md cursor-pointer"
+                    onClick={() => window.open(punchOutPhoto, '_blank')}
+                  />
+                ) : (
+                  <img
+                    src="/profile.png"
+                    alt="No photo"
+                    className="w-16 sm:w-20 h-16 sm:h-20 object-cover rounded-md opacity-50"
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -345,8 +419,8 @@ export default function AttendancePage() {
 
       {showCameraModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
-            <h2 className="text-2xl font-bold mb-4">Take Attendance Selfie</h2>
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-[95%] sm:w-full max-w-md sm:max-w-lg">
+            <h2 className="text-lg sm:text-2xl font-bold mb-4">Take Attendance Selfie</h2>
             <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
               <video
                 ref={videoRef}
@@ -362,13 +436,13 @@ export default function AttendancePage() {
                   setShowCameraModal(false);
                   stopCameraStream();
                 }}
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 text-sm sm:text-base"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCapturePhoto}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 text-sm sm:text-base"
               >
                 Capture Photo
               </button>
@@ -379,13 +453,22 @@ export default function AttendancePage() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
-            <h2 className="text-3xl text-red-600 text-center font-bold mb-4">Emergency Punch Out</h2>
-            <p className="mb-2 text-xl">You’re punching out early. Please provide a reason:</p>
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-[95%] sm:w-full max-w-md sm:max-w-lg">
+            <h2 className="text-xl sm:text-3xl text-red-600 text-center font-bold mb-4">Emergency Punch Out</h2>
+            {capturedImage && (
+              <div className="mb-4 flex justify-center">
+                <img
+                  src={capturedImage}
+                  alt="Attendance Selfie"
+                  className="w-32 h-32 object-cover rounded-md border border-gray-300"
+                />
+              </div>
+            )}
+            <p className="mb-2 text-base sm:text-xl">You're punching out early. Please provide a reason:</p>
             <textarea
               value={emergencyReason}
               onChange={(e) => setEmergencyReason(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded mb-4 resize-none overflow-y-auto"
+              className="w-full p-2 border border-gray-300 rounded mb-4 resize-none overflow-y-auto text-sm sm:text-base"
               rows={3}
             />
             <div className="flex justify-end space-x-2">
@@ -394,13 +477,13 @@ export default function AttendancePage() {
                   setShowModal(false);
                   setEmergencyReason('');
                 }}
-                className="bg-gray-300 px-4 py-2 rounded font-bold cursor-pointer"
+                className="bg-gray-300 px-4 py-2 rounded font-bold cursor-pointer text-sm sm:text-base"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmEmergencyPunchOut}
-                className="bg-red-600 active:scale-90 text-white px-4 py-2 rounded font-bold cursor-pointer"
+                className="bg-red-600 active:scale-90 text-white px-4 py-2 rounded font-bold cursor-pointer text-sm sm:text-base"
               >
                 Confirm
               </button>
