@@ -768,11 +768,10 @@ export default function PersonalCalendar() {
                   formData={formData}
                   handleInputChange={handleInputChange}
                   categoryDotColors={categoryDotColors}
-                  onCancel={() => {
-                    setModalOpen(false);
-                    resetFormData();
-                  }}
+                  onCancel={() => setModalOpen(false)}
                   onSubmit={handleCreateEvent}
+                  onClose={() => setModalOpen(false)}
+                  isModal={true}
                 />
               )}
               {activeTab === "Daily Task" && (
@@ -780,10 +779,7 @@ export default function PersonalCalendar() {
                   formData={formData}
                   handleInputChange={handleInputChange}
                   categoryDotColors={categoryDotColors}
-                  onCancel={() => {
-                    setModalOpen(false);
-                    resetFormData();
-                  }}
+                  closeModal={() => setModalOpen(false)}
                   onSubmit={handleCreateEvent}
                 />
               )}
@@ -792,10 +788,7 @@ export default function PersonalCalendar() {
                   formData={formData}
                   handleInputChange={handleInputChange}
                   categoryDotColors={categoryDotColors}
-                  onCancel={() => {
-                    setModalOpen(false);
-                    resetFormData();
-                  }}
+                  closeModal={() => setModalOpen(false)} // <- Changed from onCancel to closeModal
                   onSubmit={handleCreateEvent}
                 />
               )}

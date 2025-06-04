@@ -7,7 +7,6 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-
 const CustomDateInput = forwardRef(({ value, onClick }, ref) => (
   <button
     onClick={(e) => {
@@ -54,7 +53,7 @@ const TimeDropdown = ({ times, selectedTime, setSelectedTime, setShowTimeDropdow
   );
 };
 
-export default function TaskForm() {
+export default function TaskForm({ closeModal }) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState('09:00');
   const [description, setDescription] = useState('');
@@ -79,12 +78,16 @@ export default function TaskForm() {
     return `${hour12}:${minutes} ${ampm}`;
   };
 
+  // Fixed handleCancel function
   const handleCancel = useCallback((e) => {
-    e?.preventDefault();
+    e && e.preventDefault(); // Handle both direct calls and event calls
     setTitle('');
     setDescription('');
     setSelectedDate(new Date());
     setSelectedTime('09:00');
+    if (closeModal && typeof closeModal === "function") {
+      closeModal();
+    }
   }, []);
 
   const handleCreate = useCallback(async (e) => {
@@ -160,33 +163,31 @@ export default function TaskForm() {
           />
         </div>
 
-
-
         <div>
           <label htmlFor="time" className="block mb-2 text-sm font-medium text-gray-700">Select Time:</label>
           <div className="flex items-center gap-3 relative">
-          <LuClock className="text-xl text-gray-500" />
-          <div className="relative w-full" ref={dropdownRef}>
-            <button
-              ref={timeButtonRef}
-              onClick={() => setShowTimeDropdown(!showTimeDropdown)}
-              className="flex items-center justify-between w-full px-4 py-2 text-gray-600 bg-white 
+            <LuClock className="text-xl text-gray-500" />
+            <div className="relative w-full" ref={dropdownRef}>
+              <button
+                ref={timeButtonRef}
+                onClick={() => setShowTimeDropdown(!showTimeDropdown)}
+                className="flex items-center justify-between w-full px-4 py-2 text-gray-600 bg-white 
                       border rounded-lg border-gray-300 hover:border-blue-500 focus:border-blue-500 
                       transition-colors"
-            >
-              <span>{formatDisplayTime() || 'Select time'}</span>
-              <IoIosArrowDown className="text-gray-400 ml-2" />
-            </button>
-            {showTimeDropdown && (
-              <TimeDropdown
-                times={times}
-                selectedTime={selectedTime}
-                setSelectedTime={setSelectedTime}
-                setShowTimeDropdown={setShowTimeDropdown}
-              />
-            )}
+              >
+                <span>{formatDisplayTime() || 'Select time'}</span>
+                <IoIosArrowDown className="text-gray-400 ml-2" />
+              </button>
+              {showTimeDropdown && (
+                <TimeDropdown
+                  times={times}
+                  selectedTime={selectedTime}
+                  setSelectedTime={setSelectedTime}
+                  setShowTimeDropdown={setShowTimeDropdown}
+                />
+              )}
+            </div>
           </div>
-        </div>
         </div>
 
         <textarea
@@ -200,17 +201,21 @@ export default function TaskForm() {
         />
 
         <div className="flex justify-end gap-4">
+          {/* Added type="button" to prevent form submission */}
           <button
+            type="button"
             onClick={handleCancel}
             className="px-6 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 
                      transition-colors font-medium"
           >
             Cancel
           </button>
+          {/* Added type="button" for consistency */}
           <button
+            type="button"
             onClick={handleCreate}
             className="px-6 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 
-                     transition-colors font-medium shadow-md"
+                    transition-colors font-medium shadow-md"
           >
             Create Task
           </button>
