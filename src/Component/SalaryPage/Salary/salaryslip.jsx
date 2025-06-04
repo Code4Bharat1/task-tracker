@@ -138,7 +138,7 @@ export default function SalarySlipPage() {
             pdf.setFontSize(9);
             pdf.text(`Employee: ${salaryData.userId.firstName} ${salaryData.userId.lastName}`, 20, monthLineY + 8);
             pdf.text(`Email: ${salaryData.userId.email}`, 20, monthLineY + 12);
-            pdf.text(`Employee ID: ${salaryData.userId._id}`, 120, monthLineY + 8);
+            pdf.text(`Employee ID: ${salaryData.userId.userId}`, 120, monthLineY + 8);
             pdf.text(`Status: ${salaryData.status}`, 120, monthLineY + 12);
 
             // Table setup
@@ -183,37 +183,37 @@ export default function SalarySlipPage() {
 
             // Table data with actual API data
             pdf.text("Basic Salary", 22, yPos);
-            pdf.text(formatCurrency(salaryData.basicSalary), 20 + col1Width + 2, yPos);
+            pdf.text(formatCurrency(Number(salaryData.basicSalary).toFixed(2)), 20 + col1Width + 2, yPos);
             pdf.text("EPF", 20 + col1Width * 2 + 2, yPos);
-            pdf.text(formatCurrency(salaryData.epf), 20 + col1Width * 3 + 2, yPos);
+            pdf.text(formatCurrency(Number(salaryData.epf).toFixed(2)), 20 + col1Width * 3 + 2, yPos);
             yPos += rowHeight;
 
             pdf.text("House Rent Allowance", 22, yPos);
-            pdf.text(formatCurrency(salaryData.houseRentAllowance), 20 + col1Width + 2, yPos);
+            pdf.text(formatCurrency(Number(salaryData.houseRentAllowance).toFixed(2)), 20 + col1Width + 2, yPos);
             pdf.text("Health Insurance", 20 + col1Width * 2 + 2, yPos);
-            pdf.text(formatCurrency(salaryData.healthInsurance), 20 + col1Width * 3 + 2, yPos);
+            pdf.text(formatCurrency(Number(salaryData.healthInsurance).toFixed(2)), 20 + col1Width * 3 + 2, yPos);
             yPos += rowHeight;
 
             pdf.text("Conveyance", 22, yPos);
-            pdf.text(formatCurrency(salaryData.conveyance), 20 + col1Width + 2, yPos);
+            pdf.text(formatCurrency(Number(salaryData.conveyance).toFixed(2)), 20 + col1Width + 2, yPos);
             pdf.text("Professional Tax", 20 + col1Width * 2 + 2, yPos);
-            pdf.text(formatCurrency(salaryData.professionalTax), 20 + col1Width * 3 + 2, yPos);
+            pdf.text(formatCurrency(Number(salaryData.professionalTax).toFixed(2)), 20 + col1Width * 3 + 2, yPos);
             yPos += rowHeight;
 
             pdf.text("Medical", 22, yPos);
-            pdf.text(formatCurrency(salaryData.medical), 20 + col1Width + 2, yPos);
+            pdf.text(formatCurrency(Number(salaryData.medical).toFixed(2)), 20 + col1Width + 2, yPos);
             pdf.text("TDS", 20 + col1Width * 2 + 2, yPos);
-            pdf.text(formatCurrency(salaryData.tds), 20 + col1Width * 3 + 2, yPos);
+            pdf.text(formatCurrency(Number(salaryData.tds).toFixed(2)), 20 + col1Width * 3 + 2, yPos);
             yPos += rowHeight;
 
             pdf.text("Special Allowance", 22, yPos);
-            pdf.text(formatCurrency(salaryData.specialAllowance), 20 + col1Width + 2, yPos);
+            pdf.text(formatCurrency(Number(salaryData.specialAllowance).toFixed(2)), 20 + col1Width + 2, yPos);
             pdf.text("Absent Deduction", 20 + col1Width * 2 + 2, yPos);
-            pdf.text(formatCurrency(salaryData.absentDeduction), 20 + col1Width * 3 + 2, yPos);
+            pdf.text(formatCurrency(Number(salaryData.absentDeduction).toFixed(2)), 20 + col1Width * 3 + 2, yPos);
             yPos += rowHeight;
 
             pdf.text("Reimbursements", 22, yPos);
-            pdf.text(formatCurrency(salaryData.reimbursements), 20 + col1Width + 2, yPos);
+            pdf.text(formatCurrency(Number(salaryData.reimbursements).toFixed(2)), 20 + col1Width + 2, yPos);
             pdf.text("", 20 + col1Width * 2 + 2, yPos);
             pdf.text("", 20 + col1Width * 3 + 2, yPos);
 
@@ -224,9 +224,9 @@ export default function SalarySlipPage() {
             pdf.setTextColor(255, 255, 255);
             pdf.setFont("helvetica", "bold");
             pdf.text("Total Earnings", 22, totalRowY + 5.5);
-            pdf.text(formatCurrency(salaryData.totalEarnings), 20 + col1Width + 2, totalRowY + 5.5);
+            pdf.text(formatCurrency(Number(salaryData.totalEarnings).toFixed(2)), 20 + col1Width + 2, totalRowY + 5.5);
             pdf.text("Total Deductions", 20 + col1Width * 2 + 2, totalRowY + 5.5);
-            pdf.text(formatCurrency(salaryData.totalDeductions), 20 + col1Width * 3 + 2, totalRowY + 5.5);
+            pdf.text(formatCurrency(Number(salaryData.totalDeductions).toFixed(2)), 20 + col1Width * 3 + 2, totalRowY + 5.5);
 
             pdf.setTextColor(0, 0, 0);
 
@@ -237,10 +237,10 @@ export default function SalarySlipPage() {
             pdf.setFont("helvetica", "bold");
             pdf.setFontSize(12);
             pdf.setTextColor(255, 255, 255);
-            pdf.text("NET SALARY: " + formatCurrency(salaryData.netSalary), pdfWidth / 2, netSalaryY + 7, { align: "center" });
+            pdf.text("NET SALARY: " + formatCurrency(Number(salaryData.netSalary).toFixed(2)), pdfWidth / 2, netSalaryY + 7, { align: "center" });
             pdf.setFontSize(9);
             pdf.setFont("helvetica", "italic");
-            pdf.text(numberToWords(salaryData.netSalary), pdfWidth / 2, netSalaryY + 14, { align: "center" });
+            pdf.text(numberToWords(Number(salaryData.netSalary).toFixed(2)), pdfWidth / 2, netSalaryY + 14, { align: "center" });
 
             const fileName = `salary-slip-${salaryData.userId.firstName}-${salaryData.userId.lastName}-${getMonthName(month)}-${year}.pdf`;
             pdf.save(fileName);
@@ -357,7 +357,7 @@ export default function SalarySlipPage() {
                             <p><strong>Email:</strong> {salaryData.userId.email}</p>
                         </div>
                         <div>
-                            <p><strong>Employee ID:</strong> {salaryData.userId._id}</p>
+                            <p><strong>Employee ID:</strong> {salaryData.userId.userId}</p>
                             <p><strong>Status:</strong> <span className="capitalize">{salaryData.status}</span></p>
                         </div>
                     </div>
@@ -378,42 +378,42 @@ export default function SalarySlipPage() {
                     <div className="border-x border-b border-gray-300">
                         <div className="grid grid-cols-4 text-sm border-b border-gray-300">
                             <div className="px-4 py-2 border-r border-gray-300 text-left">Basic Salary</div>
-                            <div className="px-4 py-2 border-r border-gray-300">{formatCurrency(salaryData.basicSalary)}</div>
+                            <div className="px-4 py-2 border-r border-gray-300">{formatCurrency(Number(salaryData.basicSalary).toFixed(2))}</div>
                             <div className="px-4 py-2 border-r border-gray-300 text-left">EPF</div>
-                            <div className="px-4 py-2">{formatCurrency(salaryData.epf)}</div>
+                            <div className="px-4 py-2">{formatCurrency(Number(salaryData.epf).toFixed(2))}</div>
                         </div>
 
                         <div className="grid grid-cols-4 text-sm border-b border-gray-300">
                             <div className="px-4 py-2 border-r border-gray-300 text-left">House Rent Allowance</div>
-                            <div className="px-4 py-2 border-r border-gray-300">{formatCurrency(salaryData.houseRentAllowance)}</div>
+                            <div className="px-4 py-2 border-r border-gray-300">{formatCurrency(Number(salaryData.houseRentAllowance).toFixed(2))}</div>
                             <div className="px-4 py-2 border-r border-gray-300 text-left">Health Insurance</div>
-                            <div className="px-4 py-2">{formatCurrency(salaryData.healthInsurance)}</div>
+                            <div className="px-4 py-2">{formatCurrency(Number(salaryData.healthInsurance).toFixed(2))}</div>
                         </div>
 
                         <div className="grid grid-cols-4 text-sm border-b border-gray-300">
                             <div className="px-4 py-2 border-r border-gray-300 text-left">Conveyance</div>
-                            <div className="px-4 py-2 border-r border-gray-300">{formatCurrency(salaryData.conveyance)}</div>
+                            <div className="px-4 py-2 border-r border-gray-300">{formatCurrency(Number(salaryData.conveyance).toFixed(2))}</div>
                             <div className="px-4 py-2 border-r border-gray-300 text-left">Professional Tax</div>
-                            <div className="px-4 py-2">{formatCurrency(salaryData.professionalTax)}</div>
+                            <div className="px-4 py-2">{formatCurrency(Number(salaryData.professionalTax).toFixed(2))}</div>
                         </div>
 
                         <div className="grid grid-cols-4 text-sm border-b border-gray-300">
                             <div className="px-4 py-2 border-r border-gray-300 text-left">Medical</div>
-                            <div className="px-4 py-2 border-r border-gray-300">{formatCurrency(salaryData.medical)}</div>
+                            <div className="px-4 py-2 border-r border-gray-300">{formatCurrency(Number(salaryData.medical).toFixed(2))}</div>
                             <div className="px-4 py-2 border-r border-gray-300 text-left">TDS</div>
-                            <div className="px-4 py-2">{formatCurrency(salaryData.tds)}</div>
+                            <div className="px-4 py-2">{formatCurrency(Number(salaryData.tds).toFixed(2))}</div>
                         </div>
 
                         <div className="grid grid-cols-4 text-sm border-b border-gray-300">
                             <div className="px-4 py-2 border-r border-gray-300 text-left">Special Allowance</div>
-                            <div className="px-4 py-2 border-r border-gray-300">{formatCurrency(salaryData.specialAllowance)}</div>
+                            <div className="px-4 py-2 border-r border-gray-300">{formatCurrency(Number(salaryData.specialAllowance).toFixed(2))}</div>
                             <div className="px-4 py-2 border-r border-gray-300 text-left">Absent Deduction</div>
-                            <div className="px-4 py-2">{formatCurrency(salaryData.absentDeduction)}</div>
+                            <div className="px-4 py-2">{formatCurrency(Number(salaryData.absentDeduction).toFixed(2))}</div>
                         </div>
 
                         <div className="grid grid-cols-4 text-sm">
                             <div className="px-4 py-2 border-r border-gray-300 text-left">Reimbursements</div>
-                            <div className="px-4 py-2 border-r border-gray-300">{formatCurrency(salaryData.reimbursements)}</div>
+                            <div className="px-4 py-2 border-r border-gray-300">{formatCurrency(Number(salaryData.reimbursements).toFixed(2))}</div>
                             <div className="px-4 py-2 border-r border-gray-300"></div>
                             <div className="px-4 py-2"></div>
                         </div>
@@ -422,16 +422,21 @@ export default function SalarySlipPage() {
                     {/* Final Total Row */}
                     <div className="grid grid-cols-4 text-center font-bold text-sm bg-[#018ABE] text-white">
                         <div className="px-4 py-2">Total Earnings</div>
-                        <div className="px-4 py-2">{formatCurrency(salaryData.totalEarnings)}</div>
+                        <div className="px-4 py-2">{formatCurrency(Number(salaryData.totalEarnings).toFixed(2))}</div>
                         <div className="px-4 py-2">Total Deductions</div>
-                        <div className="px-4 py-2">{formatCurrency(salaryData.totalDeductions)}</div>
+                        <div className="px-4 py-2">{formatCurrency(Number(salaryData.totalDeductions).toFixed(2))}</div>
                     </div>
 
                     {/* Net Salary */}
                     <div className="bg-[#018ABE] text-white mt-6 p-4 rounded-lg text-center">
-                        <p className="text-xl font-bold">NET SALARY: {formatCurrency(salaryData.netSalary)}</p>
-                        <p className="text-sm italic">{numberToWords(salaryData.netSalary)}</p>
+                        <p className="text-xl font-bold">
+                            NET SALARY: {formatCurrency(Number(salaryData.netSalary).toFixed(2))}
+                        </p>
+                        <p className="text-sm italic">
+                            {numberToWords(Number(salaryData.netSalary).toFixed(2))}
+                        </p>
                     </div>
+
 
                     {/* Created Date */}
                     <div className="mt-4 text-right text-sm text-gray-600">

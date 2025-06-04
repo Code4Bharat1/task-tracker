@@ -4,6 +4,7 @@ import { IoClose, IoTimeOutline, IoCheckmarkCircle, IoPlayCircle, IoChevronDown 
 import { FiUser, FiCalendar, FiMessageCircle } from "react-icons/fi";
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { axiosInstance } from '@/lib/axiosInstance';
 
 const FloatingButtons = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,7 +29,6 @@ const FloatingButtons = () => {
 
     // Configure axios defaults
     axios.defaults.withCredentials = true;
-    const API_BASE = 'http://localhost:4110/api';
 
     const handleKeyDown = (e) => {
         if (e.key === 'Escape') {
@@ -68,7 +68,7 @@ const FloatingButtons = () => {
 
     const fetchUsers = async () => {
         try {
-            const response = await axios.get(`${API_BASE}/ticket/getAllUsersEmail`);
+            const response = await axiosInstance.get('/ticket/getAllUsersEmail');
             setUsers(response.data);
         } catch (error) {
             console.error('Error fetching users:', error);
@@ -78,7 +78,7 @@ const FloatingButtons = () => {
     const fetchTickets = async () => {
         setLoading(true);
         try {
-            const response = await axios.get(`${API_BASE}/ticket/fetchTicket`);
+            const response = await axiosInstance.get('/ticket/fetchTicket');
             setTickets(response.data);
         } catch (error) {
             console.error('Error fetching tickets:', error);
@@ -164,7 +164,7 @@ const FloatingButtons = () => {
         setSubmitting(true);
 
         try {
-            await axios.post(`${API_BASE}/ticket/raiseTicket`, {
+            await axiosInstance.post('/ticket/raiseTicket', {
                 selectedUserId,
                 title,
                 msg: message
@@ -188,7 +188,7 @@ const FloatingButtons = () => {
 
     const updateTicketStatus = async (ticketId, newStatus) => {
         try {
-            await axios.patch(`${API_BASE}/ticket/updateTicket`, {
+            await axiosInstance.patch(`/ticket/updateTicket`, {
                 ticketId,
                 status: newStatus
             });
