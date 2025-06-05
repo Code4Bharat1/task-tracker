@@ -13,7 +13,7 @@ export default function Games() {
         { name: 'chess', displayName: 'Chess', icon: '♛' },
         { name: 'debug', displayName: 'Debug Game', icon: '🐛' },
         { name: 'itquiz', displayName: 'IT Quiz', icon: '💻' },
-        { name: 'ludo', displayName: 'Ludo', icon: '🎲' },
+        { name: 'drawize', displayName: 'Drawize', icon: '🎲' },
         { name: 'tictactoe', displayName: 'Tic Tac Toe', icon: '⭕' },
         { name: 'wordpuzzle', displayName: 'Word Search Puzzle', icon: '🧩' },
         { name: 'typing', displayName: 'Typing Speed Test', icon: '⌨️' }
