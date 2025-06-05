@@ -17,15 +17,15 @@ export default function GameModal({ onSubmit, eventDate, editingEvent }) {
   }, [editingEvent]);
 
   const games = [
-    { name: "binary", displayName: "Binary Game", icon: "🔢" },
-    { name: "chess", displayName: "Chess", icon: "♛" },
-    { name: "debug", displayName: "Debug Game", icon: "🐛" },
-    { name: "itquiz", displayName: "IT Quiz", icon: "💻" },
-    { name: "ludo", displayName: "Ludo", icon: "🎲" },
-    { name: "tictactoe", displayName: "Tic Tac Toe", icon: "⭕" },
-    { name: "triStrike", displayName: "Stone Paper Scissors", icon: "✂️" },
-    { name: "typing", displayName: "Speed Typing Test", icon: "⌨️" },
-  ];
+        { name: 'binary', displayName: 'Binary Game', icon: '🔢' },
+        { name: 'chess', displayName: 'Chess', icon: '♛' },
+        { name: 'debug', displayName: 'Debug Game', icon: '🐛' },
+        { name: 'itquiz', displayName: 'IT Quiz', icon: '💻' },
+        { name: 'drawize', displayName: 'Drawize', icon: '🎲' },
+        { name: 'tictactoe', displayName: 'Tic Tac Toe', icon: '⭕' },
+        { name: 'wordsearch', displayName: 'Word Search', icon: '🧩' },
+        { name: 'typing', displayName: 'Typing Speed Test', icon: '⌨️' }
+    ];
 
   const toggleGame = (name) => {
     setSelectedGames((prev) =>
