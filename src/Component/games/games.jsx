@@ -1,20 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import { axiosInstance } from '@/lib/axiosInstance';
 
 export default function Games() {
-    useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_API}/registration/all`);
-        console.log(res.data);
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      }
-    };
 
-    fetchUsers();
-  }, []);
+    const [userGames, setUserGames] = useState([]);
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const res = await axiosInstance.get(`${process.env.NEXT_PUBLIC_BACKEND_API}/registration/all`);
+                console.log(res.data);
+                setUserGames(res.data.data.games || []);
+
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
+        };
+
+        fetchUsers();
+    }, []);
+
     const router = useRouter();
     const [showLeaderBoard, setShowLeaderBoard] = useState(false);
     const [selectedGame, setSelectedGame] = useState('all');
@@ -30,7 +35,7 @@ export default function Games() {
         { name: 'itquiz', displayName: 'IT Quiz', icon: '💻' },
         { name: 'drawize', displayName: 'Drawize', icon: '🎲' },
         { name: 'tictactoe', displayName: 'Tic Tac Toe', icon: '⭕' },
-        { name: 'wordpuzzle', displayName: 'Word Search Puzzle', icon: '🧩' },
+        { name: 'wordsearch', displayName: 'Word Search', icon: '🧩' },
         { name: 'typing', displayName: 'Typing Speed Test', icon: '⌨️' }
     ];
 
@@ -41,7 +46,7 @@ export default function Games() {
         { player: 'Player3', game: 'typing', score: 3200 },
         { player: 'Player4', game: 'itquiz', score: 1950 },
         { player: 'Player5', game: 'binary', score: 2100 },
-        { player: 'Player6', game: 'wordpuzzle', score: 1600 },
+        { player: 'Player6', game: 'wordsearch', score: 1600 },
         { player: 'Player1', game: 'chess', score: 1200 },
         { player: 'Player2', game: 'typing', score: 2800 },
         { player: 'Player3', game: 'binary', score: 1900 },
@@ -49,11 +54,11 @@ export default function Games() {
 
     const getFilteredLeaderboard = () => {
         let filteredData = leaderboardData;
-        
+
         if (selectedGame !== 'all') {
             filteredData = leaderboardData.filter(entry => entry.game === selectedGame);
         }
-        
+
         // Group by player and calculate total games and total score
         const playerStats = {};
         filteredData.forEach(entry => {
@@ -67,54 +72,61 @@ export default function Games() {
             playerStats[entry.player].totalGames += 1;
             playerStats[entry.player].totalScore += entry.score;
         });
-        
+
         return Object.values(playerStats).sort((a, b) => b.totalScore - a.totalScore);
     };
 
     return (
         <div className="bg-white text-black p-8">
             <div className="max-w-4xl mx-auto">
-                {/* Header with Title and Leader Board Button */}
                 <div className="flex justify-between items-center mb-12">
-                    <h1 className="text-4xl font-bold text-blue-400">
-                        Games
-                    </h1>
+                    <h1 className="text-4xl font-bold text-blue-400">Games</h1>
                     <button
                         onClick={() => setShowLeaderBoard(true)}
                         className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center gap-2"
                     >
-                        <span className="text-xl">🏆</span>
-                        Leader Board
+                        <span className="text-xl">🏆</span> Leader Board
                     </button>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    {games.map((game, index) => (
-                        <button
-                            key={game.name}
-                            onClick={() => handleGameNavigation(game.name)}
-                            className="bg-gray-800 hover:bg-gray-700 border border-gray-600 hover:border-blue-400 rounded-lg p-6 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-400/20 group"
-                        >
-                            <div className="text-center">
-                                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
-                                    {game.icon}
-                                </div>
-                                <h3 className="text-lg font-semibold text-gray-200 group-hover:text-blue-400 transition-colors duration-300">
-                                    {game.displayName}
-                                </h3>
+                    {games.map((game) => {
+                        const isClickable = userGames.includes(game.name);
+
+                        return (
+                            <div key={game.name} className="relative">
+                                <button
+                                    onClick={() => isClickable && handleGameNavigation(game.name)}
+                                    disabled={!isClickable}
+                                    className={`border rounded-lg p-6 transition-all duration-300 transform group w-full
+                    ${isClickable
+                                            ? "bg-gray-800 hover:bg-gray-700 border-gray-600 hover:border-blue-400 hover:scale-105 hover:shadow-lg hover:shadow-blue-400/20"
+                                            : "bg-gray-200 border-gray-300 text-gray-400 cursor-not-allowed"
+                                        }`}
+                                >
+                                    <div className="text-center">
+                                        <div className={`text-4xl mb-3 transition-transform duration-300 ${isClickable ? "group-hover:scale-110" : ""}`}>
+                                            {game.icon}
+                                        </div>
+                                        <h3 className={`text-lg font-semibold ${isClickable ? "text-gray-200 group-hover:text-blue-400" : "text-gray-400"}`}>
+                                            {game.displayName}
+                                        </h3>
+                                    </div>
+                                </button>
+                                {!isClickable && (
+                                    <div className="absolute inset-0 bg-transparent bg-opacity-50 rounded-lg flex items-center justify-center">
+                                    </div>
+                                )}
                             </div>
-                        </button>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 <div className="mt-12 text-center">
-                    <p className="text-gray-400 text-sm">
-                        Choose a game to start playing!
-                    </p>
+                    <p className="text-gray-400 text-sm">Choose a game to start playing!</p>
                 </div>
             </div>
 
-            {/* Leader Board Modal */}
             {showLeaderBoard && (
                 <div className="fixed inset-0 bg-gray-500 bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm p-4">
                     <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200">
@@ -133,7 +145,6 @@ export default function Games() {
                             </button>
                         </div>
 
-                        {/* Game Selection Dropdown */}
                         <div className="mb-6">
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                                 🎮 Select Game:
@@ -152,40 +163,29 @@ export default function Games() {
                             </select>
                         </div>
 
-                        {/* Leaderboard Table */}
                         <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
                             <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4">
                                 <div className="grid grid-cols-4 gap-4">
-                                    <div className="text-white font-bold text-sm uppercase tracking-wide">
-                                        🏅 Rank
-                                    </div>
-                                    <div className="text-white font-bold text-sm uppercase tracking-wide">
-                                        👤 Player
-                                    </div>
-                                    <div className="text-white font-bold text-sm uppercase tracking-wide">
-                                        🎯 Games
-                                    </div>
-                                    <div className="text-white font-bold text-sm uppercase tracking-wide">
-                                        ⭐ Score
-                                    </div>
+                                    <div className="text-white font-bold text-sm uppercase tracking-wide">🏅 Rank</div>
+                                    <div className="text-white font-bold text-sm uppercase tracking-wide">👤 Player</div>
+                                    <div className="text-white font-bold text-sm uppercase tracking-wide">🎯 Games</div>
+                                    <div className="text-white font-bold text-sm uppercase tracking-wide">⭐ Score</div>
                                 </div>
                             </div>
                             <div className="max-h-72 overflow-y-auto">
                                 {getFilteredLeaderboard().map((entry, index) => (
-                                    <div 
-                                        key={entry.player} 
-                                        className={`grid grid-cols-4 gap-4 p-4 transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 border-b border-gray-100 last:border-b-0 ${
-                                            index === 0 ? 'bg-gradient-to-r from-yellow-50 to-orange-50' : 
-                                            index === 1 ? 'bg-gradient-to-r from-gray-50 to-gray-100' : 
-                                            index === 2 ? 'bg-gradient-to-r from-orange-50 to-yellow-50' : ''
-                                        }`}
+                                    <div
+                                        key={entry.player}
+                                        className={`grid grid-cols-4 gap-4 p-4 transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 border-b border-gray-100 last:border-b-0 ${index === 0 ? 'bg-gradient-to-r from-yellow-50 to-orange-50' :
+                                            index === 1 ? 'bg-gradient-to-r from-gray-50 to-gray-100' :
+                                                index === 2 ? 'bg-gradient-to-r from-orange-50 to-yellow-50' : ''
+                                            }`}
                                     >
                                         <div className="flex items-center">
-                                            <div className={`text-xl font-bold mr-2 ${
-                                                index === 0 ? 'text-yellow-500' : 
-                                                index === 1 ? 'text-gray-500' : 
-                                                index === 2 ? 'text-orange-500' : 'text-blue-600'
-                                            }`}>
+                                            <div className={`text-xl font-bold mr-2 ${index === 0 ? 'text-yellow-500' :
+                                                index === 1 ? 'text-gray-500' :
+                                                    index === 2 ? 'text-orange-500' : 'text-blue-600'
+                                                }`}>
                                                 {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
                                             </div>
                                         </div>
@@ -223,7 +223,6 @@ export default function Games() {
                             </div>
                         </div>
 
-                        {/* Stats Footer */}
                         <div className="mt-4 text-center">
                             <div className="inline-flex items-center bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-full font-semibold shadow-lg text-sm">
                                 <span className="mr-2">🎯</span>
@@ -236,4 +235,3 @@ export default function Games() {
         </div>
     );
 }
-
