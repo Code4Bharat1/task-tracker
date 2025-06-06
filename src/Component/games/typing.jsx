@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { axiosInstance } from '@/lib/axiosInstance';
+import { toast } from 'react-hot-toast';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 const textModes = {
@@ -75,9 +77,13 @@ export default function EnhancedTypingTest() {
   const [currentCharIndex, setCurrentCharIndex] = useState(0);
   const [errors, setErrors] = useState(0);
   const [totalCharsTyped, setTotalCharsTyped] = useState(0);
+  const [score, setScore] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const intervalRef = useRef(null);
   const inputRef = useRef(null);
 
+  
   // Generate text based on mode
   const generateText = (mode) => {
     const modeData = textModes[mode];
@@ -111,6 +117,16 @@ export default function EnhancedTypingTest() {
 
   const { wpm: currentWpm, accuracy: currentAccuracy } = getCurrentStats();
 
+  // Calculate score when test completes
+  useEffect(() => {
+    if (isCompleted && !isSubmitted) {
+      const { wpm, accuracy } = getCurrentStats();
+      // Score calculation: WPM * accuracy percentage (0-1)
+      const calculatedScore = Math.round(wpm * (accuracy / 100));
+      setScore(calculatedScore);
+    }
+  }, [isCompleted, isSubmitted]);
+
   // Handle typing
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -133,7 +149,7 @@ export default function EnhancedTypingTest() {
         setUserInput(newInput);
         setCurrentCharIndex(prev => prev + 1);
         setTotalCharsTyped(prev => prev + 1);
-        
+
         // Check for errors
         if (key !== currentText[userInput.length]) {
           setErrors(prev => prev + 1);
@@ -192,6 +208,8 @@ export default function EnhancedTypingTest() {
     setCurrentCharIndex(0);
     setErrors(0);
     setTotalCharsTyped(0);
+    setScore(0);
+    setIsSubmitted(false);
     setCurrentText(generateText(selectedMode));
     inputRef.current?.focus();
   };
@@ -201,10 +219,29 @@ export default function EnhancedTypingTest() {
     inputRef.current?.focus();
   }, []);
 
+  const submitScore = async () => {
+    if (isSubmitting || isSubmitted) return;
+    
+    setIsSubmitting(true);
+    try {
+      await axiosInstance.post('/gameScore/submit', {
+        gameName: 'typingTest',
+        score: score
+      });
+      toast.success('Score submitted successfully!');
+      setIsSubmitted(true);
+    } catch (error) {
+      console.error('Error submitting score:', error);
+      toast.error('Failed to submit score.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const renderText = () => {
     return currentText.split('').map((char, i) => {
       let className = 'text-gray-400';
-      
+
       if (i < userInput.length) {
         if (userInput[i] === char) {
           className = 'text-yellow-400';
@@ -229,7 +266,7 @@ export default function EnhancedTypingTest() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-light mb-4 text-yellow-400">Typing Master</h1>
-          
+
           {/* Mode Selection */}
           <div className="flex flex-wrap justify-center gap-2 mb-4">
             {Object.entries(textModes).map(([key, mode]) => (
@@ -239,11 +276,10 @@ export default function EnhancedTypingTest() {
                   setSelectedMode(key);
                   resetTest();
                 }}
-                className={`px-4 py-2 rounded-lg transition ${
-                  selectedMode === key
+                className={`px-4 py-2 rounded-lg transition ${selectedMode === key
                     ? 'bg-yellow-500 text-gray-900 font-semibold'
                     : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-                }`}
+                  }`}
               >
                 {mode.name}
               </button>
@@ -260,13 +296,12 @@ export default function EnhancedTypingTest() {
                   setTimeLeft(time);
                   resetTest();
                 }}
-                className={`px-3 py-1 rounded transition ${
-                  selectedTime === time
+                className={`px-3 py-1 rounded transition ${selectedTime === time
                     ? 'bg-yellow-500 text-gray-900'
                     : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
-                }`}
+                  }`}
               >
-                {time}
+                {time}s
               </button>
             ))}
           </div>
@@ -292,7 +327,7 @@ export default function EnhancedTypingTest() {
 
         {/* Typing Area */}
         <div className="relative mb-8">
-          <div 
+          <div
             className="bg-gray-800 rounded-lg p-6 min-h-[200px] text-xl leading-relaxed font-mono focus-within:ring-2 focus-within:ring-yellow-500/50 overflow-hidden"
             onClick={() => inputRef.current?.focus()}
           >
@@ -302,13 +337,13 @@ export default function EnhancedTypingTest() {
               </div>
             </div>
           </div>
-          
+
           {/* Hidden input for mobile support */}
           <input
             ref={inputRef}
             className="absolute opacity-0 pointer-events-none"
             value={userInput}
-            onChange={() => {}} // Controlled by keydown handler
+            onChange={() => { }}
             autoFocus
           />
         </div>
@@ -334,7 +369,7 @@ export default function EnhancedTypingTest() {
         {isCompleted && (
           <div className="bg-gray-800 rounded-lg p-6">
             <h2 className="text-2xl font-light text-center mb-6 text-yellow-400">Results</h2>
-            
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="text-center">
                 <div className="text-3xl font-mono text-yellow-400">{currentWpm}</div>
@@ -352,6 +387,10 @@ export default function EnhancedTypingTest() {
                 <div className="text-3xl font-mono text-green-400">{totalCharsTyped}</div>
                 <div className="text-gray-400">Characters</div>
               </div>
+              <div className="text-center col-span-2 md:col-span-4">
+                <div className="text-3xl font-mono text-purple-400">{score}</div>
+                <div className="text-gray-400">Score</div>
+              </div>
             </div>
 
             {wpmHistory.length > 1 && (
@@ -359,28 +398,28 @@ export default function EnhancedTypingTest() {
                 <h3 className="text-lg mb-4 text-center text-gray-300">WPM Over Time</h3>
                 <ResponsiveContainer width="100%" height={200}>
                   <LineChart data={wpmHistory}>
-                    <Line 
-                      type="monotone" 
-                      dataKey="wpm" 
-                      stroke="#facc15" 
-                      strokeWidth={2} 
+                    <Line
+                      type="monotone"
+                      dataKey="wpm"
+                      stroke="#facc15"
+                      strokeWidth={2}
                       dot={{ fill: '#facc15', r: 3 }}
                     />
-                    <XAxis 
-                      dataKey="time" 
+                    <XAxis
+                      dataKey="time"
                       axisLine={false}
                       tickLine={false}
                       tick={{ fill: '#9ca3af', fontSize: 12 }}
                     />
-                    <YAxis 
+                    <YAxis
                       axisLine={false}
                       tickLine={false}
                       tick={{ fill: '#9ca3af', fontSize: 12 }}
                     />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#374151', 
-                        border: 'none', 
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#374151',
+                        border: 'none',
                         borderRadius: '8px',
                         color: '#fff'
                       }}
@@ -389,6 +428,20 @@ export default function EnhancedTypingTest() {
                 </ResponsiveContainer>
               </div>
             )}
+
+            {/* Submit Score Button */}
+            <div className="mt-6 text-center">
+              <button
+                onClick={submitScore}
+                disabled={isSubmitting || isSubmitted}
+                className={`px-6 py-2 rounded-lg transition ${isSubmitted
+                  ? 'bg-green-500 text-gray-900'
+                  : 'bg-yellow-500 hover:bg-yellow-600 text-gray-900'
+                } font-medium disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {isSubmitting ? 'Submitting...' : isSubmitted ? 'Score Submitted!' : 'Submit Score'}
+              </button>
+            </div>
           </div>
         )}
       </div>

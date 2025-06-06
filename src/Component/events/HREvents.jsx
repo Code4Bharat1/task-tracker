@@ -3,6 +3,7 @@ import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import GameModal from "./gameModal";
 import { Edit3, Trash2 } from "lucide-react";
+import { FiRefreshCw } from "react-icons/fi";
 
 const HREvents = () => {
   const [showModal, setShowModal] = useState(false);
@@ -12,11 +13,15 @@ const HREvents = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [eventToDelete, setEventToDelete] = useState(null);
 
-  useEffect(() => {
+  const fetchEvents = () => {
     axios
-      .get(`${process.env.NEXT_PUBLIC_BACKEND_API}/event/all`)
+      .get("http://localhost:4110/api/event/all")
       .then((res) => setEvents(res.data.events || []))
       .catch(() => setEvents([]));
+  };
+
+  useEffect(() => {
+    fetchEvents();
   }, []);
 
   const handleEdit = (event) => {
@@ -51,6 +56,15 @@ const HREvents = () => {
 
   return (
     <>
+      <div className="flex justify-end items-center p-4 sm:p-6">
+        <button
+          className="text-blue-600 hover:text-blue-800 text-2xl"
+          onClick={fetchEvents}
+          title="Refresh Events"
+        >
+          <FiRefreshCw />
+        </button>
+      </div>
       {/* Create Event Button */}
       <button
         onClick={() => setShowModal(true)}

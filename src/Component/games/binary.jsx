@@ -1,4 +1,6 @@
+import { axiosInstance } from '@/lib/axiosInstance';
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 
 export default function BinaryChallenge() {
     const [currentNumber, setCurrentNumber] = useState(0);
@@ -11,6 +13,30 @@ export default function BinaryChallenge() {
     const [timeLeft, setTimeLeft] = useState(30);
     const [gameOver, setGameOver] = useState(false);
     const [difficulty, setDifficulty] = useState('easy');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const submitScore = async () => {
+        setIsSubmitting(true);
+        try {
+            await axiosInstance.post('/gameScore/submit', {
+                gameName: 'binary',
+                score: score
+            });
+            toast.success('Score submitted successfully!');
+            setGameOver(true);
+        } catch (error) {
+            console.error('Error submitting score:', error);
+            toast.error('Failed to submit score.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    useEffect(() => {
+        if (gameOver) {
+            submitScore();
+        }
+    }, [gameOver]);
 
     const difficultyRanges = {
         easy: { min: 1, max: 15 },

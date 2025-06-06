@@ -1,6 +1,8 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Bug, CheckCircle, XCircle, Trophy, Clock, Code, Lightbulb, RotateCcw, Play } from 'lucide-react';
+import { axiosInstance } from '@/lib/axiosInstance';
+import toast from 'react-hot-toast';
 
 const codeProblems = [
     {
@@ -849,6 +851,45 @@ export default function DebugCodeGame() {
     const [problems, setProblems] = useState([]);
     const [gameComplete, setGameComplete] = useState(false);
     const [shuffledOptions, setShuffledOptions] = useState([]);
+    const [eventId, setEventId] = useState();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // useEffect(() => {
+    //     const fetchUsers = async () => {
+    //         try {
+    //             const res = await axiosInstance.get(`${process.env.NEXT_PUBLIC_BACKEND_API}/registration/all`);
+    //             console.log(res.data);
+    //             setEventId(res.data.eventId);
+    //         } catch (error) {
+    //             console.error('Error fetching users:', error);
+    //         }
+    //     };
+    //     fetchUsers();
+    // }, []);
+
+    const submitScore = async () => {
+        setIsSubmitting(true);
+        try {
+            await axiosInstance.post('/gameScore/submit', {
+                gameName: 'debugCodeGame',
+                score: score
+            });
+            toast.success('Score submitted successfully!');
+            setGameComplete(true);
+        } catch (error) {
+            console.error('Error submitting score:', error);
+            toast.error('Failed to submit score.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+
+    useEffect(() => {
+        if (gameComplete) {
+            submitScore();
+        }
+    }, [gameComplete]);
 
     // Shuffle function
     const shuffleArray = (array) => {
@@ -891,12 +932,10 @@ export default function DebugCodeGame() {
 
         if (answer === currentProblem.correctAnswer) {
             setScore(prev => prev + 1);
-            // Correct answer - move to next after 3 seconds
             setTimeout(() => {
                 moveToNext();
             }, 3000);
         } else {
-            // Wrong answer - wait 6 seconds to give more time to read
             setTimeout(() => {
                 moveToNext();
             }, 6000);
@@ -909,7 +948,7 @@ export default function DebugCodeGame() {
 
         setTimeout(() => {
             moveToNext();
-        }, 6000); // Give 6 seconds to read explanation when time runs out
+        }, 6000);
     };
 
     const moveToNext = () => {

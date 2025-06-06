@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import EventModal from "./EventModal";
 import { useRouter } from "next/navigation";
+import { FiRefreshCw } from "react-icons/fi";
 
 const UserEvents = () => {
   const [events, setEvents] = useState([]);
@@ -9,9 +10,9 @@ const UserEvents = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const router = useRouter();
 
-  useEffect(() => {
+  const fetchEvents = () => {
     axios
-      .get(`${process.env.NEXT_PUBLIC_BACKEND_API}/event/all`, { withCredentials: true })
+      .get("http://localhost:4110/api/event/all", { withCredentials: true })
       .then((res) => {
         const allEvents = res.data.events || [];
         const formatDate = (date) => new Date(date).toISOString().split("T")[0];
@@ -22,6 +23,10 @@ const UserEvents = () => {
         setEvents(filteredEvents);
       })
       .catch(() => setEvents([]));
+  };
+
+  useEffect(() => {
+    fetchEvents();
   }, []);
 
   const handleCardClick = (event) => {
@@ -59,7 +64,16 @@ const UserEvents = () => {
 
   return (
     <div className="p-4 sm:p-6">
-      <h2 className="text-xl sm:text-2xl font-bold mb-4">Your Events</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl sm:text-2xl font-bold">Your Events</h2>
+        <button
+          className="text-blue-600 hover:text-blue-800 text-2xl"
+          onClick={fetchEvents}
+          title="Refresh Events"
+        >
+          <FiRefreshCw />
+        </button>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {events.length === 0 ? (
           <div className="col-span-full text-center text-gray-500 text-lg font-semibold py-8">

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { axiosInstance } from '@/lib/axiosInstance';
+import { toast } from 'react-hot-toast';
 
 const WordPuzzleGame = () => {
   const [grid, setGrid] = useState([]);
@@ -11,17 +13,44 @@ const WordPuzzleGame = () => {
   const [score, setScore] = useState(0);
   const [gameCompleted, setGameCompleted] = useState(false);
   const [wordPlacements, setWordPlacements] = useState({});
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(30);
   const [gameActive, setGameActive] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const submitScore = async () => {
+    setIsSubmitting(true);
+    console.log(score)
+    console.log(gameOver);
+    try {
+      // Using axios directly with full URL
+      await axiosInstance.post('/gameScore/submit', {
+        gameName: 'word puzzle',
+        score: score
+      });
+      toast.success('Score submitted successfully!');
+      setGameOver(true);
+    } catch (error) {
+      console.error('Error submitting score:', error);
+      toast.error('Failed to submit score.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (timeLeft === 0) {
+      submitScore();
+    }
+  }, [timeLeft]);
 
   const GRID_SIZE = 12;
 
   // Color palette for straps
   const strapColors = [
     'bg-red-500/80',
-    'bg-blue-500/80', 
+    'bg-blue-500/80',
     'bg-green-500/80',
     'bg-yellow-500/80',
     'bg-purple-500/80',
@@ -56,16 +85,16 @@ const WordPuzzleGame = () => {
       diagonal: [1, 1],
       diagonalUp: [-1, 1]
     };
-    
+
     const [dr, dc] = directions[direction];
-    
+
     // Check if all positions are valid and either empty or match the letter
     for (let i = 0; i < word.length; i++) {
       const r = startRow + dr * i;
       const c = startCol + dc * i;
-      
+
       if (!isValidPosition(r, c)) return false;
-      
+
       // If cell is not empty, it must match the current letter
       if (grid[r][c] !== '' && grid[r][c] !== word[i]) {
         return false;
@@ -82,14 +111,14 @@ const WordPuzzleGame = () => {
       diagonal: [1, 1],
       diagonalUp: [-1, 1]
     };
-    
+
     const [dr, dc] = directions[direction];
     const positions = [];
-    
+
     if (!canPlaceWord(grid, word, startRow, startCol, direction)) {
       return null;
     }
-    
+
     // Place the word
     for (let i = 0; i < word.length; i++) {
       const r = startRow + dr * i;
@@ -97,31 +126,31 @@ const WordPuzzleGame = () => {
       grid[r][c] = word[i];
       positions.push({ row: r, col: c });
     }
-    
+
     return positions;
   };
 
   // Generate puzzle grid
   const generateGrid = useCallback(() => {
     // Start with empty grid
-    const newGrid = Array(GRID_SIZE).fill(null).map(() => 
+    const newGrid = Array(GRID_SIZE).fill(null).map(() =>
       Array(GRID_SIZE).fill('')
     );
 
     const directions = ['horizontal', 'vertical', 'diagonal', 'diagonalUp'];
     const newWordPlacements = {};
     const placedWords = [];
-    
+
     // Try to place each word
     words.forEach(word => {
       let placed = false;
       let attempts = 0;
-      
+
       while (!placed && attempts < 200) {
         const direction = directions[Math.floor(Math.random() * directions.length)];
         const startRow = Math.floor(Math.random() * GRID_SIZE);
         const startCol = Math.floor(Math.random() * GRID_SIZE);
-        
+
         const positions = placeWord(newGrid, word, startRow, startCol, direction);
         if (positions) {
           placed = true;
@@ -135,7 +164,7 @@ const WordPuzzleGame = () => {
         }
         attempts++;
       }
-      
+
       if (!placed) {
         console.warn(`Could not place word: ${word}`);
       }
@@ -152,7 +181,7 @@ const WordPuzzleGame = () => {
 
     setGrid(newGrid);
     setWordPlacements(newWordPlacements);
-    
+
     // Update words list to only include successfully placed words
     if (placedWords.length !== words.length) {
       console.log(`Successfully placed ${placedWords.length} out of ${words.length} words`);
@@ -197,7 +226,7 @@ const WordPuzzleGame = () => {
       setGameActive(false);
       setGameOver(false);
       setGameStarted(false);
-      setTimeLeft(300);
+      setTimeLeft(30);
     }
   }, [words, generateGrid]);
 
@@ -223,16 +252,16 @@ const WordPuzzleGame = () => {
   // Handle mouse enter
   const handleMouseEnter = (row, col) => {
     if (!isSelecting || !gameActive || gameOver || !gameStarted) return;
-    
+
     setSelectedCells(current => {
       if (current.length === 0) return [{ row, col }];
-      
+
       const start = current[0];
       const cells = [];
-      
+
       const rowDiff = row - start.row;
       const colDiff = col - start.col;
-      
+
       if (rowDiff === 0) {
         // Horizontal
         const step = colDiff > 0 ? 1 : -1;
@@ -250,15 +279,15 @@ const WordPuzzleGame = () => {
         const rowStep = rowDiff > 0 ? 1 : -1;
         const colStep = colDiff > 0 ? 1 : -1;
         const steps = Math.abs(rowDiff);
-        
+
         for (let i = 0; i <= steps; i++) {
           cells.push({
             row: start.row + i * rowStep,
             col: start.col + i * colStep
           });
-        }
+        } 
       }
-      
+
       return cells.length > 0 ? cells : current;
     });
   };
@@ -266,14 +295,14 @@ const WordPuzzleGame = () => {
   // Handle mouse up
   const handleMouseUp = () => {
     if (!gameActive || gameOver || !gameStarted) return;
-    
+
     if (selectedCells.length > 1) {
       const selectedWord = selectedCells.map(cell => grid[cell.row][cell.col]).join('');
       const reverseWord = selectedWord.split('').reverse().join('');
-      
+
       let wordFound = '';
       let wordPositions = [];
-      
+
       if (words.includes(selectedWord) && !foundWords.includes(selectedWord)) {
         wordFound = selectedWord;
         wordPositions = [...selectedCells];
@@ -281,7 +310,7 @@ const WordPuzzleGame = () => {
         wordFound = reverseWord;
         wordPositions = [...selectedCells];
       }
-      
+
       if (wordFound) {
         setFoundWords(prev => [...prev, wordFound]);
         setFoundWordPositions(prev => ({
@@ -294,7 +323,7 @@ const WordPuzzleGame = () => {
         setScore(prev => prev + wordFound.length * 10);
       }
     }
-    
+
     setIsSelecting(false);
     setSelectedCells([]);
   };
@@ -318,7 +347,7 @@ const WordPuzzleGame = () => {
     setGameActive(false);
     setGameOver(false);
     setGameStarted(false);
-    setTimeLeft(300);
+    setTimeLeft(30);
   };
 
   // Format time
@@ -342,7 +371,7 @@ const WordPuzzleGame = () => {
         <div className="mb-6 bg-white/10 backdrop-blur-md rounded-2xl p-4 shadow-2xl text-center">
           <h3 className="text-xl font-bold text-white mb-2">📖 How to Play</h3>
           <p className="text-purple-200">
-            Click the START button to begin the game and start the 5-minute timer. 
+            Click the START button to begin the game and start the 5-minute timer.
             Once started, click and drag to select words in the grid. Words can be horizontal, vertical, or diagonal.
             Find all the words within 5 minutes to complete the puzzle! You cannot select words before clicking START.
           </p>
@@ -370,7 +399,7 @@ const WordPuzzleGame = () => {
         <div className="flex flex-col xl:flex-row gap-8 items-center justify-center">
           {/* Game Grid */}
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl flex-shrink-0">
-            <div 
+            <div
               className="grid gap-1 select-none mx-auto"
               style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))` }}
               onMouseLeave={() => {
@@ -383,14 +412,14 @@ const WordPuzzleGame = () => {
                   const isSelected = selectedCells.some(
                     selected => selected.row === rowIndex && selected.col === colIndex
                   );
-                  
+
                   // Check if this cell is part of any found word
                   const foundWordStraps = Object.entries(foundWordPositions)
-                    .filter(([word, data]) => 
+                    .filter(([word, data]) =>
                       data.positions.some(pos => pos.row === rowIndex && pos.col === colIndex)
                     )
                     .map(([word, data]) => data.color);
-                  
+
                   return (
                     <div
                       key={getCellKey(rowIndex, colIndex)}
@@ -398,8 +427,8 @@ const WordPuzzleGame = () => {
                         w-12 h-12 flex items-center justify-center text-lg font-bold relative
                         border border-white/20 cursor-pointer transition-all duration-150
                         hover:scale-110 hover:shadow-lg
-                        ${isSelected 
-                          ? 'bg-yellow-400 text-black shadow-lg scale-110 z-10' 
+                        ${isSelected
+                          ? 'bg-yellow-400 text-black shadow-lg scale-110 z-10'
                           : 'bg-white/20 text-white hover:bg-white/30'
                         }
                         ${(!gameActive || gameOver || !gameStarted) ? 'cursor-not-allowed opacity-50' : ''}
@@ -464,7 +493,7 @@ const WordPuzzleGame = () => {
                   >
                     <span className="truncate">{word}</span>
                     {foundWords.includes(word) && (
-                      <div 
+                      <div
                         className={`w-3 h-3 rounded-full ${foundWordPositions[word]?.color || 'bg-green-500'} 
                           border border-white flex-shrink-0 ml-1`}
                       />
@@ -472,7 +501,7 @@ const WordPuzzleGame = () => {
                   </div>
                 ))}
               </div>
-              
+
               <div className="mt-4 text-purple-200 text-center">
                 Found: {foundWords.length} / {words.length}
               </div>

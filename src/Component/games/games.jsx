@@ -5,20 +5,20 @@ import { axiosInstance } from '@/lib/axiosInstance';
 export default function Games() {
 
     const [userGames, setUserGames] = useState([]);
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const res = await axiosInstance.get(`${process.env.NEXT_PUBLIC_BACKEND_API}/registration/all`);
-                console.log(res.data);
-                setUserGames(res.data.data.games || []);
+    // useEffect(() => {
+    //     const fetchUsers = async () => {
+    //         try {
+    //             const res = await axiosInstance.get(`${process.env.NEXT_PUBLIC_BACKEND_API}/registration/all`);
+    //             console.log(res.data);
+    //             setUserGames(res.data.data.games || []);
 
-            } catch (error) {
-                console.error('Error fetching users:', error);
-            }
-        };
-
-        fetchUsers();
-    }, []);
+    //         } catch (error) {
+    //             console.error('Error fetching users:', error);
+    //         }
+    //     };
+    
+    //     fetchUsers();
+    // }, []);
 
     const router = useRouter();
     const [showLeaderBoard, setShowLeaderBoard] = useState(false);
