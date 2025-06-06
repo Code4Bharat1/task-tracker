@@ -15,7 +15,7 @@ const HREvents = () => {
 
   const fetchEvents = () => {
     axios
-      .get("http://localhost:4110/api/event/all")
+      .get(`${process.env.NEXT_PUBLIC_BACKEND_API}/event/all`)
       .then((res) => setEvents(res.data.events || []))
       .catch(() => setEvents([]));
   };
