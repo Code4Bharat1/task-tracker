@@ -1,8 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Bug, CheckCircle, XCircle, Trophy, Clock, Code, Lightbulb, RotateCcw, Play } from 'lucide-react';
-import { axiosInstance } from '@/lib/axiosInstance';
-import toast from 'react-hot-toast';
 
 const codeProblems = [
     {
@@ -844,52 +842,16 @@ export default function DebugCodeGame() {
     const [currentProblem, setCurrentProblem] = useState(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [score, setScore] = useState(0);
-    const [selectedAnswer, setSelectedAnswer] = useState(null);
+    const [selectedAnswers, setSelectedAnswers] = useState([]);
+    const [currentSelectedAnswer, setCurrentSelectedAnswer] = useState(null);
+    const [showFeedback, setShowFeedback] = useState(false);
     const [gameStarted, setGameStarted] = useState(false);
-    const [showExplanation, setShowExplanation] = useState(false);
-    const [timeRemaining, setTimeRemaining] = useState(60);
+    const [timeRemaining, setTimeRemaining] = useState(300); // 5 minutes = 300 seconds
     const [problems, setProblems] = useState([]);
     const [gameComplete, setGameComplete] = useState(false);
     const [shuffledOptions, setShuffledOptions] = useState([]);
-    const [eventId, setEventId] = useState();
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    // useEffect(() => {
-    //     const fetchUsers = async () => {
-    //         try {
-    //             const res = await axiosInstance.get(`${process.env.NEXT_PUBLIC_BACKEND_API}/registration/all`);
-    //             console.log(res.data);
-    //             setEventId(res.data.eventId);
-    //         } catch (error) {
-    //             console.error('Error fetching users:', error);
-    //         }
-    //     };
-    //     fetchUsers();
-    // }, []);
-
-    const submitScore = async () => {
-        setIsSubmitting(true);
-        try {
-            await axiosInstance.post('/gameScore/submit', {
-                gameName: 'debugCodeGame',
-                score: score
-            });
-            toast.success('Score submitted successfully!');
-            setGameComplete(true);
-        } catch (error) {
-            console.error('Error submitting score:', error);
-            toast.error('Failed to submit score.');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-
-    useEffect(() => {
-        if (gameComplete) {
-            submitScore();
-        }
-    }, [gameComplete]);
+    const [gameStartTime, setGameStartTime] = useState(null);
+    const [completionTime, setCompletionTime] = useState(null);//completion time is stored here
 
     // Shuffle function
     const shuffleArray = (array) => {
@@ -902,15 +864,15 @@ export default function DebugCodeGame() {
     };
 
     useEffect(() => {
-        if (gameStarted && !gameComplete && timeRemaining > 0 && !showExplanation) {
+        if (gameStarted && !gameComplete && timeRemaining > 0) {
             const timer = setTimeout(() => {
                 setTimeRemaining(time => time - 1);
             }, 1000);
             return () => clearTimeout(timer);
-        } else if (timeRemaining === 0 && !showExplanation) {
-            handleTimeUp();
+        } else if (timeRemaining === 0 && !gameComplete) {
+            endGame();
         }
-    }, [timeRemaining, gameStarted, gameComplete, showExplanation]);
+    }, [timeRemaining, gameStarted, gameComplete]);
 
     const startGame = () => {
         const shuffled = [...codeProblems].sort(() => 0.5 - Math.random()).slice(0, 10);
@@ -918,37 +880,33 @@ export default function DebugCodeGame() {
         setCurrentProblem(shuffled[0]);
         setShuffledOptions(shuffleArray(shuffled[0].options));
         setGameStarted(true);
+        setGameStartTime(Date.now());
         setCurrentIndex(0);
         setScore(0);
-        setTimeRemaining(60);
+        setSelectedAnswers([]);
+        setCurrentSelectedAnswer(null);
+        setShowFeedback(false);
+        setTimeRemaining(300);
         setGameComplete(false);
-        setShowExplanation(false);
-        setSelectedAnswer(null);
+        setCompletionTime(null);
     };
 
     const handleAnswer = (answer) => {
-        setSelectedAnswer(answer);
-        setShowExplanation(true);
+        setCurrentSelectedAnswer(answer);
+        setShowFeedback(true);
+        
+        const newSelectedAnswers = [...selectedAnswers];
+        newSelectedAnswers[currentIndex] = answer;
+        setSelectedAnswers(newSelectedAnswers);
 
         if (answer === currentProblem.correctAnswer) {
             setScore(prev => prev + 1);
-            setTimeout(() => {
-                moveToNext();
-            }, 3000);
-        } else {
-            setTimeout(() => {
-                moveToNext();
-            }, 6000);
         }
-    };
 
-    const handleTimeUp = () => {
-        setSelectedAnswer(null);
-        setShowExplanation(true);
-
+        // Move to next question after 2 seconds
         setTimeout(() => {
             moveToNext();
-        }, 6000);
+        }, 2000);
     };
 
     const moveToNext = () => {
@@ -957,11 +915,21 @@ export default function DebugCodeGame() {
             setCurrentIndex(nextIndex);
             setCurrentProblem(problems[nextIndex]);
             setShuffledOptions(shuffleArray(problems[nextIndex].options));
-            setSelectedAnswer(null);
-            setShowExplanation(false);
-            setTimeRemaining(60);
+            setCurrentSelectedAnswer(null);
+            setShowFeedback(false);
         } else {
+            endGame();
+        }
+    };
+
+    const endGame = () => {
+        if (!gameComplete) {
             setGameComplete(true);
+            if (gameStartTime) {
+                const endTime = Date.now();
+                const timeTaken = Math.floor((endTime - gameStartTime) / 1000);
+                setCompletionTime(timeTaken);
+            }
         }
     };
 
@@ -970,12 +938,15 @@ export default function DebugCodeGame() {
         setCurrentProblem(null);
         setCurrentIndex(0);
         setScore(0);
-        setSelectedAnswer(null);
-        setShowExplanation(false);
-        setTimeRemaining(60);
+        setSelectedAnswers([]);
+        setCurrentSelectedAnswer(null);
+        setShowFeedback(false);
+        setTimeRemaining(300);
         setProblems([]);
         setGameComplete(false);
         setShuffledOptions([]);
+        setGameStartTime(null);
+        setCompletionTime(null);
     };
 
     const getDifficultyColor = (difficulty) => {
@@ -997,6 +968,12 @@ export default function DebugCodeGame() {
         }
     };
 
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
     if (!gameStarted) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 flex items-center justify-center p-4">
@@ -1010,7 +987,7 @@ export default function DebugCodeGame() {
 
                     <div className="grid grid-cols-2 gap-4 mb-8">
                         <div className="text-center p-4 bg-red-50 rounded-lg">
-                            <div className="text-2xl font-bold text-red-600">15</div>
+                            <div className="text-2xl font-bold text-red-600">30</div>
                             <div className="text-xs text-gray-600">Code Problems</div>
                         </div>
                         <div className="text-center p-4 bg-orange-50 rounded-lg">
@@ -1018,8 +995,8 @@ export default function DebugCodeGame() {
                             <div className="text-xs text-gray-600">Per Game</div>
                         </div>
                         <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                            <div className="text-2xl font-bold text-yellow-600">60s</div>
-                            <div className="text-xs text-gray-600">Per Problem</div>
+                            <div className="text-2xl font-bold text-yellow-600">5</div>
+                            <div className="text-xs text-gray-600">Minutes Total</div>
                         </div>
                         <div className="text-center p-4 bg-green-50 rounded-lg">
                             <div className="text-2xl font-bold text-green-600">4</div>
@@ -1060,27 +1037,91 @@ export default function DebugCodeGame() {
         };
 
         return (
-            <div className=" bg-gradient-to-br from-red-50 via-white to-orange-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center border border-gray-100">
-                    <div className="w-20 h-20 bg-[#018ABE] rounded-full flex items-center justify-center mx-auto mb-6">
-                        <Trophy className="w-10 h-10 text-white" />
+            <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl shadow-xl p-8 max-w-2xl w-full">
+                    <div className="text-center mb-8">
+                        <div className="w-20 h-20 bg-[#018ABE] rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Trophy className="w-10 h-10 text-white" />
+                        </div>
+                        <h1 className="text-3xl font-bold text-gray-800 mb-2">Game Complete!</h1>
+                        <p className="text-2xl font-bold mb-4 text-orange-600">{getScoreMessage()}</p>
                     </div>
 
-                    <h1 className="text-3xl font-bold text-gray-800 mb-2">Game Complete!</h1>
-                    <p className="text-2xl font-bold mb-4 text-orange-600">{getScoreMessage()}</p>
+                    <div className="grid md:grid-cols-2 gap-6 mb-8">
+                        <div className="bg-gray-50 rounded-xl p-6 text-center">
+                            <div className="text-4xl font-bold text-gray-800 mb-2">
+                                {score} / {problems.length}
+                            </div>
+                            <div className="text-gray-600 mb-2">
+                                {percentage}% Bugs Fixed
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div
+                                    className="bg-[#018ABE] h-2 rounded-full transition-all duration-500"
+                                    style={{ width: `${percentage}%` }}
+                                ></div>
+                            </div>
+                        </div>
 
-                    <div className="bg-gray-50 rounded-xl p-6 mb-6">
-                        <div className="text-4xl font-bold text-gray-800 mb-2">
-                            {score} / {problems.length}
+                        <div className="bg-gray-50 rounded-xl p-6 text-center">
+                            <div className="text-4xl font-bold text-gray-800 mb-2">
+                                {completionTime ? formatTime(completionTime) : formatTime(300 - timeRemaining)}
+                            </div>
+                            <div className="text-gray-600">
+                                Time {completionTime && currentIndex >= problems.length ? 'Taken' : 'Elapsed'}
+                            </div>
                         </div>
-                        <div className="text-gray-600 mb-2">
-                            {percentage}% Bugs Fixed
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                                className="bg-[#018ABE] h-2 rounded-full transition-all duration-500"
-                                style={{ width: `${percentage}%` }}
-                            ></div>
+                    </div>
+
+                    {/* Review Section */}
+                    <div className="mb-8">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">Review:</h3>
+                        <div className="space-y-3 max-h-64 overflow-y-auto">
+                            {problems.map((problem, index) => {
+                                const userAnswer = selectedAnswers[index];
+                                const isCorrect = userAnswer === problem.correctAnswer;
+                                
+                                return (
+                                    <div key={problem.id} className={`p-4 rounded-lg border-2 ${
+                                        isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                                    }`}>
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-semibold text-gray-800">
+                                                    {index + 1}. {problem.title}
+                                                </span>
+                                                <span className={`px-2 py-1 rounded-full text-xs ${getDifficultyColor(problem.difficulty)}`}>
+                                                    {problem.difficulty}
+                                                </span>
+                                            </div>
+                                            {isCorrect ? (
+                                                <CheckCircle className="w-5 h-5 text-green-600" />
+                                            ) : (
+                                                <XCircle className="w-5 h-5 text-red-600" />
+                                            )}
+                                        </div>
+                                        
+                                        {userAnswer && (
+                                            <div className="text-sm">
+                                                <p className={`mb-1 ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>
+                                                    <strong>Your answer:</strong> {userAnswer}
+                                                </p>
+                                                {!isCorrect && (
+                                                    <p className="text-green-700">
+                                                        <strong>Correct answer:</strong> {problem.correctAnswer}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+                                        
+                                        {!userAnswer && (
+                                            <p className="text-gray-600 text-sm">
+                                                <strong>Not answered</strong> - Correct answer: {problem.correctAnswer}
+                                            </p>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
 
@@ -1117,7 +1158,7 @@ export default function DebugCodeGame() {
                         </div>
                         <div className="flex items-center gap-2 text-red-500">
                             <Clock className="w-4 h-4" />
-                            <span className="font-bold text-lg">{timeRemaining}s</span>
+                            <span className="font-bold text-lg">{formatTime(timeRemaining)}</span>
                         </div>
                     </div>
 
@@ -1140,37 +1181,6 @@ export default function DebugCodeGame() {
                             <div className="bg-gray-900 text-green-400 p-4 rounded-lg mb-4 font-mono text-sm overflow-x-auto">
                                 <pre>{currentProblem.buggyCode}</pre>
                             </div>
-
-                            {showExplanation && (
-                                <div className="space-y-4">
-                                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                                        <div className="flex items-start gap-3">
-                                            <Bug className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                                            <div>
-                                                <h5 className="font-semibold text-red-800 mb-1">Bug Found:</h5>
-                                                <p className="text-red-700 text-sm">{currentProblem.bug}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                                        <div className="flex items-start gap-3">
-                                            <Lightbulb className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                                            <div>
-                                                <h5 className="font-semibold text-green-800 mb-1">Explanation:</h5>
-                                                <p className="text-green-700 text-sm">{currentProblem.explanation}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <h4 className="font-semibold text-gray-800 mb-3">✅ Fixed Code:</h4>
-                                        <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto">
-                                            <pre>{currentProblem.correctCode}</pre>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     </div>
 
@@ -1180,38 +1190,34 @@ export default function DebugCodeGame() {
                         <div className="space-y-3">
                             {shuffledOptions.map((option, index) => {
                                 let buttonClass = "w-full p-4 text-left rounded-xl border-2 transition-all duration-200 font-medium ";
-
-                                if (showExplanation) {
+                                
+                                if (showFeedback) {
                                     if (option === currentProblem.correctAnswer) {
                                         buttonClass += "bg-green-50 border-green-500 text-green-700";
-                                    } else if (option === selectedAnswer && option !== currentProblem.correctAnswer) {
+                                    } else if (option === currentSelectedAnswer && option !== currentProblem.correctAnswer) {
                                         buttonClass += "bg-red-50 border-red-500 text-red-700";
                                     } else {
                                         buttonClass += "bg-gray-50 border-gray-200 text-gray-600 cursor-not-allowed";
                                     }
                                 } else {
-                                    if (selectedAnswer === option) {
-                                        buttonClass += "bg-[#018ABE] text-white border-[#018ABE] transform scale-105";
-                                    } else {
-                                        buttonClass += "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300";
-                                    }
+                                    buttonClass += "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300";
                                 }
 
                                 return (
                                     <button
                                         key={index}
-                                        onClick={() => !showExplanation && handleAnswer(option)}
-                                        disabled={showExplanation}
+                                        onClick={() => !showFeedback && handleAnswer(option)}
+                                        disabled={showFeedback}
                                         className={buttonClass}
                                     >
                                         <div className="flex items-center justify-between">
                                             <span>{option}</span>
-                                            {showExplanation && (
+                                            {showFeedback && (
                                                 <div>
                                                     {option === currentProblem.correctAnswer && (
                                                         <CheckCircle className="w-5 h-5 text-green-600" />
                                                     )}
-                                                    {option === selectedAnswer && option !== currentProblem.correctAnswer && (
+                                                    {option === currentSelectedAnswer && option !== currentProblem.correctAnswer && (
                                                         <XCircle className="w-5 h-5 text-red-600" />
                                                     )}
                                                 </div>
@@ -1222,7 +1228,7 @@ export default function DebugCodeGame() {
                             })}
                         </div>
 
-                        {!showExplanation && (
+                        {!showFeedback && (
                             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                                 <p className="text-blue-700 text-sm">
                                     💡 <strong>Tip:</strong> Look carefully at the code structure, syntax, and logic. Common bugs include missing semicolons, incorrect operators, and undefined variables.
@@ -1230,26 +1236,30 @@ export default function DebugCodeGame() {
                             </div>
                         )}
 
-                        {showExplanation && (
-                            <div className="mt-6 text-center">
-                                {selectedAnswer === currentProblem.correctAnswer ? (
-                                    <div className="text-green-600">
-                                        <CheckCircle className="w-8 h-8 mx-auto mb-2" />
-                                        <p className="font-semibold">Correct! +1 point</p>
-                                    </div>
-                                ) : selectedAnswer ? (
-                                    <div className="text-red-600">
-                                        <XCircle className="w-8 h-8 mx-auto mb-2" />
-                                        <p className="font-semibold">Incorrect. Try again next time!</p>
+                        {showFeedback && (
+                            <div className="mt-6">
+                                {currentSelectedAnswer === currentProblem.correctAnswer ? (
+                                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <CheckCircle className="w-6 h-6 text-green-600" />
+                                            <span className="font-semibold text-green-800">Correct! +1 point</span>
+                                        </div>
+                                        <p className="text-green-700 text-sm">{currentProblem.explanation}</p>
                                     </div>
                                 ) : (
-                                    <div className="text-orange-600">
-                                        <Clock className="w-8 h-8 mx-auto mb-2" />
-                                        <p className="font-semibold">Time's up!</p>
+                                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <XCircle className="w-6 h-6 text-red-600" />
+                                            <span className="font-semibold text-red-800">Incorrect</span>
+                                        </div>
+                                        <p className="text-red-700 text-sm mb-2">
+                                            <strong>Correct answer:</strong> {currentProblem.correctAnswer}
+                                        </p>
+                                        <p className="text-red-700 text-sm">{currentProblem.explanation}</p>
                                     </div>
                                 )}
-                                <p className="text-sm text-gray-600 mt-2">
-                                    Moving to next problem...
+                                <p className="text-center text-gray-600 text-sm mt-3">
+                                    Moving to next question...
                                 </p>
                             </div>
                         )}

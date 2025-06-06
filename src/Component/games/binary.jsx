@@ -1,42 +1,18 @@
-import { axiosInstance } from '@/lib/axiosInstance';
 import React, { useState, useEffect } from 'react';
-import toast from 'react-hot-toast';
 
 export default function BinaryChallenge() {
     const [currentNumber, setCurrentNumber] = useState(0);
     const [userInput, setUserInput] = useState('');
     const [score, setScore] = useState(0);
-    const [streak, setStreak] = useState(0);
     const [feedback, setFeedback] = useState('');
     const [isCorrect, setIsCorrect] = useState(null);
     const [gameStarted, setGameStarted] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(30);
+    const [timeLeft, setTimeLeft] = useState(180); // 3 minutes = 180 seconds
     const [gameOver, setGameOver] = useState(false);
     const [difficulty, setDifficulty] = useState('easy');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const submitScore = async () => {
-        setIsSubmitting(true);
-        try {
-            await axiosInstance.post('/gameScore/submit', {
-                gameName: 'binary',
-                score: score
-            });
-            toast.success('Score submitted successfully!');
-            setGameOver(true);
-        } catch (error) {
-            console.error('Error submitting score:', error);
-            toast.error('Failed to submit score.');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    useEffect(() => {
-        if (gameOver) {
-            submitScore();
-        }
-    }, [gameOver]);
+    const [questionsAnswered, setQuestionsAnswered] = useState(0);
+    const [completionTime, setCompletionTime] = useState(null);// completion time stored here
+    const [gameWon, setGameWon] = useState(false);
 
     const difficultyRanges = {
         easy: { min: 1, max: 15 },
@@ -45,14 +21,19 @@ export default function BinaryChallenge() {
     };
 
     useEffect(() => {
-        if (gameStarted && timeLeft > 0 && !gameOver) {
+        if (gameStarted && timeLeft > 0 && !gameOver && questionsAnswered < 10) {
             const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
             return () => clearTimeout(timer);
-        } else if (timeLeft === 0 && gameStarted) {
+        } else if ((timeLeft === 0 || questionsAnswered >= 10) && gameStarted) {
+            if (questionsAnswered >= 10) {
+                // Player completed all 10 questions
+                setGameWon(true);
+                setCompletionTime(180 - timeLeft); // Time taken to complete
+            }
             setGameOver(true);
             setGameStarted(false);
         }
-    }, [timeLeft, gameStarted, gameOver]);
+    }, [timeLeft, gameStarted, gameOver, questionsAnswered]);
 
     const generateRandomNumber = () => {
         const range = difficultyRanges[difficulty];
@@ -62,9 +43,11 @@ export default function BinaryChallenge() {
     const startGame = () => {
         setGameStarted(true);
         setGameOver(false);
+        setGameWon(false);
         setScore(0);
-        setStreak(0);
-        setTimeLeft(30);
+        setQuestionsAnswered(0);
+        setTimeLeft(180); // 3 minutes
+        setCompletionTime(null);
         setCurrentNumber(generateRandomNumber());
         setUserInput('');
         setFeedback('');
@@ -74,9 +57,11 @@ export default function BinaryChallenge() {
     const resetGame = () => {
         setGameStarted(false);
         setGameOver(false);
+        setGameWon(false);
         setScore(0);
-        setStreak(0);
-        setTimeLeft(30);
+        setQuestionsAnswered(0);
+        setTimeLeft(180);
+        setCompletionTime(null);
         setUserInput('');
         setFeedback('');
         setIsCorrect(null);
@@ -88,20 +73,22 @@ export default function BinaryChallenge() {
 
         if (userBinary === correctBinary) {
             setIsCorrect(true);
-            setScore(score + 10 + streak * 2);
-            setStreak(streak + 1);
+            setScore(score + 1); // 1 point for each correct answer
             setFeedback(`✅ Correct! ${currentNumber} = ${correctBinary}`);
         } else {
             setIsCorrect(false);
-            setStreak(0);
             setFeedback(`❌ Wrong! ${currentNumber} = ${correctBinary}`);
         }
 
+        setQuestionsAnswered(questionsAnswered + 1);
+
         setTimeout(() => {
-            setCurrentNumber(generateRandomNumber());
-            setUserInput('');
-            setFeedback('');
-            setIsCorrect(null);
+            if (questionsAnswered + 1 < 10) {
+                setCurrentNumber(generateRandomNumber());
+                setUserInput('');
+                setFeedback('');
+                setIsCorrect(null);
+            }
         }, 1500);
     };
 
@@ -113,9 +100,15 @@ export default function BinaryChallenge() {
     };
 
     const handleKeyPress = (e) => {
-        if (e.key === 'Enter' && userInput && gameStarted && !gameOver) {
+        if (e.key === 'Enter' && userInput && gameStarted && !gameOver && questionsAnswered < 10) {
             checkAnswer();
         }
+    };
+
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
     return (
@@ -125,11 +118,21 @@ export default function BinaryChallenge() {
                     <h1 className="text-4xl font-bold text-[#018ABE] mb-2 flex items-center justify-center gap-2">
                         🔢 Binary Challenge
                     </h1>
-                    <p className="text-black">Convert decimal numbers to binary!</p>
+                    <p className="text-black">Convert 10 decimal numbers to binary in 3 minutes!</p>
                 </div>
 
                 {!gameStarted && !gameOver && (
                     <div className="space-y-6">
+                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                            <h3 className="font-bold text-blue-800 mb-2">🎯 Game Rules:</h3>
+                            <ul className="text-blue-700 text-sm space-y-1">
+                                <li>• Convert 10 decimal numbers to binary</li>
+                                <li>• You have 3 minutes to complete all 10</li>
+                                <li>• Each correct answer = 1 point</li>
+                                <li>• Finish early to save time!</li>
+                            </ul>
+                        </div>
+
                         <div>
                             <label className="block text-black mb-3 font-semibold">Choose Difficulty:</label>
                             <div className="space-y-2">
@@ -158,7 +161,7 @@ export default function BinaryChallenge() {
                             onClick={startGame}
                             className="w-full bg-[#018ABE] text-white py-4 rounded-xl font-bold text-lg hover:bg-[#0170a0] transition-all duration-200 shadow-lg flex items-center justify-center gap-2"
                         >
-                            ▶️ Start Game
+                            ▶️ Start Challenge
                         </button>
                     </div>
                 )}
@@ -168,8 +171,15 @@ export default function BinaryChallenge() {
                         <div className="flex justify-between items-center">
                             <div className="text-black">
                                 <div className="text-sm opacity-80">⏱️ Time Left</div>
-                                <div className={`text-2xl font-bold ${timeLeft <= 10 ? 'text-red-400' : 'text-green-400'}`}>
-                                    {timeLeft}s
+                                <div className={`text-2xl font-bold ${timeLeft <= 30 ? 'text-red-400' : 'text-green-400'}`}>
+                                    {formatTime(timeLeft)}
+                                </div>
+                            </div>
+
+                            <div className="text-black text-center">
+                                <div className="text-sm opacity-80">📊 Progress</div>
+                                <div className="text-2xl font-bold text-purple-500">
+                                    {questionsAnswered}/10
                                 </div>
                             </div>
 
@@ -179,17 +189,16 @@ export default function BinaryChallenge() {
                             </div>
                         </div>
 
-                        {streak > 0 && (
-                            <div className="text-center">
-                                <div className="inline-flex items-center px-3 py-1 rounded-full bg-orange-500/20 text-orange-300 text-sm font-semibold">
-                                    🔥 {streak} streak
-                                </div>
-                            </div>
-                        )}
+                        <div className="w-full bg-gray-200 rounded-full h-3">
+                            <div 
+                                className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-300"
+                                style={{ width: `${(questionsAnswered / 10) * 100}%` }}
+                            ></div>
+                        </div>
 
                         <div className="text-center">
-                            <div className="text-gray-300 mb-2">Convert to binary:</div>
-                            <div className="text-6xl font-bold text-[#5ce1e6] mb-6">
+                            <div className="text-gray-600 mb-2">Convert to binary:</div>
+                            <div className="text-6xl font-bold text-[#018ABE] mb-6">
                                 {currentNumber}
                             </div>
                         </div>
@@ -203,11 +212,12 @@ export default function BinaryChallenge() {
                                 placeholder="Enter binary (e.g., 1010)"
                                 className="w-full p-4 rounded-xl bg-white/10 text-black placeholder-gray-400 border border-white/20 focus:border-cyan-400 focus:outline-none text-center text-xl font-mono"
                                 autoFocus
+                                disabled={questionsAnswered >= 10}
                             />
 
                             <button
                                 onClick={checkAnswer}
-                                disabled={!userInput}
+                                disabled={!userInput || questionsAnswered >= 10}
                                 className="w-full bg-[#018ABE] text-white py-3 rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#0170a0] transition-all duration-200 flex items-center justify-center gap-2"
                             >
                                 ✓ Submit Answer
@@ -223,8 +233,8 @@ export default function BinaryChallenge() {
 
                         {feedback && (
                             <div className={`text-center p-4 rounded-xl ${isCorrect
-                                ? 'bg-green-500/20 text-green-300 border border-green-500/30'
-                                : 'bg-red-500/20 text-red-300 border border-red-500/30'
+                                ? 'bg-green-500/20 text-green-600 border border-green-500/30'
+                                : 'bg-red-500/20 text-red-600 border border-red-500/30'
                                 }`}>
                                 {feedback}
                             </div>
@@ -234,22 +244,45 @@ export default function BinaryChallenge() {
 
                 {gameOver && (
                     <div className="text-center space-y-6">
-                        <div className="text-6xl mb-4">🎯</div>
-                        <h2 className="text-3xl font-bold text-black mb-4">Game Over!</h2>
-
-                        <div className="space-y-2">
-                            <div className="text-gray-300">Final Score</div>
-                            <div className="text-4xl font-bold text-cyan-400">{score}</div>
+                        <div className="text-6xl mb-4">
+                            {gameWon ? '🎉' : '⏰'}
                         </div>
+                        <h2 className="text-3xl font-bold text-black mb-4">
+                            {gameWon ? 'Challenge Complete!' : 'Time\'s Up!'}
+                        </h2>
 
-                        <div className="grid grid-cols-2 gap-4 text-center">
-                            <div className="bg-white/10 rounded-xl p-4">
-                                <div className="text-gray-300 text-sm">📊 Difficulty</div>
-                                <div className="text-black font-bold capitalize">{difficulty}</div>
+                        <div className="space-y-4">
+                            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
+                                <div className="text-gray-600 mb-2">Final Score</div>
+                                <div className="text-4xl font-bold text-cyan-500">{score}/10</div>
+                                <div className="text-sm text-gray-500 mt-1">
+                                    {questionsAnswered}/10 questions answered
+                                </div>
                             </div>
-                            <div className="bg-white/10 rounded-xl p-4">
-                                <div className="text-gray-300 text-sm">🔥 Best Streak</div>
-                                <div className="text-orange-400 font-bold">{streak}</div>
+
+                            {gameWon && completionTime && (
+                                <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                                    <div className="text-green-600 font-semibold">⚡ Completion Time</div>
+                                    <div className="text-2xl font-bold text-green-700">
+                                        {formatTime(completionTime)}
+                                    </div>
+                                    <div className="text-sm text-green-600">
+                                        {completionTime < 120 ? 'Excellent speed!' : 'Good timing!'}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-2 gap-4 text-center">
+                                <div className="bg-white/10 rounded-xl p-4">
+                                    <div className="text-gray-500 text-sm">📊 Difficulty</div>
+                                    <div className="text-black font-bold capitalize">{difficulty}</div>
+                                </div>
+                                <div className="bg-white/10 rounded-xl p-4">
+                                    <div className="text-gray-500 text-sm">🎯 Accuracy</div>
+                                    <div className="text-blue-600 font-bold">
+                                        {questionsAnswered > 0 ? Math.round((score)/questionsAnswered * 100) : 0}%
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
