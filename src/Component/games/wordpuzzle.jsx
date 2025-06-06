@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { axiosInstance } from '@/lib/axiosInstance';
-import { toast } from 'react-hot-toast';
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 const WordPuzzleGame = () => {
   const [grid, setGrid] = useState([]);
-  const allWords = ['REACT', 'JAVASCRIPT', 'PUZZLE', 'GAME', 'CODE', 'HTML', 'CSS', 'PYTHON', 'ANGULAR', 'NODE', 'REDUX', 'WEBPACK', 'BABEL', 'GITHUB', 'SWIFT', 'KOTLIN', 'FLUTTER', 'DOCKER', 'MONGODB', 'MYSQL', 'FIREBASE', 'NEXTJS', 'VUEJS', 'TYPESCRIPT', 'JQUERY', 'BOOTSTRAP', 'TAILWIND', 'SASS', 'GRAPHQL', 'RESTAPI', 'ALGORITHM', 'POLYMORPHISM', 'ENCAPSULATION', 'INHERITANCE', 'ABSTRACTION', 'RECURSION', 'SYNCHRONIZATION', 'ASYNCHRONOUS', 'MULTITHREADING', 'AUTHENTICATION', 'AUTHORIZATION', 'CRYPTOGRAPHY', 'BLOCKCHAIN', 'MICROSERVICES', 'VIRTUALIZATION', 'CONTAINERIZATION', 'ORCHESTRATION', 'DEPLOYMENT', 'DEBUGGING', 'REFACTORING', 'OPTIMIZATION', 'SCALABILITY', 'ARCHITECTURE', 'METHODOLOGY', 'FRAMEWORKS', 'LIBRARIES', 'DEPENDENCIES', 'REPOSITORY', 'CONFIGURATION', 'INTEGRATION', 'COMPILATION', 'INTERPRETATION', 'SERIALIZATION', 'DESERIALIZATION', 'MIDDLEWARE', 'PREPROCESSING', 'POSTPROCESSING', 'TRANSFORMATION', 'VALIDATION', 'SANITIZATION', 'NORMALIZATION'];
+  const allWords = ['REACT', 'JAVASCRIPT', 'PUZZLE', 'GAME', 'CODE', 'HTML', 'CSS', 'PYTHON', 'ANGULAR', 'NODE', 'REDUX', 'WEBPACK', 'BABEL', 'GITHUB', 'SWIFT', 'KOTLIN', 'FLUTTER', 'DOCKER', 'MONGODB', 'MYSQL', 'FIREBASE', 'NEXTJS', 'VUEJS', 'TYPESCRIPT', 'JQUERY', 'BOOTSTRAP', 'TAILWIND', 'SASS', 'GRAPHQL', 'RESTAPI', 'ALGORITHM'];
   const [words, setWords] = useState([]);
   const [foundWords, setFoundWords] = useState([]);
   const [foundWordPositions, setFoundWordPositions] = useState({});
@@ -13,62 +12,54 @@ const WordPuzzleGame = () => {
   const [score, setScore] = useState(0);
   const [gameCompleted, setGameCompleted] = useState(false);
   const [wordPlacements, setWordPlacements] = useState({});
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [timeLeft, setTimeLeft] = useState(300);
   const [gameActive, setGameActive] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [completionTime, setCompletionTime] = useState(null);
 
-  const submitScore = async () => {
-    setIsSubmitting(true);
-    console.log(score)
-    console.log(gameOver);
-    try {
-      // Using axios directly with full URL
-      await axiosInstance.post('/gameScore/submit', {
-        gameName: 'word puzzle',
-        score: score
-      });
-      toast.success('Score submitted successfully!');
-      setGameOver(true);
-    } catch (error) {
-      console.error('Error submitting score:', error);
-      toast.error('Failed to submit score.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  // Use refs to avoid stale closures in timer
+  const gameActiveRef = useRef(false);
+  const gameStartedRef = useRef(false);
+  const gameCompletedRef = useRef(false);
+
+  const GRID_SIZE = 15;
+
+  // Light, eye-friendly color palette
+  const strapColors = [
+    'bg-gradient-to-r from-blue-100 to-blue-200 border-blue-300',
+    'bg-gradient-to-r from-green-100 to-green-200 border-green-300',
+    'bg-gradient-to-r from-purple-100 to-purple-200 border-purple-300',
+    'bg-gradient-to-r from-pink-100 to-pink-200 border-pink-300',
+    'bg-gradient-to-r from-indigo-100 to-indigo-200 border-indigo-300',
+    'bg-gradient-to-r from-orange-100 to-orange-200 border-orange-300',
+    'bg-gradient-to-r from-teal-100 to-teal-200 border-teal-300',
+    'bg-gradient-to-r from-cyan-100 to-cyan-200 border-cyan-300',
+    'bg-gradient-to-r from-lime-100 to-lime-200 border-lime-300',
+    'bg-gradient-to-r from-rose-100 to-rose-200 border-rose-300',
+    'bg-gradient-to-r from-emerald-100 to-emerald-200 border-emerald-300',
+    'bg-gradient-to-r from-violet-100 to-violet-200 border-violet-300',
+    'bg-gradient-to-r from-amber-100 to-amber-200 border-amber-300',
+    'bg-gradient-to-r from-sky-100 to-sky-200 border-sky-300'
+  ];
+
+  // Update refs when state changes
+  useEffect(() => {
+    gameActiveRef.current = gameActive;
+  }, [gameActive]);
 
   useEffect(() => {
-    if (timeLeft === 0) {
-      submitScore();
-    }
-  }, [timeLeft]);
+    gameStartedRef.current = gameStarted;
+  }, [gameStarted]);
 
-  const GRID_SIZE = 12;
-
-  // Color palette for straps
-  const strapColors = [
-    'bg-red-500/80',
-    'bg-blue-500/80',
-    'bg-green-500/80',
-    'bg-yellow-500/80',
-    'bg-purple-500/80',
-    'bg-pink-500/80',
-    'bg-indigo-500/80',
-    'bg-orange-500/80',
-    'bg-teal-500/80',
-    'bg-cyan-500/80',
-    'bg-lime-500/80',
-    'bg-rose-500/80',
-    'bg-emerald-500/80',
-    'bg-violet-500/80'
-  ];
+  useEffect(() => {
+    gameCompletedRef.current = gameCompleted;
+  }, [gameCompleted]);
 
   // Generate random words for each game
   const generateRandomWords = () => {
     const shuffled = [...allWords].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 10); // Changed from 8 to 10 words
+    return shuffled.slice(0, 12);
   };
 
   // Generate random letter
@@ -77,25 +68,26 @@ const WordPuzzleGame = () => {
   // Check if position is valid
   const isValidPosition = (row, col) => row >= 0 && row < GRID_SIZE && col >= 0 && col < GRID_SIZE;
 
+  // Get all 8 directions for word placement
+  const getDirections = () => [
+    { name: 'horizontal', dr: 0, dc: 1 },
+    { name: 'vertical', dr: 1, dc: 0 },
+    { name: 'diagonal', dr: 1, dc: 1 },
+    { name: 'diagonalUp', dr: -1, dc: 1 },
+    { name: 'horizontalReverse', dr: 0, dc: -1 },
+    { name: 'verticalReverse', dr: -1, dc: 0 },
+    { name: 'diagonalReverse', dr: -1, dc: -1 },
+    { name: 'diagonalUpReverse', dr: 1, dc: -1 }
+  ];
+
   // Check if word can be placed at position
-  const canPlaceWord = (grid, word, startRow, startCol, direction) => {
-    const directions = {
-      horizontal: [0, 1],
-      vertical: [1, 0],
-      diagonal: [1, 1],
-      diagonalUp: [-1, 1]
-    };
-
-    const [dr, dc] = directions[direction];
-
-    // Check if all positions are valid and either empty or match the letter
+  const canPlaceWord = (grid, word, startRow, startCol, dr, dc) => {
     for (let i = 0; i < word.length; i++) {
       const r = startRow + dr * i;
       const c = startCol + dc * i;
 
       if (!isValidPosition(r, c)) return false;
 
-      // If cell is not empty, it must match the current letter
       if (grid[r][c] !== '' && grid[r][c] !== word[i]) {
         return false;
       }
@@ -104,22 +96,13 @@ const WordPuzzleGame = () => {
   };
 
   // Place word in grid
-  const placeWord = (grid, word, startRow, startCol, direction) => {
-    const directions = {
-      horizontal: [0, 1],
-      vertical: [1, 0],
-      diagonal: [1, 1],
-      diagonalUp: [-1, 1]
-    };
-
-    const [dr, dc] = directions[direction];
+  const placeWord = (grid, word, startRow, startCol, dr, dc) => {
     const positions = [];
 
-    if (!canPlaceWord(grid, word, startRow, startCol, direction)) {
+    if (!canPlaceWord(grid, word, startRow, startCol, dr, dc)) {
       return null;
     }
 
-    // Place the word
     for (let i = 0; i < word.length; i++) {
       const r = startRow + dr * i;
       const c = startCol + dc * i;
@@ -130,43 +113,55 @@ const WordPuzzleGame = () => {
     return positions;
   };
 
-  // Generate puzzle grid
-  const generateGrid = useCallback(() => {
-    // Start with empty grid
+  // Generate puzzle grid with improved algorithm
+  const generateGrid = useCallback((wordList) => {
     const newGrid = Array(GRID_SIZE).fill(null).map(() =>
       Array(GRID_SIZE).fill('')
     );
 
-    const directions = ['horizontal', 'vertical', 'diagonal', 'diagonalUp'];
+    const directions = getDirections();
     const newWordPlacements = {};
     const placedWords = [];
 
-    // Try to place each word
-    words.forEach(word => {
+    const sortedWords = [...wordList].sort((a, b) => b.length - a.length);
+
+    sortedWords.forEach(word => {
       let placed = false;
       let attempts = 0;
+      const maxAttempts = 500;
 
-      while (!placed && attempts < 200) {
+      while (!placed && attempts < maxAttempts) {
         const direction = directions[Math.floor(Math.random() * directions.length)];
-        const startRow = Math.floor(Math.random() * GRID_SIZE);
-        const startCol = Math.floor(Math.random() * GRID_SIZE);
+        const { dr, dc } = direction;
 
-        const positions = placeWord(newGrid, word, startRow, startCol, direction);
-        if (positions) {
-          placed = true;
-          placedWords.push(word);
-          newWordPlacements[word] = {
-            positions,
-            direction,
-            startRow,
-            startCol
-          };
+        const maxStartRow = dr >= 0 ? GRID_SIZE - word.length : word.length - 1;
+        const minStartRow = dr >= 0 ? 0 : word.length - 1;
+        const maxStartCol = dc >= 0 ? GRID_SIZE - word.length : word.length - 1;
+        const minStartCol = dc >= 0 ? 0 : word.length - 1;
+
+        if (maxStartRow >= minStartRow && maxStartCol >= minStartCol) {
+          const startRow = Math.floor(Math.random() * (maxStartRow - minStartRow + 1)) + minStartRow;
+          const startCol = Math.floor(Math.random() * (maxStartCol - minStartCol + 1)) + minStartCol;
+
+          const positions = placeWord(newGrid, word, startRow, startCol, dr, dc);
+          if (positions) {
+            placed = true;
+            placedWords.push(word);
+            newWordPlacements[word] = {
+              positions,
+              direction: direction.name,
+              startRow,
+              startCol,
+              dr,
+              dc
+            };
+          }
         }
         attempts++;
       }
 
       if (!placed) {
-        console.warn(`Could not place word: ${word}`);
+        console.warn(`Could not place word: ${word} after ${maxAttempts} attempts`);
       }
     });
 
@@ -179,65 +174,98 @@ const WordPuzzleGame = () => {
       }
     }
 
-    setGrid(newGrid);
-    setWordPlacements(newWordPlacements);
+    return { newGrid, newWordPlacements, placedWords };
+  }, []);
 
-    // Update words list to only include successfully placed words
-    if (placedWords.length !== words.length) {
-      console.log(`Successfully placed ${placedWords.length} out of ${words.length} words`);
-    }
-  }, [words]);
-
-  // Timer effect
+  // Fixed timer effect - using refs to prevent infinite loops
   useEffect(() => {
     let interval = null;
-    if (gameActive && gameStarted && timeLeft > 0 && !gameCompleted) {
+    
+    if (gameActiveRef.current && gameStartedRef.current && !gameCompletedRef.current) {
       interval = setInterval(() => {
-        setTimeLeft(timeLeft => timeLeft - 1);
+        setTimeLeft(prevTime => {
+          if (prevTime <= 1) {
+            // Time's up - handle game over
+            setGameActive(false);
+            setGameOver(true);
+            setScore(prev => prev); // Keep current score
+            
+            // Reveal unfound words
+            setFoundWords(prevFoundWords => {
+              setWords(prevWords => {
+                const unfoundWords = prevWords.filter(word => !prevFoundWords.includes(word));
+                
+                setFoundWordPositions(prevPositions => {
+                  const newPositions = { ...prevPositions };
+                  
+                  unfoundWords.forEach((word) => {
+                    setWordPlacements(prevPlacements => {
+                      if (prevPlacements[word]) {
+                        newPositions[word] = {
+                          positions: prevPlacements[word].positions,
+                          color: 'bg-gradient-to-r from-red-100 to-red-200 border-red-400',
+                          isRevealed: true
+                        };
+                      }
+                      return prevPlacements;
+                    });
+                  });
+                  
+                  return newPositions;
+                });
+                
+                return prevWords;
+              });
+              return prevFoundWords;
+            });
+            
+            return 0;
+          }
+          return prevTime - 1;
+        });
       }, 1000);
-    } else if (timeLeft === 0 && gameStarted) {
-      setGameActive(false);
-      setGameOver(true);
     }
-    return () => clearInterval(interval);
-  }, [gameActive, gameStarted, timeLeft, gameCompleted]);
-
-  // Calculate final score based on words found and time remaining
-  const calculateFinalScore = () => {
-    const wordScore = foundWords.length * 100;
-    const timeBonus = timeLeft * 2;
-    return wordScore + timeBonus;
-  };
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [gameActive, gameStarted, gameCompleted]);
 
   // Initialize game
   useEffect(() => {
-    const randomWords = generateRandomWords();
-    setWords(randomWords);
-  }, []);
+    const initializeGame = () => {
+      const randomWords = generateRandomWords();
+      const { newGrid, newWordPlacements, placedWords } = generateGrid(randomWords);
 
-  // Generate grid when words change
-  useEffect(() => {
-    if (words.length > 0) {
-      generateGrid();
+      setGrid(newGrid);
+      setWordPlacements(newWordPlacements);
+      setWords(placedWords);
       setFoundWords([]);
       setFoundWordPositions({});
+      setSelectedCells([]);
       setScore(0);
       setGameCompleted(false);
       setGameActive(false);
       setGameOver(false);
       setGameStarted(false);
-      setTimeLeft(30);
-    }
-  }, [words, generateGrid]);
+      setTimeLeft(300);
+      setCompletionTime(null);
+    };
+
+    initializeGame();
+  }, [generateGrid]);
 
   // Check if game is completed
   useEffect(() => {
-    if (foundWords.length === words.length && words.length > 0) {
+    if (foundWords.length === words.length && words.length > 0 && !gameCompleted) {
       setGameCompleted(true);
       setGameActive(false);
-      setScore(calculateFinalScore());
+      setScore(foundWords.length);
+      setCompletionTime(300 - timeLeft);
     }
-  }, [foundWords, words, timeLeft]);
+  }, [foundWords.length, words.length, gameCompleted, timeLeft]);
 
   // Get cell key
   const getCellKey = (row, col) => `${row}-${col}`;
@@ -249,7 +277,7 @@ const WordPuzzleGame = () => {
     setSelectedCells([{ row, col }]);
   };
 
-  // Handle mouse enter
+  // Handle mouse enter with improved line detection
   const handleMouseEnter = (row, col) => {
     if (!isSelecting || !gameActive || gameOver || !gameStarted) return;
 
@@ -263,29 +291,31 @@ const WordPuzzleGame = () => {
       const colDiff = col - start.col;
 
       if (rowDiff === 0) {
-        // Horizontal
         const step = colDiff > 0 ? 1 : -1;
         for (let c = start.col; c !== col + step; c += step) {
-          cells.push({ row: start.row, col: c });
+          if (c >= 0 && c < GRID_SIZE) {
+            cells.push({ row: start.row, col: c });
+          }
         }
       } else if (colDiff === 0) {
-        // Vertical
         const step = rowDiff > 0 ? 1 : -1;
         for (let r = start.row; r !== row + step; r += step) {
-          cells.push({ row: r, col: start.col });
+          if (r >= 0 && r < GRID_SIZE) {
+            cells.push({ row: r, col: start.col });
+          }
         }
       } else if (Math.abs(rowDiff) === Math.abs(colDiff)) {
-        // Diagonal
         const rowStep = rowDiff > 0 ? 1 : -1;
         const colStep = colDiff > 0 ? 1 : -1;
         const steps = Math.abs(rowDiff);
 
         for (let i = 0; i <= steps; i++) {
-          cells.push({
-            row: start.row + i * rowStep,
-            col: start.col + i * colStep
-          });
-        } 
+          const newRow = start.row + i * rowStep;
+          const newCol = start.col + i * colStep;
+          if (newRow >= 0 && newRow < GRID_SIZE && newCol >= 0 && newCol < GRID_SIZE) {
+            cells.push({ row: newRow, col: newCol });
+          }
+        }
       }
 
       return cells.length > 0 ? cells : current;
@@ -317,10 +347,10 @@ const WordPuzzleGame = () => {
           ...prev,
           [wordFound]: {
             positions: wordPositions,
-            color: strapColors[Object.keys(prev).length % strapColors.length]
+            color: strapColors[Object.keys(prev).length % strapColors.length],
+            isRevealed: false
           }
         }));
-        setScore(prev => prev + wordFound.length * 10);
       }
     }
 
@@ -337,17 +367,21 @@ const WordPuzzleGame = () => {
   // New game
   const newGame = () => {
     const randomWords = generateRandomWords();
-    setWords(randomWords);
+    const { newGrid, newWordPlacements, placedWords } = generateGrid(randomWords);
+
+    setGrid(newGrid);
+    setWordPlacements(newWordPlacements);
+    setWords(placedWords);
     setFoundWords([]);
     setFoundWordPositions({});
     setSelectedCells([]);
     setScore(0);
     setGameCompleted(false);
-    setWordPlacements({});
     setGameActive(false);
     setGameOver(false);
     setGameStarted(false);
-    setTimeLeft(30);
+    setTimeLeft(300);
+    setCompletionTime(null);
   };
 
   // Format time
@@ -358,47 +392,42 @@ const WordPuzzleGame = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-4">
-          <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">
-            🧩 Word Search Puzzle
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h1 className="text-5xl font-bold text-slate-800 mb-3 drop-shadow-sm">
+            🔍 Word Search Adventure
           </h1>
-          <p className="text-purple-200 text-lg">Find the hidden words in the grid!</p>
+          <p className="text-slate-600 text-xl font-medium">Find all hidden words in all directions!</p>
         </div>
 
-        {/* Instructions - moved to top */}
-        <div className="mb-6 bg-white/10 backdrop-blur-md rounded-2xl p-4 shadow-2xl text-center">
-          <h3 className="text-xl font-bold text-white mb-2">📖 How to Play</h3>
-          <p className="text-purple-200">
-            Click the START button to begin the game and start the 5-minute timer.
-            Once started, click and drag to select words in the grid. Words can be horizontal, vertical, or diagonal.
-            Find all the words within 5 minutes to complete the puzzle! You cannot select words before clicking START.
-          </p>
-        </div>
-
-        {/* Game Completed - moved between instructions and game */}
+        {/* Game Status Messages */}
         {gameCompleted && (
-          <div className="mb-6 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl p-6 shadow-2xl text-center animate-bounce">
-            <h2 className="text-3xl font-bold text-white mb-2">🎉 Congratulations!</h2>
-            <p className="text-white text-lg">You found all the words!</p>
-            <p className="text-green-100 mt-2 text-xl">Final Score: {score}</p>
-            <p className="text-green-100 text-sm">Time Bonus: {timeLeft * 2} points</p>
+          <div className="mb-6 bg-gradient-to-r from-green-100 to-emerald-100 border-2 border-green-300 rounded-3xl p-8 shadow-lg text-center transform hover:scale-105 transition-transform duration-300">
+            <div className="text-6xl mb-4">🎉</div>
+            <h2 className="text-4xl font-bold text-green-800 mb-3">Congratulations!</h2>
+            <p className="text-green-700 text-xl mb-2">Perfect Score! You found all the words!</p>
+            <div className="flex justify-center gap-8 text-green-600">
+              <p className="text-2xl font-bold">Score: {score}/{words.length}</p>
+              <p className="text-lg">Time: {formatTime(completionTime)}</p>
+            </div>
           </div>
         )}
 
-        {/* Game Over - moved between instructions and game */}
         {gameOver && !gameCompleted && (
-          <div className="mb-6 bg-gradient-to-r from-red-500 to-pink-500 rounded-2xl p-6 shadow-2xl text-center animate-pulse">
-            <h2 className="text-3xl font-bold text-white mb-2">⏰ Time's Up!</h2>
-            <p className="text-white text-lg">You found {foundWords.length} out of {words.length} words</p>
-            <p className="text-red-100 mt-2 text-xl">Final Score: {foundWords.length * 100}</p>
+          <div className="mb-6 bg-gradient-to-r from-red-100 to-pink-100 border-2 border-red-300 rounded-3xl p-8 shadow-lg text-center transform hover:scale-105 transition-transform duration-300">
+            <div className="text-6xl mb-4">⏰</div>
+            <h2 className="text-4xl font-bold text-red-800 mb-3">Time's Up!</h2>
+            <p className="text-red-700 text-xl mb-2">You found {foundWords.length} out of {words.length} words</p>
+            <p className="text-2xl font-bold text-red-600">Score: {score}/{words.length}</p>
+            <p className="text-red-500 text-sm mt-3">💡 Unfound words are now highlighted in red!</p>
           </div>
         )}
 
-        <div className="flex flex-col xl:flex-row gap-8 items-center justify-center">
+        <div className="flex flex-col xl:flex-row gap-8 items-start justify-center">
           {/* Game Grid */}
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl flex-shrink-0">
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-slate-200">
             <div
               className="grid gap-1 select-none mx-auto"
               style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))` }}
@@ -413,46 +442,40 @@ const WordPuzzleGame = () => {
                     selected => selected.row === rowIndex && selected.col === colIndex
                   );
 
-                  // Check if this cell is part of any found word
-                  const foundWordStraps = Object.entries(foundWordPositions)
-                    .filter(([word, data]) =>
-                      data.positions.some(pos => pos.row === rowIndex && pos.col === colIndex)
-                    )
-                    .map(([word, data]) => data.color);
+                  const foundWordEntry = Object.entries(foundWordPositions).find(([word, data]) =>
+                    data.positions.some(pos => pos.row === rowIndex && pos.col === colIndex)
+                  );
+
+                  const hasFoundWord = foundWordEntry !== undefined;
+                  const wordColor = foundWordEntry ? foundWordEntry[1].color : '';
+                  const isRevealed = foundWordEntry ? foundWordEntry[1].isRevealed : false;
 
                   return (
                     <div
                       key={getCellKey(rowIndex, colIndex)}
                       className={`
-                        w-12 h-12 flex items-center justify-center text-lg font-bold relative
-                        border border-white/20 cursor-pointer transition-all duration-150
-                        hover:scale-110 hover:shadow-lg
+                        w-10 h-10 flex items-center justify-center text-sm font-bold relative
+                        border-2 transition-all duration-200 cursor-pointer
                         ${isSelected
-                          ? 'bg-yellow-400 text-black shadow-lg scale-110 z-10'
-                          : 'bg-white/20 text-white hover:bg-white/30'
+                          ? 'bg-gradient-to-r from-yellow-200 to-orange-200 text-slate-800 shadow-md scale-110 z-20 border-yellow-400'
+                          : hasFoundWord
+                            ? `${wordColor} text-slate-800 shadow-sm border-2 ${isRevealed ? 'border-red-400 animate-pulse' : ''}`
+                            : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200 hover:scale-105'
                         }
-                        ${(!gameActive || gameOver || !gameStarted) ? 'cursor-not-allowed opacity-50' : ''}
+                        ${(!gameActive || gameOver || !gameStarted) ? 'cursor-not-allowed opacity-60' : ''}
+                        rounded-lg
                       `}
                       onMouseDown={() => handleMouseDown(rowIndex, colIndex)}
                       onMouseEnter={() => handleMouseEnter(rowIndex, colIndex)}
                       onMouseUp={handleMouseUp}
                     >
-                      {/* Found word straps */}
-                      {foundWordStraps.map((strapColor, index) => (
-                        <div
-                          key={index}
-                          className={`absolute inset-0 ${strapColor} 
-                            ${index === 0 ? 'opacity-80' : 'opacity-60'}
-                            ${index > 0 ? 'transform rotate-45' : ''}
-                            ${index > 1 ? 'transform -rotate-45' : ''}
-                          `}
-                          style={{
-                            zIndex: index + 1,
-                            transform: index === 1 ? 'rotate(45deg)' : index === 2 ? 'rotate(-45deg)' : 'none'
-                          }}
-                        />
-                      ))}
-                      <span className="relative z-10 drop-shadow-sm">{cell}</span>
+                      <span className="relative z-10 font-black">
+                        {cell}
+                      </span>
+                      {/* Revealed word indicator */}
+                      {isRevealed && (
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-400 rounded-full border-2 border-white animate-bounce"></div>
+                      )}
                     </div>
                   );
                 })
@@ -460,66 +483,102 @@ const WordPuzzleGame = () => {
             </div>
           </div>
 
-          {/* Game Info */}
+          {/* Game Info Panel */}
           <div className="space-y-6 w-full max-w-sm">
-            {/* Timer */}
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl text-center">
-              <h2 className="text-2xl font-bold text-white mb-4">⏱️ Time</h2>
-              <div className={`text-3xl font-bold ${timeLeft <= 60 ? 'text-red-400' : 'text-green-400'}`}>
-                {formatTime(timeLeft)}
-              </div>
-            </div>
-
-            {/* Score */}
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl text-center">
-              <h2 className="text-2xl font-bold text-white mb-4">🏆 Score</h2>
-              <div className="text-3xl font-bold text-yellow-400">{score}</div>
-            </div>
-
-            {/* Words to Find */}
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl">
-              <h2 className="text-2xl font-bold text-white mb-4 text-center">🎯 Find These Words</h2>
-              <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-                {words.map((word, index) => (
-                  <div
-                    key={word}
-                    className={`
-                      px-3 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center justify-between text-xs
-                      ${foundWords.includes(word)
-                        ? `${foundWordPositions[word]?.color || 'bg-green-500'} text-white line-through`
-                        : 'bg-white/20 text-white'
-                      }
-                    `}
-                  >
-                    <span className="truncate">{word}</span>
-                    {foundWords.includes(word) && (
-                      <div
-                        className={`w-3 h-3 rounded-full ${foundWordPositions[word]?.color || 'bg-green-500'} 
-                          border border-white flex-shrink-0 ml-1`}
-                      />
-                    )}
+            {/* Game Stats */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-lg border border-slate-200">
+              <div className="grid grid-cols-2 gap-4 text-center">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-700 mb-2">⏱️ Time</h3>
+                  <div className={`text-2xl font-bold ${timeLeft <= 60 ? 'text-red-500 animate-pulse' : 'text-green-600'}`}>
+                    {formatTime(timeLeft)}
                   </div>
-                ))}
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-700 mb-2">🏆 Score</h3>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {score}/{words.length}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Instructions */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-lg border border-slate-200">
+              <h3 className="text-xl font-bold text-slate-800 mb-3 text-center">📖 How to Play</h3>
+              <div className="text-slate-600 text-sm space-y-2">
+                <p>• Click START to begin the 5-minute timer</p>
+                <p>• Click and drag to select words</p>
+                <p>• Words can be in any direction</p>
+                <p>• Find all words to win!</p>
+              </div>
+            </div>
+
+            {/* Words List */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-lg border border-slate-200">
+              <h3 className="text-xl font-bold text-slate-800 mb-4 text-center">🎯 Words to Find</h3>
+
+              <div className="flex flex-wrap gap-2 justify-center">
+                {words.map((word) => {
+                  const wordData = foundWordPositions[word];
+                  const isFound = foundWords.includes(word);
+                  const isRevealed = wordData && wordData.isRevealed;
+
+                  return (
+                    <div
+                      key={word}
+                      className={`
+                        px-4 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-between border-2
+                        ${isFound && !isRevealed
+                          ? `${wordData?.color || 'bg-green-100 border-green-300'} text-slate-800 line-through shadow-sm`
+                          : isRevealed
+                            ? 'bg-gradient-to-r from-red-100 to-red-200 text-slate-800 border-red-400 animate-pulse'
+                            : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+                        }
+                      `}
+                    >
+                      <span className="text-sm font-bold">{word}</span>
+                      {(isFound || isRevealed) && (
+                        <div className="flex items-center space-x-2 ml-2">
+                          {isFound && !isRevealed && (
+                            <div className="text-green-600 text-lg">✓</div>
+                          )}
+                          {isRevealed && (
+                            <div className="text-red-500 text-lg animate-bounce">👁️</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
-              <div className="mt-4 text-purple-200 text-center">
-                Found: {foundWords.length} / {words.length}
+              <div className="mt-4 text-center">
+                <div className="text-slate-600 font-semibold">
+                  Progress: {foundWords.length} / {words.length}
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-3 mt-2">
+                  <div
+                    className="bg-gradient-to-r from-green-400 to-blue-500 h-3 rounded-full transition-all duration-500"
+                    style={{ width: `${(foundWords.length / words.length) * 100}%` }}
+                  ></div>
+                </div>
               </div>
             </div>
 
             {/* Controls */}
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl">
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-lg border border-slate-200">
               {!gameStarted ? (
                 <button
                   onClick={startGame}
-                  className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 hover:scale-105 shadow-lg mb-2"
+                  className="w-full bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 hover:scale-105 shadow-md mb-3 text-lg"
                 >
                   🚀 START GAME
                 </button>
               ) : null}
               <button
                 onClick={newGame}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 hover:scale-105 shadow-lg"
+                className="w-full bg-gradient-to-r from-purple-400 to-pink-500 hover:from-purple-500 hover:to-pink-600 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 hover:scale-105 shadow-md text-lg"
               >
                 🎮 New Game
               </button>

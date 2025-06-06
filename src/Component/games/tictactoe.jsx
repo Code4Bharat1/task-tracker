@@ -118,17 +118,17 @@ const TicTacToeGame = () => {
             setWinner(winResult.winner);
             setWinningLine(winResult.line);
             setGameOver(true);
+            // Winner gets 1 point
             setScores(prev => ({
                 ...prev,
-                [winResult.winner]: prev[winResult.winner] + 2
+                [winResult.winner]: prev[winResult.winner] + 1
             }));
         } else if (checkDraw(newBoard)) {
             setIsDraw(true);
             setGameOver(true);
+            // Draw: both players get 0 points, but we track draws separately
             setScores(prev => ({
                 ...prev,
-                X: prev.X + 1,
-                O: prev.O + 1,
                 draws: prev.draws + 1
             }));
         } else {
@@ -486,7 +486,7 @@ const TicTacToeGame = () => {
                                 <p>• Players take turns placing X's and O's</p>
                                 <p>• Get 3 in a row (horizontal, vertical, or diagonal) to win</p>
                                 <p>• If all 9 squares are filled with no winner, it's a draw</p>
-                                <p>• Winner gets 2 points, Draw gives 1 point each, Loss gets 0 points</p>
+                                <p>• Winner gets 1 point, Draw gives 0 points to both players</p>
                                 {gameMode === 'pvc' && <p>• You are X, Computer is O</p>}
                             </div>
                         </div>

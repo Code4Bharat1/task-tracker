@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Bug, CheckCircle, XCircle, Trophy, Clock, Code, Lightbulb, RotateCcw, Play } from 'lucide-react';
-
+import { axiosInstance } from '@/lib/axiosInstance';
 const codeProblems = [
     {
         id: 1,
@@ -852,7 +852,8 @@ export default function DebugCodeGame() {
     const [shuffledOptions, setShuffledOptions] = useState([]);
     const [gameStartTime, setGameStartTime] = useState(null);
     const [completionTime, setCompletionTime] = useState(null);//completion time is stored here
-
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveStatus, setSaveStatus] = useState('');
     // Shuffle function
     const shuffleArray = (array) => {
         const shuffled = [...array];
@@ -862,6 +863,33 @@ export default function DebugCodeGame() {
         }
         return shuffled;
     };
+
+    const submitScoreToBackend = async () => {
+        setIsSaving(true);
+        setSaveStatus('Saving score...');
+        try {
+            const response = await axiosInstance.post(`${process.env.NEXT_PUBLIC_BACKEND_API}/gamescore/submit`, {
+                gameName: 'Debug Code Game',
+                score: score,
+                time: completionTime,
+            });
+
+            console.log('Score saved successfully:', response.data);
+            setSaveStatus('Score saved successfully! 🎉');
+        } catch (error) {
+            console.error('Error saving score:', error);
+            setSaveStatus('Failed to save score. Please try again.');
+        } finally {
+            setIsSaving(false);
+            setTimeout(() => setSaveStatus(''), 3000);
+        }
+    };
+
+    useEffect(() => {
+        if (gameComplete && completionTime !== null && score >= 0) {
+            submitScoreToBackend();
+        }
+    }, [gameComplete, completionTime, score]);
 
     useEffect(() => {
         if (gameStarted && !gameComplete && timeRemaining > 0) {
