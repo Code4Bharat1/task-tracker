@@ -16,7 +16,7 @@ export default function Games() {
     //             console.error('Error fetching users:', error);
     //         }
     //     };
-    
+
     //     fetchUsers();
     // }, []);
 
@@ -38,7 +38,7 @@ export default function Games() {
         { name: 'wordpuzzle', displayName: 'Word Search', icon: '🧩' },
         { name: 'typing', displayName: 'Typing Speed Test', icon: '⌨️' }
     ];
-
+ 
     // Sample leaderboard data - replace with actual data from your backend
     const leaderboardData = [
         { player: 'Player1', game: 'binary', score: 2500 },
@@ -129,7 +129,7 @@ export default function Games() {
 
             {showLeaderBoard && (
                 <div className="fixed inset-0 bg-gray-500 bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm p-4">
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200">
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200">
                         <div className="flex justify-between items-center mb-6">
                             <div className="flex items-center">
                                 <div className="text-3xl mr-3">🏆</div>
@@ -165,26 +165,27 @@ export default function Games() {
 
                         <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
                             <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4">
-                                <div className="grid grid-cols-4 gap-4">
+                                <div className="grid grid-cols-5 gap-4">
                                     <div className="text-white font-bold text-sm uppercase tracking-wide">🏅 Rank</div>
                                     <div className="text-white font-bold text-sm uppercase tracking-wide">👤 Player</div>
                                     <div className="text-white font-bold text-sm uppercase tracking-wide">🎯 Games</div>
                                     <div className="text-white font-bold text-sm uppercase tracking-wide">⭐ Score</div>
+                                    <div className="text-white font-bold text-sm uppercase tracking-wide">⏱️ Time</div>
                                 </div>
                             </div>
                             <div className="max-h-72 overflow-y-auto">
                                 {getFilteredLeaderboard().map((entry, index) => (
                                     <div
                                         key={entry.player}
-                                        className={`grid grid-cols-4 gap-4 p-4 transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 border-b border-gray-100 last:border-b-0 ${index === 0 ? 'bg-gradient-to-r from-yellow-50 to-orange-50' :
-                                            index === 1 ? 'bg-gradient-to-r from-gray-50 to-gray-100' :
-                                                index === 2 ? 'bg-gradient-to-r from-orange-50 to-yellow-50' : ''
+                                        className={`grid grid-cols-5 gap-4 p-4 transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 border-b border-gray-100 last:border-b-0 ${index === 0 ? 'bg-gradient-to-r from-yellow-50 to-orange-50' :
+                                                index === 1 ? 'bg-gradient-to-r from-gray-50 to-gray-100' :
+                                                    index === 2 ? 'bg-gradient-to-r from-orange-50 to-yellow-50' : ''
                                             }`}
                                     >
                                         <div className="flex items-center">
                                             <div className={`text-xl font-bold mr-2 ${index === 0 ? 'text-yellow-500' :
-                                                index === 1 ? 'text-gray-500' :
-                                                    index === 2 ? 'text-orange-500' : 'text-blue-600'
+                                                    index === 1 ? 'text-gray-500' :
+                                                        index === 2 ? 'text-orange-500' : 'text-blue-600'
                                                 }`}>
                                                 {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
                                             </div>
@@ -205,6 +206,11 @@ export default function Games() {
                                         <div className="flex items-center">
                                             <div className="text-lg font-bold text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text">
                                                 {entry.totalScore.toLocaleString()}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <div className="text-sm font-semibold text-gray-600 bg-green-100 px-3 py-1 rounded-full">
+                                                {entry.timeSubmitted ? new Date(entry.timeSubmitted).toLocaleDateString() : 'N/A'}
                                             </div>
                                         </div>
                                     </div>

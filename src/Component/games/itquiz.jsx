@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { CheckCircle, XCircle, RotateCcw, Trophy, Clock, Target, Play, Home, ArrowRight } from 'lucide-react';
+import { CheckCircle, XCircle, RotateCcw, Trophy, Clock, Target, Play, Home, ArrowRight } from 'lucide-react'
+import { axiosInstance } from '@/lib/axiosInstance';
 
 const allQuestions = [
     {
@@ -515,7 +516,8 @@ export default function TechQuizApp() {
     const [timeRemaining, setTimeRemaining] = useState(180); // 3 minutes = 180 seconds
     const [quizStarted, setQuizStarted] = useState(false);
     const [quizStartTime, setQuizStartTime] = useState(null);
-    const [completionTime, setCompletionTime] = useState(null);//completion time is stored here
+    const [completionTime, setCompletionTime] = useState(null);
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         if (quizStarted && !showResult && timeRemaining > 0) {
@@ -565,6 +567,29 @@ export default function TechQuizApp() {
             endQuiz();
         }
     };
+
+    const submitScoreToBackend = async () => {
+        setIsSaving(true);
+        try {
+            const response = await axiosInstance.post('/gamescore/submit', {
+                gameName: 'IT Quiz',
+                score: score,
+                time: completionTime,
+            });
+
+            console.log('Score saved successfully:', response.data);
+        } catch (error) {
+            console.error('Error saving score:', error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    useEffect(() => {
+        if (showResult && completionTime !== null) {
+            submitScoreToBackend();
+        }
+    }, [showResult, completionTime]);
 
     const endQuiz = () => {
         if (quizStartTime && !completionTime) {
@@ -676,6 +701,9 @@ export default function TechQuizApp() {
                             <div className="text-sm text-blue-600 font-semibold">
                                 ⏱️ Completed in: {formatTime(completionTime)}
                             </div>
+                        )}
+                        {isSaving && (
+                            <div className="text-sm text-gray-500 mt-2">Saving your score...</div>
                         )}
                     </div>
 

@@ -894,7 +894,7 @@ export default function DebugCodeGame() {
     const handleAnswer = (answer) => {
         setCurrentSelectedAnswer(answer);
         setShowFeedback(true);
-        
+
         const newSelectedAnswers = [...selectedAnswers];
         newSelectedAnswers[currentIndex] = answer;
         setSelectedAnswers(newSelectedAnswers);
@@ -1080,11 +1080,10 @@ export default function DebugCodeGame() {
                             {problems.map((problem, index) => {
                                 const userAnswer = selectedAnswers[index];
                                 const isCorrect = userAnswer === problem.correctAnswer;
-                                
+
                                 return (
-                                    <div key={problem.id} className={`p-4 rounded-lg border-2 ${
-                                        isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
-                                    }`}>
+                                    <div key={problem.id} className={`p-4 rounded-lg border-2 ${isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                                        }`}>
                                         <div className="flex items-start justify-between mb-2">
                                             <div className="flex items-center gap-2">
                                                 <span className="font-semibold text-gray-800">
@@ -1100,7 +1099,7 @@ export default function DebugCodeGame() {
                                                 <XCircle className="w-5 h-5 text-red-600" />
                                             )}
                                         </div>
-                                        
+
                                         {userAnswer && (
                                             <div className="text-sm">
                                                 <p className={`mb-1 ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>
@@ -1113,7 +1112,7 @@ export default function DebugCodeGame() {
                                                 )}
                                             </div>
                                         )}
-                                        
+
                                         {!userAnswer && (
                                             <p className="text-gray-600 text-sm">
                                                 <strong>Not answered</strong> - Correct answer: {problem.correctAnswer}
@@ -1190,7 +1189,7 @@ export default function DebugCodeGame() {
                         <div className="space-y-3">
                             {shuffledOptions.map((option, index) => {
                                 let buttonClass = "w-full p-4 text-left rounded-xl border-2 transition-all duration-200 font-medium ";
-                                
+
                                 if (showFeedback) {
                                     if (option === currentProblem.correctAnswer) {
                                         buttonClass += "bg-green-50 border-green-500 text-green-700";
