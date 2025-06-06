@@ -95,12 +95,6 @@ const HREvents = () => {
                   Create Event
                 </h2>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="date"
-                    value={eventDate}
-                    onChange={(e) => setEventDate(e.target.value)}
-                    className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  />
                   <button
                     onClick={() => setShowModal(false)}
                     className="text-gray-600 hover:text-red-500 text-2xl font-bold"
