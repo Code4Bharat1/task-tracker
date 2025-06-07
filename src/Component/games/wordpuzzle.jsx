@@ -1,4 +1,4 @@
-
+import { axiosInstance } from '@/lib/axiosInstance';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 const WordPuzzleGame = () => {
@@ -12,16 +12,24 @@ const WordPuzzleGame = () => {
   const [score, setScore] = useState(0);
   const [gameCompleted, setGameCompleted] = useState(false);
   const [wordPlacements, setWordPlacements] = useState({});
-  const [timeLeft, setTimeLeft] = useState(300);
   const [gameActive, setGameActive] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [completionTime, setCompletionTime] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('');
+
+  // Game duration in seconds (10 seconds for testing)
+  const GAME_DURATION = 300;
+  const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
 
   // Use refs to avoid stale closures in timer
   const gameActiveRef = useRef(false);
   const gameStartedRef = useRef(false);
   const gameCompletedRef = useRef(false);
+  const scoreRef = useRef(0);
+  const gameOverRef = useRef(false);
+  const scoreSubmittedRef = useRef(false); // Track if score has been submitted
 
   const GRID_SIZE = 15;
 
@@ -43,6 +51,29 @@ const WordPuzzleGame = () => {
     'bg-gradient-to-r from-sky-100 to-sky-200 border-sky-300'
   ];
 
+  // Backend score submission function
+  const submitScoreToBackend = async (finalScore, finalTime) => {
+    setIsSaving(true);
+    setSaveStatus('Saving score...');
+
+    const dataToSend = {
+      gameName: 'Word Puzzle Game',
+      score: finalScore,
+      time: finalTime,
+    };
+
+    try {
+      const response = await axiosInstance.post('/gamescore/submit', dataToSend);
+      setSaveStatus('Score saved successfully! 🎉');
+    } catch (error) {
+      setSaveStatus(`Failed to save score: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setIsSaving(false);
+      // Clear save status after 3 seconds
+      setTimeout(() => setSaveStatus(''), 3000);
+    }
+  };
+
   // Update refs when state changes
   useEffect(() => {
     gameActiveRef.current = gameActive;
@@ -55,6 +86,14 @@ const WordPuzzleGame = () => {
   useEffect(() => {
     gameCompletedRef.current = gameCompleted;
   }, [gameCompleted]);
+
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
+
+  useEffect(() => {
+    gameOverRef.current = gameOver;
+  }, [gameOver]);
 
   // Generate random words for each game
   const generateRandomWords = () => {
@@ -177,27 +216,37 @@ const WordPuzzleGame = () => {
     return { newGrid, newWordPlacements, placedWords };
   }, []);
 
-  // Fixed timer effect - using refs to prevent infinite loops
+  // Fixed timer effect - handles both completion and time up scenarios
   useEffect(() => {
     let interval = null;
-    
-    if (gameActiveRef.current && gameStartedRef.current && !gameCompletedRef.current) {
+
+    if (gameActiveRef.current && gameStartedRef.current && !gameCompletedRef.current && !gameOverRef.current) {
       interval = setInterval(() => {
         setTimeLeft(prevTime => {
           if (prevTime <= 1) {
-            // Time's up - handle game over
+            // Time's up - end game and save score
+            const finalTime = GAME_DURATION; // Full time elapsed
+            const finalScore = scoreRef.current;
+
+            // Set states
             setGameActive(false);
             setGameOver(true);
-            setScore(prev => prev); // Keep current score
-            
+            setCompletionTime(finalTime);
+
+            // Submit score only if not already submitted
+            if (!scoreSubmittedRef.current) {
+              scoreSubmittedRef.current = true;
+              submitScoreToBackend(finalScore, finalTime);
+            }
+
             // Reveal unfound words
             setFoundWords(prevFoundWords => {
               setWords(prevWords => {
                 const unfoundWords = prevWords.filter(word => !prevFoundWords.includes(word));
-                
+
                 setFoundWordPositions(prevPositions => {
                   const newPositions = { ...prevPositions };
-                  
+
                   unfoundWords.forEach((word) => {
                     setWordPlacements(prevPlacements => {
                       if (prevPlacements[word]) {
@@ -210,28 +259,28 @@ const WordPuzzleGame = () => {
                       return prevPlacements;
                     });
                   });
-                  
+
                   return newPositions;
                 });
-                
+
                 return prevWords;
               });
               return prevFoundWords;
             });
-            
+
             return 0;
           }
           return prevTime - 1;
         });
       }, 1000);
     }
-    
+
     return () => {
       if (interval) {
         clearInterval(interval);
       }
     };
-  }, [gameActive, gameStarted, gameCompleted]);
+  }, [gameActive, gameStarted, gameCompleted, gameOver]);
 
   // Initialize game
   useEffect(() => {
@@ -250,22 +299,36 @@ const WordPuzzleGame = () => {
       setGameActive(false);
       setGameOver(false);
       setGameStarted(false);
-      setTimeLeft(300);
+      setTimeLeft(GAME_DURATION);
       setCompletionTime(null);
+      setSaveStatus('');
+      scoreSubmittedRef.current = false; // Reset submission tracker
     };
 
     initializeGame();
   }, [generateGrid]);
 
-  // Check if game is completed
+  // Check if game is completed (all words found)
   useEffect(() => {
-    if (foundWords.length === words.length && words.length > 0 && !gameCompleted) {
+    if (foundWords.length === words.length && 
+        words.length > 0 && 
+        !gameCompleted && 
+        !gameOver && 
+        !scoreSubmittedRef.current) {
+      
+      const finalTime = GAME_DURATION - timeLeft;
+      const finalScore = score;
+
+      // Set completion states
       setGameCompleted(true);
       setGameActive(false);
-      setScore(foundWords.length);
-      setCompletionTime(300 - timeLeft);
+      setCompletionTime(finalTime);
+
+      // Submit score only once
+      scoreSubmittedRef.current = true;
+      submitScoreToBackend(finalScore, finalTime);
     }
-  }, [foundWords.length, words.length, gameCompleted, timeLeft]);
+  }, [foundWords.length, words.length, gameCompleted, gameOver, timeLeft, score]);
 
   // Get cell key
   const getCellKey = (row, col) => `${row}-${col}`;
@@ -342,6 +405,9 @@ const WordPuzzleGame = () => {
       }
 
       if (wordFound) {
+        // Add 1 point for each found word
+        setScore(prevScore => prevScore + 1);
+
         setFoundWords(prev => [...prev, wordFound]);
         setFoundWordPositions(prev => ({
           ...prev,
@@ -362,6 +428,10 @@ const WordPuzzleGame = () => {
   const startGame = () => {
     setGameStarted(true);
     setGameActive(true);
+    setGameOver(false);
+    setGameCompleted(false);
+    setSaveStatus('');
+    scoreSubmittedRef.current = false; // Reset submission tracker
   };
 
   // New game
@@ -380,8 +450,10 @@ const WordPuzzleGame = () => {
     setGameActive(false);
     setGameOver(false);
     setGameStarted(false);
-    setTimeLeft(300);
+    setTimeLeft(GAME_DURATION);
     setCompletionTime(null);
+    setSaveStatus('');
+    scoreSubmittedRef.current = false; // Reset submission tracker
   };
 
   // Format time
@@ -402,6 +474,19 @@ const WordPuzzleGame = () => {
           <p className="text-slate-600 text-xl font-medium">Find all hidden words in all directions!</p>
         </div>
 
+        {/* Save Status */}
+        {saveStatus && (
+          <div className={`mb-4 p-4 rounded-lg text-center ${saveStatus.includes('successfully')
+              ? 'bg-green-100 text-green-800 border border-green-300'
+              : saveStatus.includes('Failed')
+                ? 'bg-red-100 text-red-800 border border-red-300'
+                : 'bg-blue-100 text-blue-800 border border-blue-300'
+            }`}>
+            {isSaving && <span className="animate-spin mr-2">⏳</span>}
+            {saveStatus}
+          </div>
+        )}
+
         {/* Game Status Messages */}
         {gameCompleted && (
           <div className="mb-6 bg-gradient-to-r from-green-100 to-emerald-100 border-2 border-green-300 rounded-3xl p-8 shadow-lg text-center transform hover:scale-105 transition-transform duration-300">
@@ -409,8 +494,8 @@ const WordPuzzleGame = () => {
             <h2 className="text-4xl font-bold text-green-800 mb-3">Congratulations!</h2>
             <p className="text-green-700 text-xl mb-2">Perfect Score! You found all the words!</p>
             <div className="flex justify-center gap-8 text-green-600">
-              <p className="text-2xl font-bold">Score: {score}/{words.length}</p>
-              <p className="text-lg">Time: {formatTime(completionTime)}</p>
+              <p className="text-2xl font-bold">Score: {score}</p>
+              <p className="text-lg">Time: {formatTime(completionTime || 0)}</p>
             </div>
           </div>
         )}
@@ -420,7 +505,7 @@ const WordPuzzleGame = () => {
             <div className="text-6xl mb-4">⏰</div>
             <h2 className="text-4xl font-bold text-red-800 mb-3">Time's Up!</h2>
             <p className="text-red-700 text-xl mb-2">You found {foundWords.length} out of {words.length} words</p>
-            <p className="text-2xl font-bold text-red-600">Score: {score}/{words.length}</p>
+            <p className="text-2xl font-bold text-red-600">Score: {score}</p>
             <p className="text-red-500 text-sm mt-3">💡 Unfound words are now highlighted in red!</p>
           </div>
         )}
@@ -490,14 +575,14 @@ const WordPuzzleGame = () => {
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div>
                   <h3 className="text-lg font-bold text-slate-700 mb-2">⏱️ Time</h3>
-                  <div className={`text-2xl font-bold ${timeLeft <= 60 ? 'text-red-500 animate-pulse' : 'text-green-600'}`}>
+                  <div className={`text-2xl font-bold ${timeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-green-600'}`}>
                     {formatTime(timeLeft)}
                   </div>
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-slate-700 mb-2">🏆 Score</h3>
                   <div className="text-2xl font-bold text-blue-600">
-                    {score}/{words.length}
+                    {score}
                   </div>
                 </div>
               </div>
@@ -507,7 +592,7 @@ const WordPuzzleGame = () => {
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-lg border border-slate-200">
               <h3 className="text-xl font-bold text-slate-800 mb-3 text-center">📖 How to Play</h3>
               <div className="text-slate-600 text-sm space-y-2">
-                <p>• Click START to begin the 5-minute timer</p>
+                <p>• Click START to begin the 10-second timer</p>
                 <p>• Click and drag to select words</p>
                 <p>• Words can be in any direction</p>
                 <p>• Find all words to win!</p>
@@ -560,7 +645,7 @@ const WordPuzzleGame = () => {
                 <div className="w-full bg-slate-200 rounded-full h-3 mt-2">
                   <div
                     className="bg-gradient-to-r from-green-400 to-blue-500 h-3 rounded-full transition-all duration-500"
-                    style={{ width: `${(foundWords.length / words.length) * 100}%` }}
+                    style={{ width: `${words.length > 0 ? (foundWords.length / words.length) * 100 : 0}%` }}
                   ></div>
                 </div>
               </div>
