@@ -12,6 +12,7 @@ const HREvents = () => {
   const [editingEvent, setEditingEvent] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [eventToDelete, setEventToDelete] = useState(null);
+  const [eventName,setEventName]=useState("")
 
   const fetchEvents = () => {
     axios
@@ -112,6 +113,7 @@ const HREvents = () => {
                   setEditingEvent(null);
                 }}
                 editingEvent={editingEvent}
+                setEventName={setEventName}
               />
             </motion.div>
           </motion.div>

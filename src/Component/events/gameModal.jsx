@@ -2,8 +2,19 @@ import React, { useState, useEffect } from "react";
 import { axiosInstance } from "@/lib/axiosInstance";
 import toast from "react-hot-toast";
 
-// Helper function for user ID
-const getUserId = (user) => user._id || user.id || user.email;
+// Helper function for user ID - prioritize _id over email
+const getUserId = (user) => {
+  // First try to get the MongoDB ObjectId
+  if (user._id) return user._id;
+  if (user.id) return user.id;
+  
+  // Fall back to email only if no ObjectId is available
+  // (This should typically not be used for database operations)
+  if (user.email) return user.email;
+  
+  console.error("User object missing both _id and email:", user);
+  return null;
+};
 
 // User Selection Modal Component
 function UserSelectionModal({
@@ -107,25 +118,27 @@ function UserSelectionModal({
       } else {
         // Add user - find the complete user object
         const userToAdd = allUsers.find((user) => {
-          // Check both ID and email fields
-          return (
-            getUserId(user) === userId ||
-            user.email === userId ||
-            user._id === userId
-          );
+          const userIdFromList = getUserId(user);
+          return userIdFromList === userId;
         });
 
         if (userToAdd) {
+          // Verify the user has a proper _id before adding
+          if (!userToAdd.userId && !userToAdd.userId) {
+            console.error("Selected user missing ObjectId:", userToAdd);
+            toast.error(`User ${userToAdd.email || userToAdd.name || 'Unknown'} is missing ID field`);
+            return prev;
+          }
           return [...prev, userToAdd];
         }
         console.error("User not found:", userId);
-        toast.error(`User ${userId} not found in available users`);
+        toast.error(`User not found in available users`);
         return prev;
       }
     });
   };
 
-  const handleCreateRoom = async () => {
+  const handleCreateEvent = async () => {
     if (selectedUsers.length === 0) {
       toast.error("Please select at least one user");
       return;
@@ -141,42 +154,98 @@ function UserSelectionModal({
       return;
     }
 
+    if (!currentEventDate) {
+      toast.error("Please select an event date");
+      return;
+    }
+
     try {
       setLoading(true);
 
-      // Create event first
-      const eventResponse = await axiosInstance.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/event/create`,
-        {
-          title: currentEventName,
-          date: currentEventDate,
-          time,
-          games: [gameName],
+      // Convert user objects to IDs for the API call
+      const participantIds = selectedUsers.map((user) => {
+        // Get the actual ObjectId (_id), not email
+        const id = user.userId || user.userId;
+        if (!id) {
+          console.error("User missing _id:", user);
+          throw new Error(`User ${user.email || user.name || 'unknown'} is missing _id field`);
         }
-      );
+        return id;
+      });
 
-      // Convert user objects back to IDs for the API call
-      const userIds = selectedUsers.map((user) => getUserId(user));
+      console.log("Participant IDs:", participantIds);
+      console.log("Selected users:", selectedUsers);
 
-      // Create room with selected user IDs
-      await axiosInstance.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/room/create`,
-        {
-          game: gameName,
-          users: userIds,
-          eventId: eventResponse.data.id || eventResponse.data._id,
-        }
-      );
+      // Debug: Log the API endpoint and payload
+      const eventApiUrl = `${process.env.NEXT_PUBLIC_BACKEND_API}/event/create`;
+      const eventPayload = {
+        title: currentEventName,
+        date: currentEventDate,
+        time: time,
+        game: gameName,
+        participants: participantIds, // Ensure this is an array of ObjectIds
+      };
+
+      console.log("Creating event with:");
+      console.log("API URL:", eventApiUrl);
+      console.log("Payload:", JSON.stringify(eventPayload, null, 2));
+      console.log("Participants type:", typeof participantIds, "isArray:", Array.isArray(participantIds));
+      console.log("Backend API base:", process.env.NEXT_PUBLIC_BACKEND_API);
+
+      // Create event with all required data including participants and game
+      const eventResponse = await axiosInstance.post(eventApiUrl, eventPayload);
+
+      console.log("Event created successfully:", eventResponse.data);
 
       toast.success(
-        `Event "${currentEventName}" created with ${gameDisplayName} room!`
+        `Event "${currentEventName}" created successfully with ${selectedUsers.length} participants!`
       );
+      
+      // Update parent component state
       setEventName(currentEventName);
       setEventDate(currentEventDate);
+      
+      // Close modal
       onClose();
+
+      // Optional: You can also call a callback to refresh events list if needed
+      // if (onEventCreated) {
+      //   onEventCreated(eventResponse.data);
+      // }
+
     } catch (error) {
-      toast.error("Failed to create event and room");
-      console.error(error);
+      console.error("Detailed error information:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url,
+        method: error.config?.method
+      });
+      
+      // More specific error handling
+      if (error.response) {
+        const status = error.response.status;
+        const errorMessage = error.response.data?.message || `Server error (${status})`;
+        
+        if (status === 404) {
+          toast.error(`API endpoint not found. Please check if the server is running and the route '/event/create' exists.`);
+          console.error("404 Error - Check backend routes:");
+          console.error("- Is the server running?");
+          console.error("- Is the route '/event/create' defined?");
+          console.error("- Is the route properly registered?");
+          console.error("- Backend API URL:", process.env.NEXT_PUBLIC_BACKEND_API);
+        } else if (status === 500) {
+          toast.error(`Server error: ${errorMessage}`);
+        } else {
+          toast.error(`Failed to create event: ${errorMessage}`);
+        }
+      } else if (error.request) {
+        toast.error("Network error - please check your connection and server status");
+        console.error("Network error - server not responding");
+      } else {
+        toast.error("Failed to create event");
+        console.error("Unexpected error:", error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -207,7 +276,7 @@ function UserSelectionModal({
           <div className="mb-6">
             <div className="mb-4">
               <label className="block text-gray-700 font-semibold mb-2">
-                Event Name
+                Event Name *
               </label>
               <input
                 type="text"
@@ -223,7 +292,7 @@ function UserSelectionModal({
               {/* Date */}
               <div>
                 <label className="block text-gray-700 font-semibold mb-2">
-                  Event Date
+                  Event Date *
                 </label>
                 <input
                   type="date"
@@ -234,21 +303,35 @@ function UserSelectionModal({
                   }
                   onChange={(e) => setCurrentEventDate(e.target.value)}
                   className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  required
                 />
               </div>
 
               {/* Time */}
               <div>
                 <label className="block text-gray-700 font-semibold mb-2">
-                  Time
+                  Time *
                 </label>
                 <input
-                  type="text"
+                  type="time"
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
                   className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  placeholder="Enter Time"
+                  required
                 />
+              </div>
+            </div>
+
+            {/* Game Info Display */}
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{gameIcon}</span>
+                <span className="font-medium text-blue-800">Game: {gameDisplayName}</span>
+                {maxUsers && (
+                  <span className="text-sm text-blue-600 ml-auto">
+                    Max {maxUsers} players
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -264,8 +347,8 @@ function UserSelectionModal({
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-3">
                   {maxUsers
-                    ? `Select Users (${selectedUsers.length}/${maxUsers} selected)`
-                    : `Select Users (${selectedUsers.length} selected)`}
+                    ? `Select Participants (${selectedUsers.length}/${maxUsers} selected)`
+                    : `Select Participants (${selectedUsers.length} selected)`}
                 </h3>
 
                 {!Array.isArray(allUsers) || allUsers.length === 0 ? (
@@ -309,7 +392,7 @@ function UserSelectionModal({
                           return (
                             <option key={userId} value={userId}>
                               {displayName}
-                              {user.email && user.name ? `(${user.email})` : ""}
+                              {user.email && user.name ? ` (${user.email})` : ""}
                             </option>
                           );
                         })}
@@ -323,7 +406,7 @@ function UserSelectionModal({
                 <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-2 border-blue-200">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-semibold text-gray-800 text-lg">
-                      Selected Users ({selectedUsers.length}
+                      Selected Participants ({selectedUsers.length}
                       {maxUsers ? `/${maxUsers}` : ""})
                     </h4>
                     <button
@@ -385,28 +468,42 @@ function UserSelectionModal({
               {selectedUsers.length === 0 && (
                 <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="text-center text-gray-500">
-                    <p className="text-sm">👥 No users selected yet</p>
+                    <p className="text-sm">👥 No participants selected yet</p>
                     <p className="text-xs mt-1">
-                      Use the dropdown above to select users for this game
+                      Use the dropdown above to select participants for this game
                     </p>
                   </div>
                 </div>
               )}
+
+              {/* Validation Summary */}
+              <div className="mb-6 p-3 bg-gray-50 rounded border">
+                <h4 className="font-medium text-gray-700 mb-2">Event Summary:</h4>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <div>📝 Event: {currentEventName || "Not set"}</div>
+                  <div>📅 Date: {currentEventDate || "Not set"}</div>
+                  <div>🕐 Time: {time || "Not set"}</div>
+                  <div>🎮 Game: {gameDisplayName}</div>
+                  <div>👥 Participants: {selectedUsers.length} selected</div>
+                </div>
+              </div>
 
               {/* Action Buttons */}
               <div className="flex justify-end gap-3">
                 <button
                   onClick={onClose}
                   className="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded transition"
+                  disabled={loading}
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleCreateRoom}
+                  onClick={handleCreateEvent}
                   disabled={
                     selectedUsers.length === 0 ||
                     !currentEventName.trim() ||
                     !time.trim() ||
+                    !currentEventDate ||
                     loading
                   }
                   className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
@@ -425,11 +522,10 @@ function UserSelectionModal({
 // Main Game Modal Component
 export default function GameModal({
   onSubmit,
-  eventDate,
-  setEventName,
-  eventName,
-  setEventDate,
+  onEventCreated, // Optional callback when event is created
 }) {
+  const [eventDate, setEventDate] = useState(""); // Add state for eventDate
+  const [eventName, setEventName] = useState("");
   const [userSelectionModal, setUserSelectionModal] = useState({
     isOpen: false,
     gameName: "",
@@ -492,7 +588,7 @@ export default function GameModal({
             ))}
           </div>
           <p className="text-gray-500 text-center text-sm mt-4">
-            Click on any game to create an event and select users.
+            Click on any game to create an event and select participants.
           </p>
         </div>
       </div>
