@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { axiosInstance } from "@/lib/axiosInstance";
 import toast from "react-hot-toast";
+import { ChevronDown, Search, Users } from "lucide-react";
 
 // Helper function for user ID - prioritize _id over email
 const getUserId = (user) => {
@@ -14,6 +15,137 @@ const getUserId = (user) => {
   
   console.error("User object missing both _id and email:", user);
   return null;
+};
+
+// Participant Dropdown Component
+const ParticipantDropdown = ({ participants = [], selectedParticipants = [], onSelectionChange, maxUsers = null }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const dropdownRef = useRef(null);
+
+  // Filter participants based on search term
+  const filteredParticipants = participants.filter(participant =>
+    (participant.name && participant.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (participant.username && participant.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (participant.email && participant.email.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  // Handle checkbox change
+  const handleCheckboxChange = (participant) => {
+    const participantId = getUserId(participant);
+    const isSelected = selectedParticipants.some(p => getUserId(p) === participantId);
+    let newSelection;
+    
+    if (isSelected) {
+      newSelection = selectedParticipants.filter(p => getUserId(p) !== participantId);
+    } else {
+      // Check if we've reached the maximum limit
+      if (maxUsers && selectedParticipants.length >= maxUsers) {
+        toast.error(`You can only select ${maxUsers} participants for this game`);
+        return;
+      }
+      newSelection = [...selectedParticipants, participant];
+    }
+    
+    onSelectionChange(newSelection);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      {/* Dropdown Button */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-left text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users size={20} className="text-gray-400" />
+            <span className="text-gray-500">
+              {selectedParticipants.length === 0 
+                ? 'Select Participants' 
+                : `${selectedParticipants.length} participant${selectedParticipants.length > 1 ? 's' : ''} selected${maxUsers ? ` (${selectedParticipants.length}/${maxUsers})` : ''}`
+              }
+            </span>
+          </div>
+          <ChevronDown 
+            size={20} 
+            className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+          />
+        </div>
+      </button>
+
+      {/* Dropdown Content */}
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-80 overflow-hidden">
+          {/* Search Input */}
+          <div className="p-3 border-b border-gray-200">
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search participants..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Participants List */}
+          <div className="max-h-60 overflow-y-auto">
+            {filteredParticipants.length === 0 ? (
+              <div className="p-4 text-center text-gray-500 text-sm">
+                No participants found
+              </div>
+            ) : (
+              filteredParticipants.map((participant) => {
+                const participantId = getUserId(participant);
+                const isSelected = selectedParticipants.some(p => getUserId(p) === participantId);
+                const displayName = participant.name || participant.username || participant.email || "Unknown User";
+                
+                return (
+                  <label
+                    key={participantId}
+                    className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleCheckboxChange(participant)}
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-900 truncate">
+                        {displayName}
+                      </div>
+                      {participant.email && (
+                        <div className="text-xs text-gray-500 truncate">
+                          {participant.email}
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 // User Selection Modal Component
@@ -97,45 +229,6 @@ function UserSelectionModal({
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleUserToggle = (userId) => {
-    setSelectedUsers((prev) => {
-      const isSelected = prev.some((user) => getUserId(user) === userId);
-
-      // If trying to add a user and would exceed max limit
-      if (!isSelected && maxUsers && prev.length >= maxUsers) {
-        toast.error(
-          `You can only select ${maxUsers} users for ${gameDisplayName}`
-        );
-        return prev;
-      }
-
-      // Toggle the user selection
-      if (isSelected) {
-        // Remove user
-        return prev.filter((user) => getUserId(user) !== userId);
-      } else {
-        // Add user - find the complete user object
-        const userToAdd = allUsers.find((user) => {
-          const userIdFromList = getUserId(user);
-          return userIdFromList === userId;
-        });
-
-        if (userToAdd) {
-          // Verify the user has a proper _id before adding
-          if (!userToAdd.userId && !userToAdd.userId) {
-            console.error("Selected user missing ObjectId:", userToAdd);
-            toast.error(`User ${userToAdd.email || userToAdd.name || 'Unknown'} is missing ID field`);
-            return prev;
-          }
-          return [...prev, userToAdd];
-        }
-        console.error("User not found:", userId);
-        toast.error(`User not found in available users`);
-        return prev;
-      }
-    });
   };
 
   const handleCreateEvent = async () => {
@@ -336,7 +429,7 @@ function UserSelectionModal({
             </div>
           </div>
 
-          {/* User Selection Dropdown */}
+          {/* Participant Selection */}
           {loading ? (
             <div className="text-center py-8">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -345,63 +438,18 @@ function UserSelectionModal({
           ) : (
             <>
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                  {maxUsers
-                    ? `Select Participants (${selectedUsers.length}/${maxUsers} selected)`
-                    : `Select Participants (${selectedUsers.length} selected)`}
-                </h3>
-
-                {!Array.isArray(allUsers) || allUsers.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500 border border-gray-200 rounded">
-                    {!Array.isArray(allUsers)
-                      ? "Error loading users"
-                      : "No users found"}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <label className="block text-gray-700 font-medium mb-2">
-                      Available Users:
-                    </label>
-                    <select
-                      onChange={(e) => {
-                        const userId = e.target.value;
-                        if (userId) {
-                          handleUserToggle(userId);
-                        }
-                        e.target.value = ""; // Reset dropdown
-                      }}
-                      className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                      value=""
-                    >
-                      <option value="">Select a user to add...</option>
-                      {allUsers
-                        .filter(
-                          (user) =>
-                            !selectedUsers.some(
-                              (selectedUser) =>
-                                getUserId(selectedUser) === getUserId(user)
-                            )
-                        )
-                        .map((user) => {
-                          const userId = getUserId(user);
-                          const displayName =
-                            user.name ||
-                            user.username ||
-                            user.email ||
-                            "Unknown User";
-                          return (
-                            <option key={userId} value={userId}>
-                              {displayName}
-                              {user.email && user.name ? ` (${user.email})` : ""}
-                            </option>
-                          );
-                        })}
-                    </select>
-                  </div>
-                )}
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Select Participants *
+                </label>
+                <ParticipantDropdown
+                  participants={allUsers}
+                  selectedParticipants={selectedUsers}
+                  onSelectionChange={setSelectedUsers}
+                  maxUsers={maxUsers}
+                />
               </div>
 
-              {/* Selected Users Panel - Always visible when users are selected */}
+              {/* Selected Participants Display */}
               {selectedUsers.length > 0 && (
                 <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-2 border-blue-200">
                   <div className="flex items-center justify-between mb-3">
@@ -446,7 +494,8 @@ function UserSelectionModal({
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              handleUserToggle(userId);
+                              const newSelection = selectedUsers.filter(u => getUserId(u) !== userId);
+                              setSelectedUsers(newSelection);
                             }}
                             className="ml-1 text-red-500 hover:text-red-700 font-bold w-5 h-5 flex items-center justify-center rounded-full hover:bg-red-100 transition-colors"
                             title="Remove user"

@@ -12,7 +12,8 @@ const HREvents = () => {
   const [editingEvent, setEditingEvent] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [eventToDelete, setEventToDelete] = useState(null);
-  const [eventName,setEventName]=useState("")
+  const [eventName, setEventName] = useState("");
+  const [participants, setParticipants] = useState([]);
 
   const fetchEvents = () => {
     axios
@@ -21,8 +22,16 @@ const HREvents = () => {
       .catch(() => setEvents([]));
   };
 
+  const fetchParticipants = () => {
+    axios
+      .get(`${process.env.NEXT_PUBLIC_BACKEND_API}/participants/all`)
+      .then((res) => setParticipants(res.data.participants || []))
+      .catch(() => setParticipants([]));
+  };
+
   useEffect(() => {
     fetchEvents();
+    fetchParticipants();
   }, []);
 
   const handleEdit = (event) => {
@@ -53,6 +62,13 @@ const HREvents = () => {
   const cancelDelete = () => {
     setShowDeleteModal(false);
     setEventToDelete(null);
+  };
+
+
+
+  const resetModal = () => {
+    setShowModal(false);
+    setEditingEvent(null);
   };
 
   return (
@@ -97,7 +113,7 @@ const HREvents = () => {
                 </h2>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setShowModal(false)}
+                    onClick={resetModal}
                     className="text-gray-600 hover:text-red-500 text-2xl font-bold"
                   >
                     &times;
@@ -105,15 +121,17 @@ const HREvents = () => {
                 </div>
               </div>
 
+
+
               {/* Modal Body */}
               <GameModal
                 eventDate={eventDate}
                 onSubmit={() => {
-                  setShowModal(false);
-                  setEditingEvent(null);
+                  resetModal();
                 }}
                 editingEvent={editingEvent}
                 setEventName={setEventName}
+                participants={participants}
               />
             </motion.div>
           </motion.div>
@@ -164,7 +182,6 @@ const HREvents = () => {
                 <button
                   onClick={() => handleDeleteClick(event)}
                   className="p-2 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition"
-                  title="Delete"
                 >
                   <Trash2 size={16} />
                 </button>

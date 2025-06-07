@@ -65,9 +65,8 @@ const textModes = {
 };
 
 export default function EnhancedTypingTest() {
-  const [selectedTime, setSelectedTime] = useState(30);
   const [selectedMode, setSelectedMode] = useState('words');
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [timeLeft, setTimeLeft] = useState(60);
   const [userInput, setUserInput] = useState('');
   const [isActive, setIsActive] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -78,26 +77,57 @@ export default function EnhancedTypingTest() {
   const [errors, setErrors] = useState(0);
   const [totalCharsTyped, setTotalCharsTyped] = useState(0);
   const [score, setScore] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [finalTime, setFinalTime] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('');
   const intervalRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Refs for maintaining state in async operations
+  const gameActiveRef = useRef(false);
+  const gameCompletedRef = useRef(false);
+  const scoreRef = useRef(0);
   
-  // Generate text based on mode
+  // Generate continuous text based on mode
   const generateText = (mode) => {
     const modeData = textModes[mode];
-    if (mode === 'quotes' || mode === 'programming') {
-      return modeData.content[Math.floor(Math.random() * modeData.content.length)];
+    let generatedText = '';
+    
+    if (mode === 'quotes') {
+      // Generate multiple quotes
+      const shuffled = [...modeData.content].sort(() => Math.random() - 0.5);
+      generatedText = shuffled.join(' ');
+    } else if (mode === 'programming') {
+      // Generate multiple code snippets
+      const shuffled = [...modeData.content].sort(() => Math.random() - 0.5);
+      generatedText = shuffled.join(' ');
     } else if (mode === 'sentences') {
+      // Generate multiple sentences
       const shuffled = [...modeData.content].sort(() => Math.random() - 0.5);
-      return shuffled.slice(0, 3).join(' ');
+      generatedText = shuffled.join(' ');
     } else if (mode === 'paragraphs') {
-      return modeData.content[Math.floor(Math.random() * modeData.content.length)];
-    } else if (mode === 'words' || mode === 'numbers') {
+      // Generate multiple paragraphs
       const shuffled = [...modeData.content].sort(() => Math.random() - 0.5);
-      return shuffled.slice(0, 50).join(' ');
+      generatedText = shuffled.join(' ');
+    } else if (mode === 'words') {
+      // Generate many words
+      const shuffled = [...modeData.content].sort(() => Math.random() - 0.5);
+      const repeatedWords = [];
+      for (let i = 0; i < 200; i++) {
+        repeatedWords.push(shuffled[i % shuffled.length]);
+      }
+      generatedText = repeatedWords.join(' ');
+    } else if (mode === 'numbers') {
+      // Generate many numbers
+      const shuffled = [...modeData.content].sort(() => Math.random() - 0.5);
+      const repeatedNumbers = [];
+      for (let i = 0; i < 200; i++) {
+        repeatedNumbers.push(shuffled[i % shuffled.length]);
+      }
+      generatedText = repeatedNumbers.join(' ');
     }
+    
+    return generatedText;
   };
 
   // Initialize text
@@ -107,7 +137,7 @@ export default function EnhancedTypingTest() {
 
   // Calculate real-time stats
   const getCurrentStats = () => {
-    const elapsed = selectedTime - timeLeft;
+    const elapsed = 60 - timeLeft;
     const minutes = elapsed / 60;
     const correctChars = userInput.split('').filter((char, i) => char === currentText[i]).length;
     const wpm = minutes > 0 ? Math.round((correctChars / 5) / minutes) : 0;
@@ -117,15 +147,27 @@ export default function EnhancedTypingTest() {
 
   const { wpm: currentWpm, accuracy: currentAccuracy } = getCurrentStats();
 
-  // Calculate score when test completes
+  // Calculate score and auto-submit when test completes
   useEffect(() => {
-    if (isCompleted && !isSubmitted) {
+    if (isCompleted && score === 0 && totalCharsTyped > 0) { // Only submit if user actually typed
       const { wpm, accuracy } = getCurrentStats();
-      // Score calculation: WPM * accuracy percentage (0-1)
-      const calculatedScore = Math.round(wpm * (accuracy / 100));
+      const elapsedTime = 60 - timeLeft;
+      
+      // Score calculation: WPM * accuracy percentage * time factor
+      // Higher score for better accuracy and consistent performance
+      const baseScore = wpm * (accuracy / 100);
+      const timeBonus = elapsedTime >= 60 ? 1.2 : 1; // Bonus for completing full 60 seconds
+      const calculatedScore = Math.round(baseScore * timeBonus);
+      
       setScore(calculatedScore);
+      setFinalTime(elapsedTime);
+      
+      // Auto-submit score after calculation
+      setTimeout(() => {
+        submitScoreToBackend(calculatedScore, elapsedTime);
+      }, 1000); // Small delay to ensure UI updates
     }
-  }, [isCompleted, isSubmitted]);
+  }, [isCompleted, timeLeft, score, totalCharsTyped]);
 
   // Handle typing
   useEffect(() => {
@@ -187,19 +229,57 @@ export default function EnhancedTypingTest() {
   // WPM tracking
   useEffect(() => {
     if (isActive && !isCompleted && timeLeft % 2 === 0) {
-      const elapsed = selectedTime - timeLeft;
+      const elapsed = 60 - timeLeft;
       if (elapsed > 0) {
         const stats = getCurrentStats();
         setWpmHistory(prev => [...prev, { time: elapsed, wpm: stats.wpm }]);
       }
     }
-  }, [timeLeft, isActive, isCompleted, selectedTime]);
+  }, [timeLeft, isActive, isCompleted]);
+
+  // Submit score to backend
+  const submitScoreToBackend = async (finalScore, finalTime) => {
+    setIsSaving(true);
+    setSaveStatus('Saving score...');
+
+    const dataToSend = {
+      gameName: 'Typing Speed Test',
+      score: finalScore,
+      time: finalTime,
+    };
+
+    try {
+      const response = await axiosInstance.post('/gamescore/submit', dataToSend);
+      setSaveStatus('Score saved successfully! 🎉');
+    } catch (error) {
+      const errorMessage = `Failed to save score: ${error.response?.data?.message || error.message}`;
+      setSaveStatus(errorMessage);
+      console.error('Error submitting score:', error);
+    } finally {
+      setIsSaving(false);
+      // Clear save status after 3 seconds
+      setTimeout(() => setSaveStatus(''), 3000);
+    }
+  };
+
+  // Update refs when state changes
+  useEffect(() => {
+    gameActiveRef.current = isActive;
+  }, [isActive]);
+
+  useEffect(() => {
+    gameCompletedRef.current = isCompleted;
+  }, [isCompleted]);
+
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
 
   // Reset test
   const resetTest = () => {
     clearInterval(intervalRef.current);
     intervalRef.current = null;
-    setTimeLeft(selectedTime);
+    setTimeLeft(60);
     setUserInput('');
     setIsActive(false);
     setIsCompleted(false);
@@ -209,7 +289,8 @@ export default function EnhancedTypingTest() {
     setErrors(0);
     setTotalCharsTyped(0);
     setScore(0);
-    setIsSubmitted(false);
+    setFinalTime(0);
+    setSaveStatus('');
     setCurrentText(generateText(selectedMode));
     inputRef.current?.focus();
   };
@@ -218,25 +299,6 @@ export default function EnhancedTypingTest() {
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
-
-  const submitScore = async () => {
-    if (isSubmitting || isSubmitted) return;
-    
-    setIsSubmitting(true);
-    try {
-      await axiosInstance.post('/gameScore/submit', {
-        gameName: 'typingTest',
-        score: score
-      });
-      toast.success('Score submitted successfully!');
-      setIsSubmitted(true);
-    } catch (error) {
-      console.error('Error submitting score:', error);
-      toast.error('Failed to submit score.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const renderText = () => {
     return currentText.split('').map((char, i) => {
@@ -266,6 +328,7 @@ export default function EnhancedTypingTest() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-light mb-4 text-yellow-400">Typing Master</h1>
+          <p className="text-gray-400 mb-6">60 Second Challenge</p>
 
           {/* Mode Selection */}
           <div className="flex flex-wrap justify-center gap-2 mb-4">
@@ -282,26 +345,6 @@ export default function EnhancedTypingTest() {
                   }`}
               >
                 {mode.name}
-              </button>
-            ))}
-          </div>
-
-          {/* Time Selection */}
-          <div className="flex justify-center gap-2 mb-6">
-            {[15, 30, 60, 120].map((time) => (
-              <button
-                key={time}
-                onClick={() => {
-                  setSelectedTime(time);
-                  setTimeLeft(time);
-                  resetTest();
-                }}
-                className={`px-3 py-1 rounded transition ${selectedTime === time
-                    ? 'bg-yellow-500 text-gray-900'
-                    : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
-                  }`}
-              >
-                {time}s
               </button>
             ))}
           </div>
@@ -351,7 +394,7 @@ export default function EnhancedTypingTest() {
         {/* Instructions */}
         {!isActive && !isCompleted && (
           <div className="text-center text-gray-400 mb-6">
-            <p>Click here or start typing to begin the test</p>
+            <p>Click here or start typing to begin the 60-second test</p>
           </div>
         )}
 
@@ -387,7 +430,11 @@ export default function EnhancedTypingTest() {
                 <div className="text-3xl font-mono text-green-400">{totalCharsTyped}</div>
                 <div className="text-gray-400">Characters</div>
               </div>
-              <div className="text-center col-span-2 md:col-span-4">
+              <div className="text-center">
+                <div className="text-3xl font-mono text-cyan-400">{finalTime}s</div>
+                <div className="text-gray-400">Time</div>
+              </div>
+              <div className="text-center">
                 <div className="text-3xl font-mono text-purple-400">{score}</div>
                 <div className="text-gray-400">Score</div>
               </div>
@@ -429,22 +476,23 @@ export default function EnhancedTypingTest() {
               </div>
             )}
 
-            {/* Submit Score Button */}
+            {/* Auto-Submit Status */}
             <div className="mt-6 text-center">
-              <button
-                onClick={submitScore}
-                disabled={isSubmitting || isSubmitted}
-                className={`px-6 py-2 rounded-lg transition ${isSubmitted
-                  ? 'bg-green-500 text-gray-900'
-                  : 'bg-yellow-500 hover:bg-yellow-600 text-gray-900'
-                } font-medium disabled:opacity-50 disabled:cursor-not-allowed`}
-              >
-                {isSubmitting ? 'Submitting...' : isSubmitted ? 'Score Submitted!' : 'Submit Score'}
-              </button>
+              {isSaving && (
+                <div className="text-yellow-400 font-medium">
+                  Submitting score automatically...
+                </div>
+              )}
+              
+              {saveStatus && (
+                <div className={`text-sm ${saveStatus.includes('successfully') ? 'text-green-400' : 'text-red-400'}`}>
+                  {saveStatus}
+                </div>
+              )}
             </div>
           </div>
         )}
       </div>
     </div>
   );
-}
+} 
